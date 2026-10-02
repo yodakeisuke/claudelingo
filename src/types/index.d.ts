@@ -11,6 +11,6 @@ export type ForeignVersion = Result<string, TranslationError>
 
 declare module 'claude-code' {
   interface PluginState {
-    claudelingo: { versions: Record<string, ForeignVersion>; denied: string; chosen: Record<string, string | boolean> }
+    claudelingo: { versions: Record<string, ForeignVersion>; denied: string; saves: number }
   }
 }

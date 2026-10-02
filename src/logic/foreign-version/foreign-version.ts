@@ -27,11 +27,13 @@ const isWanted = (settings: Settings, from: string, text: string) =>
   settings.enabled && isOwn(from) && ownWords(text) !== '' && !/^\/[^\s/]*(\s|$)/.test(text)
 // 訳を頼むのは、描く面があり（-p は誰も見ない）、同じ文をまだ訳せていないときだけ
 const isNeeded = (surfaces: readonly string[], existing?: ForeignVersion) => surfaces.length > 0 && existing?.ok !== true
-// 出すのは、訳せていて、言い直しが元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
+// 出すのは、訳せていて、言い直しがあり、元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
 const line = (prompt: string, version?: ForeignVersion) => {
   const shown = version?.ok ? split(version.value) : undefined
-  return shown && plain(shown.restated) !== plain(ownWords(prompt)) ? shown : undefined
+  return shown && isRestated(shown.restated, ownWords(prompt)) ? shown : undefined
 }
+// 言い直したとみなすのは、言い直しがあり（箇条書きだけの指示は全行がアドバイス扱いになり空になる）、元の文面と違うとき
+const isRestated = (restated: string, own: string) => restated !== '' && plain(restated) !== plain(own)
 // 比べるのは文字・数字・アポストロフィだけ（強調の印・大文字・句読点・空白は見ない。dont → don't は直しとして出す）
 const plain = (text: string) => text.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '')
 // "- " で始まる行がアドバイス、残りの行をつないだものが言い直し（複数段落の指示でも切らない）

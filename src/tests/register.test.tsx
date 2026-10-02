@@ -5,8 +5,15 @@ const composer: PromptOrigin = { kind: 'composer' }
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 
 // エンジン役：返事は "EN: <入力>"、行はそのまま。fail で失敗の仕方を変える
-const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[] = ['terminal']) => {
+const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[] = ['terminal'], saved?: object, isWritable = true) => {
   const clock = mock.clock(on)
+  const store = new Map<string, unknown>(saved ? [['settings', saved]] : [])
+  on('store.get', (_$, e) => ({ value: store.get(e.key) }))
+  on('store.set', (_$, e) => {
+    if (!isWritable) throw new Error('disk full')
+    store.set(e.key, e.value)
+    return { value: undefined }
+  })
   on('session.surfaces', () => ({ value: surfaces }))
   const asked: string[] = []
   const models: string[] = []
@@ -25,11 +32,13 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     const { Text } = $.ui.resolve(e)
     return <Text>{e.props.text}</Text>
   })
-  return { clock, asked, models }
+  return { clock, asked, models, store }
 }
 
 const row = (text: string, origin: PromptOrigin = composer) =>
   ({ plugin: 'claudelingo', component: 'UserMessage', props: { text, origin, isExpanded: true } }) as const
+
+const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
 
 describe('register', () => {
   test('-p など描く面がないときは訳さない', async ($, on) => {
@@ -98,57 +107,51 @@ describe('register', () => {
     })
   }
 
-  test('オフの設定では訳さない', { options: { enabled: false } }, async ($, on) => {
-    const { clock, asked } = engine(on)
+  test('無効の設定では訳さない', async ($, on) => {
+    const { clock, asked } = engine(on, undefined, undefined, { enabled: false })
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
     await clock.advance(0)
     expect(asked).toHaveLength(0)
   })
 
-  test('/lingo で設定パネルが開き、選ぶ・入力するとすぐ設定に書く', async ($, on) => {
-    engine(on)
+  test('/lingo で設定パネルが開き、押す・入力するとすぐ保存され、選んだ方が強調される', async ($, on) => {
+    const { store } = engine(on)
     const opened: string[] = []
-    const set: unknown[] = []
     on('ui.open', (_$, e) => (opened.push(e.id), { value: { isPlaced: true } }))
-    on('config.set', (_$, e) => (set.push([e.key, e.value]), { value: e.value }))
     await $.command.run({ command: 'lingo', args: '', origin: composer, presentation: { isFullscreen: false, columns: 80 } })
     expect(opened).toEqual(['claudelingo'])
-    const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
-    // 面ごとに別の値を選ぶ（同じ値をもう一度選んでも保存しないので）
     for (const [surface, enabled, target, model] of [['terminal', false, 'Spanish', 'opus'], ['desktop', true, 'French', 'haiku']] as const) {
-      set.length = 0
       const ui = await $.ui.mount({ plugin: 'claudelingo', surface, component: 'Pane', requestId: 'claudelingo', props: pane })
       await ui.press({ key: `enabled-${enabled ? 'on' : 'off'}` })
       await ui.input({ key: 'target', text: target })
       await ui.press({ key: `model-${model}` })
-      await ui.input({ key: 'target', text: target })
-      expect(set).toEqual([['claudelingo.enabled', enabled], ['claudelingo.target', target], ['claudelingo.model', model]])
+      expect(store.get('settings')).toEqual({ enabled, native: 'Japanese', target, model })
+      expect((await ui.find({ type: 'Button', key: `model-${model}` }))?.props.variant).toBe('primary')
+      expect((await ui.find({ type: 'Button', key: `enabled-${enabled ? 'on' : 'off'}` }))?.props.variant).toBe('primary')
     }
   })
 
+  test('選んだモデルが、次の訳から使われる', async ($, on) => {
+    const { clock, models } = engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    await ui.press({ key: 'model-opus' })
+    await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
+    await clock.advance(0)
+    expect(models).toEqual(['opus'])
+  })
+
   test('設定の保存に失敗したら、選んだ値は示さず、理由を出す', async ($, on) => {
-    engine(on)
-    // config.set に応える者がいない＝呼び出しそのものが失敗する
-    const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
+    engine(on, undefined, undefined, undefined, false)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
     await ui.press({ key: 'model-opus' })
     expect(await ui.find({ type: 'Text', text: /保存できませんでした：.+/ })).toBeDefined()
     expect((await ui.find({ type: 'Button', key: 'model-opus' }))?.props.variant).toBe('secondary')
   })
 
-  test('設定の保存が拒否されたら、パネルに理由を出す', async ($, on) => {
-    engine(on)
-    on('config.set', () => ({ deny: 'policy' }))
-    const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
-    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
-    await ui.press({ key: 'model-opus' })
-    expect(await ui.find({ type: 'Text', text: '保存できませんでした：policy' })).toBeDefined()
-  })
-
-  test('翻訳モデルを設定で変えられる', { options: { model: 'sonnet' } }, async ($, on) => {
-    const { clock, models } = engine(on)
+  test('保存してある翻訳モデルで訳す', async ($, on) => {
+    const { clock, models } = engine(on, undefined, undefined, { model: 'haiku' })
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
     await clock.advance(0)
-    expect(models).toEqual(['sonnet'])
+    expect(models).toEqual(['haiku'])
   })
 })

@@ -2,36 +2,5 @@
   "name": "claudelingo",
   "version": "0.1.0",
   "description": "Claude を使うついでに、外国語",
-  "types": "./types/index.d.ts",
-  "userConfig": {
-    "enabled": {
-      "type": "boolean",
-      "title": "外国語版",
-      "description": "指示の外国語版を出す（/lingo でも切り替え）",
-      "default": true
-    },
-    "native": {
-      "type": "string",
-      "title": "母語",
-      "description": "あなたの母語",
-      "default": "Japanese"
-    },
-    "target": {
-      "type": "string",
-      "title": "学ぶ言語",
-      "description": "学びたい言語",
-      "default": "English"
-    },
-    "model": {
-      "type": "string",
-      "title": "翻訳モデル",
-      "description": "訳に使うモデル（常にその系統の最新）",
-      "options": [
-        "haiku",
-        "sonnet",
-        "opus"
-      ],
-      "default": "sonnet"
-    }
-  }
+  "types": "./types/index.d.ts"
 }

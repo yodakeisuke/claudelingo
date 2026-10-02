@@ -30,6 +30,12 @@ describe('draft-translation', () => {
     expect(request?.system).toContain('"! "')
   })
 
+  test('赤線も 💡 も一度に 1 つ。赤線は下書きの一番前の直す所', () => {
+    const two = { ok: true, value: 'I **want to** know **why**.\n- want の後は to\n- 文末は why\n! know why\n! want know' } as const
+    expect(DraftTranslations.line(two)?.tips).toEqual(['want の後は to'])
+    expect(DraftTranslations.marks('i want know why', two)).toEqual([{ start: 2, end: 11 }])
+  })
+
   test('帯には "! " の行を出さず、赤線はその文字列が下書きに残っている所', () => {
     expect(DraftTranslations.line(fixed)).toEqual({ restated: 'Please check why this test **is failing**.', tips: ['is fail ではなく is failing'] })
     expect(DraftTranslations.marks('please check why this test is fail', fixed)).toEqual([{ start: 27, end: 34 }])

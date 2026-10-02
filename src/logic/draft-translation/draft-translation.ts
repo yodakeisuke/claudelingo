@@ -25,7 +25,7 @@ const isCommand = (draft: string, commands: readonly string[]) => {
 const request = (settings: Settings, draft: string, commands: readonly string[]) => {
   if (!isWanted(settings, draft, commands)) return undefined
   const asked = TranslationRequest.of({ ...settings, model: settings.liveModel }, draft.trim())
-  const marking = `Finally, for each ${settings.target} part of the message that you rewrote, add one line starting with "! " followed by that part exactly as it appears in the message. Add none for parts you only translated.`
+  const marking = `Finally, for each mistake in the ${settings.target} parts of the message, in the order they appear, add one line starting with "! " followed by only the wrong word or words, copied exactly from the message (as few words as possible, never the whole sentence). Add none for parts you only translated.`
   return { ...asked, system: `${asked.system}\n\n${marking}` }
 }
 // "! " で始まる行が、赤線を引く所
@@ -34,11 +34,18 @@ const isMark = (l: string) => l.trim().startsWith('! ')
 const markLines = (value: string) => value.split('\n').filter(isMark).map(l => l.trim().slice(2)).filter(Boolean)
 // 帯に出すのは、"! " の行を除いた残り
 const withoutMarks = (value: string) => value.split('\n').filter(l => !isMark(l)).join('\n')
-// 帯には "! " の行を除いて、送信後の訳と同じ形で出す
-const line = (version: Translation) => PromptTranslations.line(version.ok ? { ok: true, value: withoutMarks(version.value) } : version)
-// 赤線は、"! " の行の文字列が今の下書きに残っている所
+// 帯には "! " の行を除いて、送信後の訳と同じ形で出す。指摘（💡）は一度に 1 つ
+const line = (version: Translation) => {
+  const shown = PromptTranslations.line(version.ok ? { ok: true, value: withoutMarks(version.value) } : version)
+  return shown && { ...shown, tips: shown.tips.slice(0, 1) }
+}
+// 赤線は一度に 1 つ。"! " の行の文字列が今の下書きに残っている所のうち、一番前。直せば次が出る
 const marks = (draft: string, version: Translation) =>
-  (version.ok ? markLines(version.value) : []).map(mark => ({ start: draft.indexOf(mark), end: draft.indexOf(mark) + mark.length })).filter(range => range.start >= 0)
+  (version.ok ? markLines(version.value) : [])
+    .map(mark => ({ start: draft.indexOf(mark), end: draft.indexOf(mark) + mark.length }))
+    .filter(range => range.start >= 0)
+    .sort((a, b) => a.start - b.start)
+    .slice(0, 1)
 // 置き換えるのは、言い直しが下書きと違うときだけ。** は外す
 const replacement = (draft: string, version: Translation) => {
   const restated = version.ok ? line(version)?.restated.replaceAll('**', '') : undefined

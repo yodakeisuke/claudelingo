@@ -54,8 +54,6 @@ export const register: Register = (on, options) => {
     return settingsPane($.ui.resolve(e) as Parameters<typeof settingsPane>[0], e.surface === 'terminal', { ...settings, ...(await read($, chosen)) }, await read($, denied), (field, value) => void changeSetting($, field, value))
   })
 
-  // 設定は /lingo だけに出し、Claude 本体の /config には並べない
-  on('config.describe', ($, e, next) => next(e.key.startsWith('claudelingo.') ? { ...e, isHidden: true } : e))
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const row = await next(e)
     const text = e.props.text.trim()

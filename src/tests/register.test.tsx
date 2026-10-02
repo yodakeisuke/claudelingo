@@ -136,13 +136,6 @@ describe('register', () => {
     expect((await ui.find({ type: 'Button', key: 'model-opus' }))?.props.variant).toBe('secondary')
   })
 
-  test('設定は Claude 本体の /config に並べない', async ($, on) => {
-    on('config.describe', (_$, e) => ({ label: e.label, isHidden: e.isHidden }))
-    const describe = (key: string) => $.config.describe({ key, label: key, isHidden: false, provider: { plugin: 'engine', tier: 'builtin' } })
-    expect((await describe('claudelingo.model')).isHidden).toBe(true)
-    expect((await describe('theme')).isHidden).toBe(false)
-  })
-
   test('設定の保存が拒否されたら、パネルに理由を出す', async ($, on) => {
     engine(on)
     on('config.set', () => ({ deny: 'policy' }))

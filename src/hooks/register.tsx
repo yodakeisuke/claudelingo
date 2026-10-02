@@ -19,7 +19,7 @@ const settingsOf = async ($: EngineInterface) => TranslationSettings.of(await $.
 const showTranslation = async ($: EngineInterface, from: string, text: string) => {
   const settings = await settingsOf($)
   const languages = `${settings.native}>${settings.target}`
-  const request = PromptTranslations.request(settings, from, text)
+  const request = PromptTranslations.request(settings, { from, text }, (await $.command.list()).map(c => c.name))
   if (!request || !PromptTranslations.isNeeded(await $.session.surfaces(), languages, (await read($, translations))[text])) return
   const translation = await $.model.complete(request).then(PromptTranslations.of, PromptTranslations.of)
   await update($, translations, all => ({ ...all, [text]: { ...translation, languages } }))

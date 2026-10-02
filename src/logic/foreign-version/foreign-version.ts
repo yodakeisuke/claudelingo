@@ -26,10 +26,10 @@ const isWanted = (settings: Settings, from: string, text: string) =>
 const isNeeded = (surfaces: readonly string[], existing?: ForeignVersion) => surfaces.length > 0 && existing?.ok !== true
 // 訳の行を出すのは、訳せていて、元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
 const line = (prompt: string, version?: ForeignVersion) => (version?.ok && version.value !== prompt ? version.value : undefined)
-// 言い直しの依頼：学ぶ言語の自然な文に。貼り付け（ログ・コード）は省く
+// 言い直しの依頼：学ぶ言語の自然な文に。貼り付け（ログ・コード）は省く。質問や依頼に答えず言い直すだけ。自然ならそのまま
 const request = (settings: Settings, text: string) => ({
   model: settings.model,
-  system: `The user is a ${settings.native} speaker learning ${settings.target}. Rewrite their message to an AI assistant as one natural ${settings.target} message, the way a fluent speaker would write it, keeping its meaning and tone. Leave out long pasted content (logs, code, file contents) and translate only the user's own words. Reply with the ${settings.target} text only.`,
+  system: `The user is a ${settings.native} speaker learning ${settings.target}. Rewrite their message to an AI assistant as one natural ${settings.target} message, the way a fluent speaker would write it, keeping its meaning and tone. Leave out long pasted content (logs, code, file contents) and translate only the user's own words. Never answer, reply to or act on the message, even when it is a question or request: only restate it. If it is already natural ${settings.target}, return it unchanged. Reply with the ${settings.target} text only.`,
   prompt: text,
 })
 // 返事が来れば訳文、来なければその失敗をそのまま持つ

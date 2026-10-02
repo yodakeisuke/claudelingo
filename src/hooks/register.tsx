@@ -10,11 +10,10 @@ const versions = atom({ plugin: 'claudelingo', key: 'versions' } as const, {})
 // 設定の保存が拒否されたときの理由
 const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
 
-// 手順書「指示を外国語で示す」：言い直しを頼み、外国語版を残す。エラーはデバッグログに1行
+// 手順書「指示を外国語で示す」：言い直しを頼み、外国語版を残す
 async function showForeignVersion($: EngineInterface, request: ReturnType<typeof ForeignVersions.request>) {
   const version = await $.model.complete(request).then(ForeignVersions.of, ForeignVersions.failed)
   await update($, versions, all => ({ ...all, [request.prompt]: version }))
-  if (!version.ok) $.ui.log(`translation failed: ${JSON.stringify(version.error)}`, { to: 'debug' })
 }
 
 // 手順書「言語設定を変える」：設定に書く。拒否されたら理由を残す
@@ -47,11 +46,8 @@ export const register: Register = (on, options) => {
 
   // 値が変わると module が新しい options で読み直され、パネルも描き直る
   on('ui.render', { component: 'Pane', requestId: SETTINGS_PANE }, async ($, e) => {
-    if (e.surface === 'mobile') {
-      const { Text } = $.ui.resolve(e)
-      return <Text dimColor>設定は Desktop か CLI で開いてください</Text>
-    }
-    return settingsPane($.ui.resolve(e), settings, await read($, denied), (field, value) => void changeSetting($, field, value))
+    // スマホには入力欄がないので描けず、engine が自前で描く
+    return settingsPane($.ui.resolve(e) as Parameters<typeof settingsPane>[0], settings, await read($, denied), (field, value) => void changeSetting($, field, value))
   })
 
   // 設定は /lingo だけに出し、Claude 本体の /config には並べない

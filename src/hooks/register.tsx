@@ -4,13 +4,13 @@ import type { EngineInterface, Register, Timer } from 'claude-code'
 import { DraftTranslations } from '../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../logic/prompt-translation/prompt-translation'
 import { TranslationSettings } from '../logic/translation-settings/translation-settings'
-import { SETTINGS_PANE, settingsPane, translationLine, withTranslation } from './ui'
+import { SETTINGS_PANE, draftBand, settingsPane, withTranslation } from './ui'
 
 // 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
 // 設定の保存に失敗したときの理由
 const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
-// 打ちかけの外国語版。まだ無いときは null
+// 打ちかけと、その校正。まだ無いときは null
 const draft = atom({ plugin: 'claudelingo', key: 'draft' } as const, null)
 // 打つ手が止まるのを待つタイマーと、走っている依頼の止め手。次の打鍵で両方やめる
 let pause: Timer | undefined
@@ -32,7 +32,8 @@ const showTranslation = async ($: EngineInterface, from: string, text: string) =
 // 手順書「打ちかけを外国語で示す」：打つ手が止まったら 1 回だけ頼み、その間に打たれたら捨てる
 const showDraftTranslation = async ($: EngineInterface, text: string, signal: AbortSignal) => {
   const request = DraftTranslations.request(await settingsOf($), text, (await $.command.list()).map(c => c.name))
-  const shown = request ? await $.model.complete(request, { signal }).then(PromptTranslations.of, PromptTranslations.of) : null
+  const version = request && (await $.model.complete(request, { signal }).then(PromptTranslations.of, PromptTranslations.of))
+  const shown = version ? { text, version } : null
   if (signal.aborted) return
   await update($, draft, () => shown)
   $.ui.invalidate('ui.render')
@@ -43,11 +44,12 @@ const cancelDraftTranslation = () => {
   stop.abort()
 }
 
-const translateAfterPause = ($: EngineInterface, text: string) => {
+const translateAfterPause = async ($: EngineInterface, text: string) => {
   cancelDraftTranslation()
   const own = new AbortController()
   stop = own
-  pause = $.clock.after(500, () => void showDraftTranslation($, text, own.signal))
+  const { livePause } = await settingsOf($)
+  if (!own.signal.aborted) pause = $.clock.after(Number(livePause) * 1000, () => void showDraftTranslation($, text, own.signal))
 }
 
 // 送ったら、入力欄が空になるのに合わせて帯もすぐ消す
@@ -72,7 +74,7 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'lingo' }, async $ => {
-    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 12 })
+    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 16 })
     return {}
   })
 
@@ -86,14 +88,27 @@ export const register: Register = on => {
 
   on('prompt.edit', async ($, e, next) => {
     const box = await next(e)
-    if (box.text !== e.text) translateAfterPause($, box.text)
-    return box
+    if (box.text !== e.text) void translateAfterPause($, box.text)
+    // 校正で直した所が下書きに残っていれば、入力欄のその文字に赤い下線（文字は変えない）
+    const shown = await read($, draft)
+    const marks = shown ? DraftTranslations.marks(box.text, shown.version).map(range => ({ ...range, color: 'error', underline: true })) : []
+    return { ...box, decorations: [...(box.decorations ?? []), ...marks] }
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const line = PromptTranslations.line((await read($, draft)) ?? undefined)
-    if (!line || e.props.hasSurvey || !(await settingsOf($)).enabled) return next(e)
-    return translationLine($.ui.resolve(e), line)
+    const shown = await read($, draft)
+    const settings = await settingsOf($)
+    if (!shown || e.props.hasSurvey || !settings.enabled || !settings.live) return next(e)
+    const line = DraftTranslations.line(shown.version)
+    const replacement = DraftTranslations.replacement(shown.text, shown.version)
+    if (!line) return next(e)
+    // 置き換えるのは、校正した打ちかけのままのときだけ（待ちの間に打たれていたら、古い言い直しになる）
+    const replace = async (text: string) => {
+      if ((await $.prompt.read()).text.trim() !== shown.text.trim()) return
+      const { isFilled } = await $.prompt.fill({ text, mode: 'replace' })
+      if (isFilled) void translateAfterPause($, text)
+    }
+    return draftBand($.ui.resolve(e), line, replacement ? () => void replace(replacement) : undefined)
   })
 
   on('ui.render', { component: 'Pane', requestId: SETTINGS_PANE }, async ($, e) => {

@@ -36,7 +36,8 @@ describe('foreign-version', () => {
     expect(ForeignVersions.line('ログ見て', { ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.', tips: [] })
     expect(ForeignVersions.line('fix the test', { ok: true, value: 'fix the test' })).toBeUndefined()
     expect(ForeignVersions.line('ok', { ok: true, value: 'Ok.' })).toBeUndefined()
-    expect(ForeignVersions.line('I dont know', { ok: true, value: "I **don't** know" })?.restated).toBe("I **don't** know")
+    expect(ForeignVersions.line('make the **title** bold', { ok: true, value: 'Make the title bold.' })).toBeUndefined()
+    expect(ForeignVersions.line('I dont know', { ok: true, value: "I don't know\n- 縮約形" })).toEqual({ restated: "I don't know", tips: ['縮約形'] })
     expect(ForeignVersions.line('which file? just the path please', { ok: true, value: 'Which file? Just the path, please.' })).toBeUndefined()
     const value = 'Fix the failing test.\nThen open a PR.\n- 「that failing」→「the failing」\n- 「pls」→「please」'
     expect(ForeignVersions.line('fix test that failing pls. then PR', { ok: true, value }))

@@ -1,6 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
+import type { Translation } from '../types'
 import { DraftTranslations } from '../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../logic/prompt-translation/prompt-translation'
 import { TranslationSettings } from '../logic/translation-settings/translation-settings'
@@ -37,7 +38,18 @@ const showDraftTranslation = async ($: EngineInterface, text: string, signal: Ab
   if (signal.aborted) return
   await update($, draft, () => shown)
   $.ui.invalidate('ui.render')
+  if (shown) await underlineNow($, shown)
 }
+
+// 赤線は打鍵の応答か fill でしか付かない。校正が届いたら、同じ文面を fill し直して赤線だけ付ける
+// 文字もカーソルも変わらないよう、入力欄が校正した下書きのままで、カーソルが末尾のときだけ
+const underlineNow = async ($: EngineInterface, shown: { text: string; version: Translation }) => {
+  const box = await $.prompt.read()
+  const decorations = underlines(box.text, shown.version)
+  if (box.text === shown.text && box.cursor === box.text.length && decorations.length > 0) await $.prompt.fill({ text: box.text, mode: 'replace', decorations })
+}
+
+const underlines = (text: string, version: Translation) => DraftTranslations.marks(text, version).map(range => ({ ...range, color: 'error', underline: true }))
 
 const cancelDraftTranslation = () => {
   pause?.cancel()
@@ -91,8 +103,7 @@ export const register: Register = on => {
     if (box.text !== e.text) void translateAfterPause($, box.text)
     // 校正で直した所が下書きに残っていれば、入力欄のその文字に赤い下線（文字は変えない）
     const shown = await read($, draft)
-    const marks = shown ? DraftTranslations.marks(box.text, shown.version).map(range => ({ ...range, color: 'error', underline: true })) : []
-    return { ...box, decorations: [...(box.decorations ?? []), ...marks] }
+    return { ...box, decorations: [...(box.decorations ?? []), ...(shown ? underlines(box.text, shown.version) : [])] }
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {

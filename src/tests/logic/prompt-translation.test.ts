@@ -53,6 +53,7 @@ describe('prompt-translation', () => {
   test('返事が来れば訳文、来なければその理由を持つ', () => {
     expect(PromptTranslations.of({ isAnswered: true, text: ' Check the logs. \n' })).toEqual({ ok: true, value: 'Check the logs.' })
     expect(PromptTranslations.of({ isAnswered: true, text: '<reasoning>needs fixing</reasoning>I want to know why.' })).toEqual({ ok: true, value: 'I want to know why.' })
+    expect(PromptTranslations.of({ isAnswered: true, text: '<message>fix the <button> styling</message>' })).toEqual({ ok: true, value: 'fix the <button> styling' })
     expect(PromptTranslations.of({ isAnswered: true, text: '<message>I want to know why.</message>' })).toEqual({ ok: true, value: 'I want to know why.' })
     expect(PromptTranslations.of({ isAnswered: false, reason: 'empty-reply' })).toEqual({ ok: false, error: 'empty-reply' })
     expect(PromptTranslations.of(new Error('model blocked'))).toEqual({ ok: false, error: 'model blocked' })

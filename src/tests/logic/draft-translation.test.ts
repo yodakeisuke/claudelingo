@@ -41,11 +41,13 @@ describe('draft-translation', () => {
     expect(DraftTranslations.marks('please check why this test is fail', fixed)).toEqual([{ start: 27, end: 34 }])
     expect(DraftTranslations.marks('please check why this test is failing now', { ok: true, value: 'x\n! is fale' })).toEqual([])
     expect(DraftTranslations.marks('x', { ok: false, error: 'api-error' })).toEqual([])
+    expect(DraftTranslations.marks('this is fail', { ok: true, value: 'x\n! is' })).toEqual([{ start: 5, end: 7 }])
   })
 
-  test('置き換えは、言い直しが下書きと違うときだけで、** は外す', () => {
+  test('置き換えは、1 行の下書きで言い直しが違うときだけで、** は外す', () => {
     expect(DraftTranslations.replacement('please check why this test is fail', fixed)).toBe('Please check why this test is failing.')
     expect(DraftTranslations.replacement('Check the logs.', { ok: true, value: 'Check the logs.\n- 自然です' })).toBeUndefined()
     expect(DraftTranslations.replacement('x', { ok: false, error: 'api-error' })).toBeUndefined()
+    expect(DraftTranslations.replacement('please check\nwhy this test is fail', fixed)).toBeUndefined()
   })
 })

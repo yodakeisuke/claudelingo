@@ -42,7 +42,7 @@ const split = (value: string): Line => {
 // 言い直しの依頼：外国語版を作る指示なら、文面をそのまま渡す。作らない指示には依頼がない
 const request = (settings: Settings, sent: Sent, commands: readonly string[]) => (isWanted(settings, sent, commands) ? TranslationRequest.of(settings, sent.text) : undefined)
 // モデルの下書き（<think> などで囲んだ考え）は捨て、残ったタグも外す。訳文だけを残す
-const withoutScratch = (text: string) => text.replace(/<(think|thinking|reasoning|scratchpad)>[\s\S]*?<\/\1>/g, '').replace(/<\/?[a-z_]+>/g, '').trim()
+const withoutScratch = (text: string) => text.replace(/<(think|thinking|reasoning|scratchpad)>[\s\S]*?<\/\1>/g, '').replace(/<\/?(message|think|thinking|reasoning|scratchpad)>/g, '').trim()
 // 返事が来れば訳文、来なければその理由。呼び出し自体が拒まれたときは、その message
 const of = (outcome: Completion | Error): Translation =>
   Result.given(outcome)

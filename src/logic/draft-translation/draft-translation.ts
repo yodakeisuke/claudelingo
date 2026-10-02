@@ -39,15 +39,19 @@ const line = (version: Translation) => {
   const shown = PromptTranslations.line(version.ok ? { ok: true, value: withoutMarks(version.value) } : version)
   return shown && { ...shown, tips: shown.tips.slice(0, 1) }
 }
+// 下書きの中で、その文字列が単語として現れる最初の位置（"this" の中の "is" は拾わない）
+const wordAt = (draft: string, mark: string) => new RegExp(`(?<![\\p{L}\\p{N}])${mark.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').exec(draft)?.index ?? -1
 // 赤線は一度に 1 つ。"! " の行の文字列が今の下書きに残っている所のうち、一番前。直せば次が出る
 const marks = (draft: string, version: Translation) =>
   (version.ok ? markLines(version.value) : [])
-    .map(mark => ({ start: draft.indexOf(mark), end: draft.indexOf(mark) + mark.length }))
+    .map(mark => ({ start: wordAt(draft, mark), end: wordAt(draft, mark) + mark.length }))
     .filter(range => range.start >= 0)
     .sort((a, b) => a.start - b.start)
     .slice(0, 1)
-// 置き換えるのは、言い直しが下書きと違うときだけ。** は外す
+// 置き換える文は、訳せたときの言い直しから ** を外したもの
+const restatedOf = (version: Translation) => (version.ok ? line(version)?.restated.replaceAll('**', '') : undefined)
+// 置き換えるのは、1 行の下書きで、言い直しが下書きと違うときだけ（言い直しは 1 行につなぐため）
 const replacement = (draft: string, version: Translation) => {
-  const restated = version.ok ? line(version)?.restated.replaceAll('**', '') : undefined
+  const restated = draft.trim().includes('\n') ? undefined : restatedOf(version)
   return restated && restated !== draft.trim() ? restated : undefined
 }

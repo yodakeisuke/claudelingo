@@ -52,17 +52,19 @@ test('訳ができるまでは何も足さない', async ($, on) => {
   expect(await ui.find({ type: 'Text', text: /↳/ })).toBeUndefined()
 })
 
-test('/lingo で止めると訳さず、もう一度で戻る', async ($, on) => {
+test('オフの設定では訳さない', { options: { enabled: false } }, async ($, on) => {
   const { clock, asked } = engine(on)
-  const lingo = () => $.command.run({ command: 'lingo', args: '', origin: composer, presentation: { isFullscreen: false, columns: 80 } })
-  await lingo()
   await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
   await clock.advance(0)
   expect(asked).toHaveLength(0)
-  await lingo()
-  await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
-  await clock.advance(0)
-  expect(asked).toHaveLength(1)
+})
+
+test('/lingo はオン/オフの設定を切り替える', async ($, on) => {
+  engine(on)
+  const set: unknown[] = []
+  on('config.set', (_$, e) => (set.push([e.key, e.value]), { value: e.value }))
+  await $.command.run({ command: 'lingo', args: '', origin: composer, presentation: { isFullscreen: false, columns: 80 } })
+  expect(set).toEqual([['claudelingo.enabled', false]])
 })
 
 test('翻訳モデルを設定で変えられる', { options: { model: 'sonnet' } }, async ($, on) => {

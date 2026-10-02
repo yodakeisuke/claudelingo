@@ -24,6 +24,7 @@ describe('word-card', () => {
     expect((await WordCards.of(reply('carry on'), carry))?.unit).toBe('carry on')
     expect((await WordCards.of(reply('test'), { word: 'tests', restated }))?.unit).toBe('test')
     expect(await WordCards.of(reply('carry on'), { word: 'tests', restated })).toBeUndefined()
+    expect(await WordCards.of(reply('3'), { word: 'times', restated: 'Retry 3 times.' })).toBeUndefined()
     expect(await WordCards.of(answered('UNIT: carry on'), carry)).toBeUndefined()
     expect(await WordCards.of(Promise.resolve({ isAnswered: false as const, reason: 'timeout' }), carry)).toBeUndefined()
     expect(await WordCards.of(Promise.reject(new Error('blocked')), carry)).toBeUndefined()

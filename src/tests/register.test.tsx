@@ -51,9 +51,9 @@ describe('register', () => {
 
   test('直した所は太字で、アドバイスは1点ずつ出る', async ($, on) => {
     const { clock } = engine(on)
-    await $.prompt.submit({ text: 'fix **tests**\n- each の後は単数', wait: false, origin: composer })
+    await $.prompt.submit({ text: 'fix **tests**\n💡 each の後は単数', wait: false, origin: composer })
     await clock.advance(0)
-    const ui = await $.ui.mount({ ...row('fix **tests**\n- each の後は単数'), surface: 'desktop' })
+    const ui = await $.ui.mount({ ...row('fix **tests**\n💡 each の後は単数'), surface: 'desktop' })
     expect(await ui.find({ type: 'Markdown', text: 'EN: fix **tests**' })).toBeDefined()
     expect(await ui.find({ type: 'Markdown', text: '💡 each の後は単数' })).toBeDefined()
   })

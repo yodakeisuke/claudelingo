@@ -5,6 +5,8 @@ import { Result } from '../result/result'
 export const ForeignVersions = {
   isOwn: (from: string) => isOwn(from),
   isWanted: (settings: Settings, from: string, text: string) => isWanted(settings, from, text),
+  isNeeded: (surfaces: readonly string[], existing?: ForeignVersion) => isNeeded(surfaces, existing),
+  line: (prompt: string, version?: ForeignVersion) => line(prompt, version),
   request: (settings: Settings, text: string) => request(settings, text),
   of: (completion: Completion) => of(completion),
   failed: (error: unknown): ForeignVersion => ({ ok: false, error: { message: error instanceof Error ? error.message : String(error) } }),
@@ -17,9 +19,13 @@ type Completion = { isAnswered: true; text: string } | ({ isAnswered: false } & 
 // ビジネスルール
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの
 const isOwn = (from: string) => ['composer', 'sdk', 'bridge'].includes(from)
-// 外国語版を作るのは、オンのときに自分で打った指示だけ（空とスラッシュコマンドは除く）
+// 外国語版を作るのは、オンのときに自分で打った指示だけ（空とスラッシュコマンドは除く。/tmp/a.log のようなパスで始まる指示は対象）
 const isWanted = (settings: Settings, from: string, text: string) =>
-  settings.enabled && isOwn(from) && text !== '' && !text.startsWith('/')
+  settings.enabled && isOwn(from) && text !== '' && !/^\/[^\s/]*(\s|$)/.test(text)
+// 訳を頼むのは、描く面があり（-p は誰も見ない）、同じ文をまだ訳せていないときだけ
+const isNeeded = (surfaces: readonly string[], existing?: ForeignVersion) => surfaces.length > 0 && existing?.ok !== true
+// 訳の行を出すのは、訳せていて、元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
+const line = (prompt: string, version?: ForeignVersion) => (version?.ok && version.value !== prompt ? version.value : undefined)
 // 言い直しの依頼：学ぶ言語の自然な文に。貼り付け（ログ・コード）は省く
 const request = (settings: Settings, text: string) => ({
   model: settings.model,

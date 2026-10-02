@@ -12,6 +12,7 @@ const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
 
 // 手順書「指示を外国語で示す」：言い直しを頼み、外国語版を残す
 async function showForeignVersion($: EngineInterface, request: ReturnType<typeof ForeignVersions.request>) {
+  if (!ForeignVersions.isNeeded(await $.session.surfaces(), (await read($, versions))[request.prompt])) return
   const version = await $.model.complete(request).then(ForeignVersions.of, ForeignVersions.failed)
   await update($, versions, all => ({ ...all, [request.prompt]: version }))
 }
@@ -54,7 +55,8 @@ export const register: Register = (on, options) => {
   on('config.describe', ($, e, next) => next(e.key.startsWith('claudelingo.') ? { ...e, isHidden: true } : e))
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const row = await next(e)
-    const version = ForeignVersions.isOwn(e.props.origin.kind) ? (await read($, versions))[e.props.text.trim()] : undefined
-    return version?.ok ? withForeignVersion($.ui.resolve(e), row, version.value) : row
+    const text = e.props.text.trim()
+    const line = ForeignVersions.isOwn(e.props.origin.kind) ? ForeignVersions.line(text, (await read($, versions))[text]) : undefined
+    return line ? withForeignVersion($.ui.resolve(e), row, line) : row
   })
 }

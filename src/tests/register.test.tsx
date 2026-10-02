@@ -1,12 +1,13 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
-import type { ModelCompleteResult, On, PromptOrigin } from 'claude-code'
+import type { ModelCompleteResult, On, PromptOrigin, RenderSurface } from 'claude-code'
 
 const composer: PromptOrigin = { kind: 'composer' }
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 
 // エンジン役：返事は "EN: <入力>"、行はそのまま。fail で失敗の仕方を変える
-const engine = (on: On, fail?: 'api-error' | 'reject') => {
+const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[] = ['terminal']) => {
   const clock = mock.clock(on)
+  on('session.surfaces', () => ({ value: surfaces }))
   const asked: string[] = []
   const models: string[] = []
   on('model.complete', (_$, e) => {
@@ -30,6 +31,22 @@ const row = (text: string, origin: PromptOrigin = composer) =>
   ({ plugin: 'claudelingo', component: 'UserMessage', props: { text, origin, isExpanded: true } }) as const
 
 describe('register', () => {
+  test('-p など描く面がないときは訳さない', async ($, on) => {
+    const { clock, asked } = engine(on, undefined, [])
+    await $.prompt.submit({ text: 'ログ見て', wait: false, origin: { kind: 'sdk' } })
+    await clock.advance(0)
+    expect(asked).toEqual([])
+  })
+
+  test('同じ文は訳し直さず、出ている訳も消えない', async ($, on) => {
+    const { clock, asked } = engine(on)
+    for (let i = 0; i < 2; i++) {
+      await $.prompt.submit({ text: 'つづけて', wait: false, origin: composer })
+      await clock.advance(0)
+    }
+    expect(asked).toEqual(['つづけて'])
+  })
+
   test('自分の指示の下に訳が出る（どの面でも）', async ($, on) => {
     const { clock } = engine(on)
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })

@@ -6,8 +6,8 @@ export function withForeignVersion(t: Elements[keyof Elements], row: RenderEleme
   return (
     <Box flexDirection="column">
       {row}
-      <Text dimColor>  ↳ {line.restated}</Text>
-      {line.tip ? <Text dimColor>  💡 {line.tip}</Text> : null}
+      <Box><Text dimColor>  ↳ </Text><Text dimColor>{line.restated}</Text></Box>
+      {line.tip ? <Box><Text dimColor>  💡 </Text><Text dimColor>{line.tip}</Text></Box> : null}
     </Box>
   )
 }

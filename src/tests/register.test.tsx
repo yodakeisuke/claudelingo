@@ -53,7 +53,7 @@ describe('register', () => {
     await clock.advance(0)
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ ...row('ログ見て'), surface })
-      expect(await ui.find({ type: 'Text', text: '↳ EN: ログ見て' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: 'ログ見て' })).toBeDefined()
     }
   })

@@ -133,7 +133,7 @@ describe('register', () => {
   test('言語を空欄で確定しても、初期値のまま', async ($, on) => {
     engine(on)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
-    await ui.input({ key: 'target', text: '' })
+    await ui.input({ key: 'target', text: ' ' })
     expect((await ui.find({ type: 'Input', key: 'target' }))?.props.value).toBe('English')
   })
 

@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
-import type { ModelCompleteResult, On, PromptOrigin, RenderSurface } from 'claude-code'
+import type { ModelCompleteResult, On, PromptEditInput, PromptEditResult, PromptFillArgs, PromptOrigin, RenderSurface } from 'claude-code'
 
 const composer: PromptOrigin = { kind: 'composer' }
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
@@ -47,6 +47,30 @@ const row = (text: string, origin: PromptOrigin = composer) =>
   ({ plugin: 'claudelingo', component: 'UserMessage', props: { text, origin, isExpanded: true } }) as const
 
 const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
+
+// 入力欄役：打った文面とカーソル、fill された文面と赤線。校正の返事はいつも proofread
+const composerBox = (on: On, saved: object = {}) => {
+  const clock = mock.clock(on)
+  const box = { text: '', cursor: 0 }
+  const asked: string[] = []
+  const fills: PromptFillArgs[] = []
+  on('store.get', (_$, e) => ({ value: e.key === 'settings' ? saved : undefined }))
+  on('session.surfaces', () => ({ value: ['desktop'] }))
+  on('command.list', () => ({ value: [] }))
+  on('model.complete', (_$, e) => (asked.push(e.prompt.replace(/<\/?message>/g, '')), { value: { isAnswered: true, text: proofread, usage } }))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('prompt.edit', (_$, e) => ({ text: e.text.slice(0, e.start) + e.inputText + e.text.slice(e.end), cursor: e.start + e.inputText.length }))
+  on('prompt.read', () => ({ value: { ...box } }))
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => {
+    const { Box } = $.ui.resolve(e)
+    return <Box />
+  })
+  on('prompt.fill', (_$, e) => (fills.push(e), (box.text = e.text), { isFilled: true }))
+  return { clock, asked, box, fills }
+}
+
+const band = { plugin: 'claudelingo', surface: 'desktop', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 80, scroll: { offset: 0, bodyRows: 3 }, view: {} } } as const
+const proofread = 'I want to know why.\n💡 want の後は to\n! want know'
 
 describe('register', () => {
   test('-p など描く面がないときは訳さない', async ($, on) => {
@@ -238,5 +262,66 @@ describe('register', () => {
     const ui = await sent($, clock)
     expect(await ui.find({ type: 'Markdown', text: 'EN: fix the tests and carry on' })).toBeDefined()
     expect(await ui.find({ type: 'Button', key: 'word-0' })).toBeUndefined()
+  })
+
+  describe('入力中の帯', () => {
+    const type = async ($: Engine, box: { text: string; cursor: number }, text: string) => {
+      // 打鍵は engine の $ に型が無いが、呼べば prompt.edit の鎖が走る
+      const edit = ($.prompt as unknown as { edit: (e: PromptEditInput) => Promise<PromptEditResult> }).edit
+      const typed = await edit({ origin: { kind: 'composer' }, text: box.text, cursor: box.cursor, start: 0, end: box.text.length, inputText: text })
+      Object.assign(box, { text: typed.text, cursor: typed.cursor })
+      return typed
+    }
+
+    test('打つ手が止まってから 1 回だけ頼み、止まる前に打てば前の分は頼まない', async ($, on) => {
+      const { clock, asked, box } = composerBox(on)
+      await type($, box, 'i want')
+      await clock.advance(300)
+      await type($, box, 'i want know why')
+      await clock.advance(500)
+      expect(asked).toEqual(['i want know why'])
+    })
+
+    test('止まると帯が出て、送れば消える', async ($, on) => {
+      const { clock, box } = composerBox(on)
+      await type($, box, 'i want know why')
+      await clock.advance(500)
+      expect(await (await $.ui.mount(band)).find({ type: 'Markdown', text: 'I want to know why.' })).toBeDefined()
+      await $.prompt.submit({ text: 'i want know why', wait: false, origin: composer })
+      await clock.advance(0)
+      expect(await (await $.ui.mount(band)).find({ type: 'Markdown' })).toBeUndefined()
+    })
+
+    test('入力中の校正が無効なら、頼まず帯も出ない', async ($, on) => {
+      const { clock, asked, box } = composerBox(on, { live: false })
+      await type($, box, 'i want know why')
+      await clock.advance(500)
+      expect(asked).toEqual([])
+      expect(await (await $.ui.mount(band)).find({ type: 'Markdown' })).toBeUndefined()
+    })
+
+    test('置換は、入力欄が校正した下書きのままのときだけ', async ($, on) => {
+      const { clock, box, fills } = composerBox(on)
+      await type($, box, 'i want know why')
+      await clock.advance(500)
+      const ui = await $.ui.mount(band)
+      box.text = 'i want know why not'
+      await ui.press({ key: 'replace' })
+      expect(fills.map(f => f.text)).not.toContain('I want to know why.')
+      box.text = 'i want know why'
+      await ui.press({ key: 'replace' })
+      expect(fills.at(-1)?.text).toBe('I want to know why.')
+    })
+
+    test('赤線は打鍵の応答に付き、校正が届いたときは入力欄がそのままでカーソルが末尾のときだけ fill し直す', async ($, on) => {
+      const { clock, box, fills } = composerBox(on)
+      await type($, box, 'i want know why')
+      await clock.advance(500)
+      expect(fills).toEqual([{ text: 'i want know why', mode: 'replace', decorations: [{ start: 2, end: 11, color: 'error', underline: true }], origin: expect.any(Object) }])
+      expect((await type($, box, 'i want know why?')).decorations).toEqual([{ start: 2, end: 11, color: 'error', underline: true }])
+      box.cursor = 0
+      await clock.advance(500)
+      expect(fills).toHaveLength(1)
+    })
   })
 })

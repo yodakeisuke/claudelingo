@@ -29,6 +29,8 @@ const showForeignVersion = async ($: EngineInterface, from: string, text: string
 const changeSetting = async ($: EngineInterface, field: string, value: string | boolean, isTyping = false) => {
   const reason = await $.store.set('settings', { ...(await settingsOf($)), [field]: value }).then(() => '', (error: unknown) => (error instanceof Error ? error.message : String(error)))
   if (reason !== (await read($, denied))) await update($, denied, () => reason)
+  // 設定が変われば、前の設定で作った訳は捨てる（言語を変えたのに古い言語の訳が出ないように）
+  await update($, versions, () => ({}))
   if (!isTyping) await update($, saves, n => n + 1)
 }
 

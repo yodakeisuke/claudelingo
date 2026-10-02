@@ -133,6 +133,17 @@ describe('register', () => {
     }
   })
 
+  test('設定を変えたら、同じ指示も訳し直す', async ($, on) => {
+    const { clock, asked } = engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    for (const target of ['German', 'French']) {
+      await ui.input({ key: 'target', text: target })
+      await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
+      await clock.advance(0)
+    }
+    expect(asked).toEqual(['ログ見て', 'ログ見て'])
+  })
+
   test('選んだモデルが、次の訳から使われる', async ($, on) => {
     const { clock, models } = engine(on)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })

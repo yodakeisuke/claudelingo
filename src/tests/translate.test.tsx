@@ -8,13 +8,14 @@ const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, c
 const engine = (on: On) => {
   const clock = mock.clock(on)
   const asked: string[] = []
-  on('model.complete', (_$, e) => (asked.push(e.prompt), { value: { isAnswered: true, text: `EN: ${e.prompt}`, usage } }))
+  const models: string[] = []
+  on('model.complete', (_$, e) => (asked.push(e.prompt), models.push(e.model), { value: { isAnswered: true, text: `EN: ${e.prompt}`, usage } }))
   on('prompt.submit', (_$, e) => ({ text: e.text }))
   on('ui.render', { component: 'UserMessage' }, ($, e) => {
     const { Text } = $.ui.resolve(e)
     return <Text>{e.props.text}</Text>
   })
-  return { clock, asked }
+  return { clock, asked, models }
 }
 
 const row = (text: string, origin: PromptOrigin = composer) =>
@@ -49,4 +50,24 @@ test('訳ができるまでは何も足さない', async ($, on) => {
   engine(on)
   const ui = await $.ui.mount({ ...row('まだ'), surface: 'terminal' })
   expect(await ui.find({ type: 'Text', text: /↳/ })).toBeUndefined()
+})
+
+test('/lingo で止めると訳さず、もう一度で戻る', async ($, on) => {
+  const { clock, asked } = engine(on)
+  const lingo = () => $.command.run({ command: 'lingo', args: '', origin: composer, presentation: { isFullscreen: false, columns: 80 } })
+  await lingo()
+  await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
+  await clock.advance(0)
+  expect(asked).toHaveLength(0)
+  await lingo()
+  await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
+  await clock.advance(0)
+  expect(asked).toHaveLength(1)
+})
+
+test('翻訳モデルを設定で変えられる', { options: { model: 'sonnet' } }, async ($, on) => {
+  const { clock, models } = engine(on)
+  await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
+  await clock.advance(0)
+  expect(models).toEqual(['sonnet'])
 })

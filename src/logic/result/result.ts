@@ -11,15 +11,17 @@ export const Result = {
 type Fluent<T, E> = {
   data: Data<T, E>
   map: <U>(fn: (value: T) => U) => Fluent<U, E>
-  andThen: <U, F>(fn: (value: T) => Fluent<U, F>) => Fluent<U, E | F>
+  flatMap: <U, F>(fn: (value: T) => Fluent<U, F>) => Fluent<U, E | F>
+  mapError: <F>(fn: (error: E) => F) => Fluent<T, F>
   let: <R>(fn: (data: Data<T, E>) => R) => R
 }
 
 // ビジネスルール
-// map は成功のときだけ変え、andThen は成功のときだけ次の Result へ。失敗はそのまま流し、let は成否を問わず全体を渡す
+// map・flatMap は成功のときだけ、mapError は失敗のときだけ働き、もう片方はそのまま流す。let は成否を問わず全体を渡す
 const wrap = <T, E>(data: Data<T, E>): Fluent<T, E> => ({
   data,
   map: fn => wrap(data.ok ? { ok: true, value: fn(data.value) } : data),
-  andThen: <U, F>(fn: (value: T) => Fluent<U, F>): Fluent<U, E | F> => (data.ok ? fn(data.value) : wrap<U, E | F>(data)),
+  flatMap: <U, F>(fn: (value: T) => Fluent<U, F>): Fluent<U, E | F> => (data.ok ? fn(data.value) : wrap<U, E | F>(data)),
+  mapError: fn => wrap(data.ok ? data : { ok: false, error: fn(data.error) }),
   let: fn => fn(data),
 })

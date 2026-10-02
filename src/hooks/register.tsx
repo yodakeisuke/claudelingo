@@ -32,7 +32,7 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'lingo' }, async $ => {
-    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 6 })
+    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 12 })
     return {}
   })
 
@@ -48,7 +48,7 @@ export const register: Register = (on, options) => {
   // 値が変わると module が新しい options で読み直され、パネルも描き直る
   on('ui.render', { component: 'Pane', requestId: SETTINGS_PANE }, async ($, e) => {
     // スマホには入力欄がないので描けず、engine が自前で描く
-    return settingsPane($.ui.resolve(e) as Parameters<typeof settingsPane>[0], settings, await read($, denied), (field, value) => void changeSetting($, field, value))
+    return settingsPane($.ui.resolve(e) as Parameters<typeof settingsPane>[0], e.surface === 'terminal', settings, await read($, denied), (field, value) => void changeSetting($, field, value))
   })
 
   // 設定は /lingo だけに出し、Claude 本体の /config には並べない

@@ -4,6 +4,9 @@ import type { Register } from 'claude-code'
 // 指示の文面 → 学ぶ言語での言い方
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
 
+// 設定の保存が拒否されたときの理由（パネルに出す）
+const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
+
 const PANE = 'claudelingo'
 const MODELS = ['haiku', 'sonnet', 'opus']
 
@@ -27,13 +30,17 @@ export const register: Register = (on, options) => {
   })
 
   // 値は userConfig に書く。変わると module が新しい options で読み直され、パネルも描き直る
-  on('ui.render', { component: 'Pane', requestId: PANE }, ($, e) => {
+  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     if (e.surface === 'mobile') {
       const { Text } = $.ui.resolve(e)
       return <Text dimColor>設定は Desktop か CLI で開いてください</Text>
     }
     const { Box, Text, Select, Input } = $.ui.resolve(e)
-    const set = (field: string, value: string | boolean) => void $.config.set({ key: `claudelingo.${field}`, value })
+    const reason = await read($, denied)
+    const set = async (field: string, value: string | boolean) => {
+      const r = await $.config.set({ key: `claudelingo.${field}`, value })
+      await update($, denied, () => r.deny ?? '')
+    }
     return (
       <Box flexDirection="column">
         <Text bold>claudelingo</Text>
@@ -41,6 +48,7 @@ export const register: Register = (on, options) => {
         <Input key="native" label="母語" value={native} onSubmit={v => set('native', v.trim() || native)} />
         <Input key="target" label="学ぶ言語" value={target} onSubmit={v => set('target', v.trim() || target)} />
         <Select key="model" label="翻訳モデル" value={model} options={MODELS.map(value => ({ value }))} onSelect={v => set('model', v)} />
+        {reason && <Text color="red">保存できませんでした：{reason}</Text>}
         <Text dimColor>変更はすぐ反映 · Esc で閉じる</Text>
       </Box>
     )
@@ -51,9 +59,15 @@ export const register: Register = (on, options) => {
     if (e.origin.kind === 'composer' && text && !text.startsWith('/') && enabled) {
       // 送信は待たせない。訳は自分の dispatch で走らせる
       $.clock.after(0, async () => {
-        const r = await $.model.complete({ model, system: system(native, target), prompt: text })
-        if (r.isAnswered) await update($, translations, all => ({ ...all, [text]: r.text.trim() }))
-        else $.ui.log(`translation failed: ${r.reason}`, { to: 'debug' })
+        // 失敗は画面に出さず、デバッグログに1行だけ
+        const fail = (why: string) => $.ui.log(`translation failed: ${why}`, { to: 'debug' })
+        try {
+          const r = await $.model.complete({ model, system: system(native, target), prompt: text, timeoutMs: 30_000 })
+          if (r.isAnswered) await update($, translations, all => ({ ...all, [text]: r.text.trim() }))
+          else fail(r.reason)
+        } catch (error) {
+          fail(String(error))
+        }
       })
     }
     return next(e)

@@ -1,15 +1,23 @@
 import { expect, mock, test } from 'claude-code/testing'
-import type { On, PromptOrigin } from 'claude-code'
+import type { ModelCompleteResult, On, PromptOrigin } from 'claude-code'
 
 const composer: PromptOrigin = { kind: 'composer' }
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 
-// エンジン役：返事は "EN: <入力>"、行はそのまま
-const engine = (on: On) => {
+// エンジン役：返事は "EN: <入力>"、行はそのまま。fail で失敗の仕方を変える
+const engine = (on: On, fail?: 'api-error' | 'reject') => {
   const clock = mock.clock(on)
   const asked: string[] = []
   const models: string[] = []
-  on('model.complete', (_$, e) => (asked.push(e.prompt), models.push(e.model), { value: { isAnswered: true, text: `EN: ${e.prompt}`, usage } }))
+  on('model.complete', (_$, e) => {
+    asked.push(e.prompt)
+    models.push(e.model)
+    if (fail === 'reject') throw new Error('model blocked')
+    const value: ModelCompleteResult = fail === 'api-error'
+      ? { isAnswered: false, reason: 'api-error', status: 500, error: 'server_error', usage }
+      : { isAnswered: true, text: `EN: ${e.prompt}`, usage }
+    return { value }
+  })
   on('prompt.submit', (_$, e) => ({ text: e.text }))
   on('ui.render', { component: 'UserMessage' }, ($, e) => {
     const { Text } = $.ui.resolve(e)
@@ -52,6 +60,16 @@ test('訳ができるまでは何も足さない', async ($, on) => {
   expect(await ui.find({ type: 'Text', text: /↳/ })).toBeUndefined()
 })
 
+for (const fail of ['api-error', 'reject'] as const) {
+  test(`訳に失敗（${fail}）しても何も足さず、送信も通る`, async ($, on) => {
+    const { clock } = engine(on, fail)
+    expect(await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })).toEqual({ text: 'ログ見て' })
+    await clock.advance(0)
+    const ui = await $.ui.mount({ ...row('ログ見て'), surface: 'terminal' })
+    expect(await ui.find({ type: 'Text', text: /↳/ })).toBeUndefined()
+  })
+}
+
 test('オフの設定では訳さない', { options: { enabled: false } }, async ($, on) => {
   const { clock, asked } = engine(on)
   await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
@@ -76,6 +94,15 @@ test('/lingo で設定パネルが開き、選ぶ・入力するとすぐ設定�
     await ui.select({ key: 'model', value: 'sonnet' })
     expect(set).toEqual([['claudelingo.enabled', false], ['claudelingo.target', 'Spanish'], ['claudelingo.model', 'sonnet']])
   }
+})
+
+test('設定の保存が拒否されたら、パネルに理由を出す', async ($, on) => {
+  engine(on)
+  on('config.set', () => ({ deny: 'policy' }))
+  const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
+  const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+  await ui.select({ key: 'model', value: 'opus' })
+  expect(await ui.find({ type: 'Text', text: '保存できませんでした：policy' })).toBeDefined()
 })
 
 test('翻訳モデルを設定で変えられる', { options: { model: 'sonnet' } }, async ($, on) => {

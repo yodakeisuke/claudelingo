@@ -83,9 +83,8 @@ describe('register', () => {
     expect(asked).toHaveLength(0)
   })
 
-  test('スラッシュコマンドと自分以外の送信は訳さない', async ($, on) => {
+  test('自分以外の送信は訳さない', async ($, on) => {
     const { clock, asked } = engine(on)
-    await $.prompt.submit({ text: '/clear', wait: false, origin: composer })
     await $.prompt.submit({ text: 'done', wait: false, origin: { kind: 'task-notification' } })
     await clock.advance(0)
     expect(asked).toHaveLength(0)

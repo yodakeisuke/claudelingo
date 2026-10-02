@@ -15,9 +15,9 @@ describe('prompt-translation', () => {
       [true, 'task-notification', 'ログ見て', false],
       [true, 'peer', 'ログ見て', false],
       [true, 'composer', '', false],
-      [true, 'composer', '/clear', false],
-      [true, 'composer', '/model sonnet', false],
       [true, 'composer', '/tmp/app.log を見て', true],
+      [true, 'composer', '/tmp を見て', true],
+      [true, 'composer', '/README.md を確認して', true],
     ] as const
     for (const [enabled, from, text, wanted] of rows) {
       expect(PromptTranslations.request({ ...on, enabled }, from, text) !== undefined).toBe(wanted)

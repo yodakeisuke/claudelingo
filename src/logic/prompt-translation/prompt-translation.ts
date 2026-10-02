@@ -20,9 +20,8 @@ type Completion = { isAnswered: true; text: string } | ({ isAnswered: false } & 
 // ビジネスルール
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの
 const isOwn = (from: string) => ['composer', 'sdk', 'bridge'].includes(from)
-// 外国語版を作るのは、オンのときに自分で打った指示だけ（空とスラッシュコマンドは除く。/tmp/a.log のようなパスで始まる指示は対象）
-const isWanted = (settings: Settings, from: string, text: string) =>
-  settings.enabled && isOwn(from) && text !== '' && !/^\/[^\s/]*(\s|$)/.test(text)
+// 外国語版を作るのは、オンのときに自分で打った指示だけ（空は除く。スラッシュコマンドはそもそも指示として届かない）
+const isWanted = (settings: Settings, from: string, text: string) => settings.enabled && isOwn(from) && text !== ''
 // 訳を頼むのは、描く面があり（-p は誰も見ない）、同じ文を今の言語の組でまだ訳せていないときだけ
 const isNeeded = (surfaces: readonly string[], languages: string, existing?: Kept) => surfaces.length > 0 && !(existing?.ok && existing.languages === languages)
 // 出すのは、自分の指示が訳せていて、言い直しがあり、元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）

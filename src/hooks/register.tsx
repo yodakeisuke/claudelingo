@@ -23,6 +23,8 @@ const showTranslation = async ($: EngineInterface, from: string, text: string) =
   if (!request || !PromptTranslations.isNeeded(await $.session.surfaces(), languages, (await read($, translations))[text])) return
   const translation = await $.model.complete(request).then(PromptTranslations.of, PromptTranslations.of)
   await update($, translations, all => ({ ...all, [text]: { ...translation, languages } }))
+  // 訳が届いたらすぐ描き直させる（状態の変化だけでは、面によっては次の描画まで行が出ない）
+  $.ui.invalidate('ui.render')
 }
 
 // 手順書「言語設定を変える」：保存して、パネルを描き直す。失敗したら理由を残す

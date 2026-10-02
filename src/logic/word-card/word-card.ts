@@ -6,7 +6,7 @@ import { CardRequest } from './card-request'
 export const WordCards = {
   words: (restated: string) => words(restated),
   request: (settings: Settings, word: string, restated: string) => CardRequest.of(settings, word, plain(restated)),
-  of: (outcome: Completion | Error, pressed: Pressed) => of(outcome, pressed),
+  of: (reply: Promise<Completion>, pressed: Pressed) => of(reply, pressed),
   saved: (all: unknown, pressed: Pressed) => (all as Saved | undefined)?.[key(pressed.word, pressed.restated)],
   saving: (all: unknown, card: Card, pressed: Pressed) => saving(all, card, pressed),
   up: (shown: readonly Shown[]) => new Set(shown.flatMap(s => [s.word, ...(s.card ? parts(s.card.unit) : [])])),
@@ -36,9 +36,8 @@ const key = (word: string, restated: string) => `${word}|${plain(restated)}`
 const saving = (all: unknown, card: Card, { word, restated }: Pressed): Saved =>
   ({ ...(all as Saved | undefined), ...Object.fromEntries([word, ...parts(card.unit)].map(w => [key(w, restated), card])) })
 // 返事が UNIT / CAPTION / SVG の形で、句が押した語と関わるときだけ絵にする。それ以外は描けなかったとする
-const of = (outcome: Completion | Error, { word, restated }: Pressed): Card | undefined =>
-  Result.given(outcome)
-    .and(o => (o instanceof Error ? Result.fail(o.message) : o))
+const of = async (reply: Promise<Completion>, { word, restated }: Pressed): Promise<Card | undefined> =>
+  (await Result.given(reply))
     .and(c => (c.isAnswered ? parse(c.text) : Result.fail(c.reason)))
     .and(card => (isAstray(card.unit, word, restated) ? Result.fail(card.unit) : card))
     .either<Card | undefined>(card => card, () => undefined)

@@ -88,7 +88,7 @@ const pressWord = async ($: EngineInterface, row: string, word: string, restated
 // 押した語の絵を頼む。同じ句の絵が先に出ていれば（swap を押し、続けて over）、後から来た方は捨てる
 const drawCard = async ($: EngineInterface, row: string, word: string, restated: string) => {
   const request = WordCards.request(await settingsOf($), word, restated)
-  const card = await $.model.complete(request).then(c => WordCards.of(c, { word, restated }), (error: Error) => WordCards.of(error, { word, restated }))
+  const card = await WordCards.of($.model.complete(request), { word, restated })
   const isUp = card !== undefined && ((await read($, cards))[row] ?? []).some(s => s.word !== word && s.card?.unit === card.unit)
   if (card && !isUp) await saveCard($, card, word, restated)
   await showCards($, row, list => list.flatMap(s => (s.word !== word ? [s] : isUp ? [] : [{ ...s, card, isFailed: !card }])))
@@ -97,7 +97,8 @@ const drawCard = async ($: EngineInterface, row: string, word: string, restated:
 // 保存領域（設定と共有）があふれたら、それまでの絵を捨てて今の絵だけ残す。それでも失敗したら、出ている絵はそのまま
 const saveCard = async ($: EngineInterface, card: Card, word: string, restated: string) => {
   const save = (all: unknown) => $.store.set('cards', WordCards.saving(all, card, { word, restated }))
-  await save(await $.store.get('cards')).then(() => undefined, () => save(undefined).then(() => undefined, () => undefined))
+  const isSaved = (await Result.given(save(await $.store.get('cards')))).either(() => true, () => false)
+  if (!isSaved) await Result.given(save(undefined))
 }
 
 // 開いている絵は置き換えで変える（中を書き換えると Desktop が描き直さない）
@@ -169,7 +170,7 @@ export const register: Register = on => {
     const line = PromptTranslations.line(version)
     if (!line) return row
     const t = $.ui.resolve(e)
-    if (!version?.ok || !(await settingsOf($)).card) return withTranslation(t, row, line)
+    if (!Result.given(version).either(() => true, () => false) || !(await settingsOf($)).card) return withTranslation(t, row, line)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
     const shown = (await read($, cards))[key] ?? []
     const isTerminal = e.surface === 'terminal'

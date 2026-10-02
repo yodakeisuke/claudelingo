@@ -15,7 +15,7 @@ const translations = atom({ plugin: 'claudelingo', key: 'translations' } as cons
 const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
 // 打ちかけと、その校正。まだ無いときは null
 const draft = atom({ plugin: 'claudelingo', key: 'draft' } as const, null)
-// 指示の鍵 → その下に開いている単語の絵
+// 指示の行（requestId）→ その下に開いている単語の絵。同じ文面を二度送っても、行ごとに別
 const cards = atom({ plugin: 'claudelingo', key: 'cards' } as const, {})
 // 打つ手が止まるのを待つタイマーと、走っている依頼の止め手。次の打鍵で両方やめる
 let pause: Timer | undefined
@@ -172,9 +172,9 @@ export const register: Register = on => {
     const t = $.ui.resolve(e)
     if (!Result.given(version).either(() => true, () => false) || !(await settingsOf($)).card) return withTranslation(t, row, line)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
-    const shown = (await read($, cards))[key] ?? []
+    const shown = (await read($, cards))[e.requestId] ?? []
     const isTerminal = e.surface === 'terminal'
-    const words = wordLine(t, isTerminal, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated))
-    return withTranslation(t, row, line, words, shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, key, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))))))
+    const words = wordLine(t, isTerminal, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, e.requestId, word, line.restated))
+    return withTranslation(t, row, line, words, shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, e.requestId, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))))))
   })
 }

@@ -27,6 +27,7 @@ const cases = {
   'rule-comment': [file(operations, data, '// ビジネスルール\nconst b = () => 1', util)],
   'shared-util': [file('// 公開する操作\nexport const A = { f: () => c() }', data, '// ビジネスルール', util),
     file('// 公開する操作\nexport const A = { f: () => b(), g: () => b() }', data, '// ビジネスルール\n// b は c\nconst b = () => c()', util)],
+  'comment-run': ['// a\n// b\n// c\nconst x = 1'],
   'result-only': ["throw new Error('x')", 'try { f() } catch { g() }', 'p.catch(() => 1)', "Promise.reject('x')"],
 }
 for (const [name, invalid] of Object.entries(cases)) {
@@ -59,7 +60,8 @@ describe('組み込みルール', () => {
     const names = Array.from({ length: n }, (_, i) => `p${i}`)
     return `const c = (${names.map(name => `${name}?: number`).join(', ')}) => [${names.join(', ')}].length`
   }
-  const padded = n => [valid, ...Array.from({ length: n - valid.split('\n').length }, () => '//')].join('\n')
+  // 行を足して長さを作る。コメントは 2 行続けたら 1 行空ける（comment-run に掛からないように）
+  const padded = n => [valid, ...Array.from({ length: n - valid.split('\n').length }, (_, i) => ((n - i) % 3 === 2 ? '' : '//'))].join('\n')
   const examples = [
     ['max-lines は 1 ファイル 70 行まで', lint, padded(70), padded(71), 'eslint(max-lines)'],
     ['complexity は 5 まで', lint, withUtil(branches(4)), withUtil(branches(5)), 'eslint(complexity)'],

@@ -3,6 +3,13 @@
   "jsPlugins": [
     "./lint/logic-layout.js"
   ],
+  "rules": {
+    "func-style": [
+      "error",
+      "expression"
+    ],
+    "logic-layout/comment-run": "error"
+  },
   "overrides": [
     {
       "files": [

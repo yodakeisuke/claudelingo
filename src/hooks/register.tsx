@@ -16,7 +16,7 @@ const saves = atom({ plugin: 'claudelingo', key: 'saves' } as const, 0)
 const settingsOf = async ($: EngineInterface) => LanguageSettings.of(await $.store.get('settings'))
 
 // 手順書「指示を外国語で示す」：訳す指示なら言い直しを頼み、外国語版を残す
-async function showForeignVersion($: EngineInterface, from: string, text: string) {
+const showForeignVersion = async ($: EngineInterface, from: string, text: string) => {
   const settings = await settingsOf($)
   if (!ForeignVersions.isWanted(settings, from, text)) return
   if (!ForeignVersions.isNeeded(await $.session.surfaces(), (await read($, versions))[text])) return
@@ -26,7 +26,7 @@ async function showForeignVersion($: EngineInterface, from: string, text: string
 
 // 手順書「言語設定を変える」：保存して、パネルを描き直す。失敗したら理由を残す
 // 打っている途中の保存では描き直さない（打ちかけの文字を、描き直しが巻き戻さないように）
-async function changeSetting($: EngineInterface, field: string, value: string | boolean, isTyping = false) {
+const changeSetting = async ($: EngineInterface, field: string, value: string | boolean, isTyping = false) => {
   const reason = await $.store.set('settings', { ...(await settingsOf($)), [field]: value }).then(() => '', (error: unknown) => (error instanceof Error ? error.message : String(error)))
   if (reason !== (await read($, denied))) await update($, denied, () => reason)
   if (!isTyping) await update($, saves, n => n + 1)

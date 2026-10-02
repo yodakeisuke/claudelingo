@@ -73,6 +73,12 @@ export default {
         }
       }
     }),
+    'comment-run': rule('連続するコメントは 2 行まで', (context) => {
+      const lines = context.sourceCode.getAllComments().map(c => c.loc.start.line)
+      for (const [i, line] of lines.entries()) {
+        if (lines[i - 1] === line - 1 && lines[i - 2] === line - 2) context.report({ loc: { line, column: 0 }, message: '連続するコメントは 2 行まで。要点だけを書く' })
+      }
+    }),
     'shared-util': rule('util は 2 つ以上の操作から直接使う', (context, program) => {
       const ops = operations(program)
       for (const { statement } of placed(context, program).filter(({ section }) => section === UTIL)) {

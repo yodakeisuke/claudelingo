@@ -7,10 +7,9 @@ type Save = (field: keyof Settings, value: string | boolean, isTyping?: boolean)
 
 export const SETTINGS_PANE = 'claudelingo'
 
-// /lingo の設定パネル：押す・打つとその場で保存（Enter を押さずに離れても残る）。選択肢は全部見せて1回で選べるボタンに（選ばれている方が強調。幅が足りなければボタン単位で折り返す）
-// 一番上は mod そのものの有効・無効。項目名と入力欄は幅を揃える。保存が拒否されたら理由を赤で1行
-// 端末は行を詰め、それ以外の面は余白と行間を取る
-export function settingsPane(t: Elements[Exclude<keyof Elements, 'mobile'>], isTerminal: boolean, settings: Settings, denied: string, write: Save) {
+// /lingo の設定パネル：一番上は mod の有効・無効。押す・打つとその場で保存し、失敗したら理由を赤で1行
+// 選択肢は全部見せるボタン（選ばれている方を強調）。端末は行を詰め、それ以外の面は余白と行間を取る
+export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isTerminal: boolean, settings: Settings, denied: string, write: Save) => {
   const { Box, Text, Button, Input } = t
   // 変わっていない値は保存しない（入力欄は外をクリックしただけでも確定が飛び、他の項目を古い値で書き戻すことがあった）
   // 打っている途中は描き直さないので比べる相手が古い。そのときは毎回保存する

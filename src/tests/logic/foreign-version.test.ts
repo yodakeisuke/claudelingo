@@ -36,9 +36,9 @@ describe('foreign-version', () => {
     expect(ForeignVersions.line('ログ見て', { ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.', tips: [] })
     expect(ForeignVersions.line('fix the test', { ok: true, value: 'fix the test' })).toBeUndefined()
     expect(ForeignVersions.line('ok', { ok: true, value: 'Ok.' })).toBeUndefined()
-    const value = 'Fix the failing test.\n- 「that failing」→「the failing」\n- 「pls」→「please」\n---\nsrc/a.ts'
-    expect(ForeignVersions.line('fix test that failing pls', { ok: true, value }))
-      .toEqual({ restated: 'Fix the failing test.', tips: ['「that failing」→「the failing」', '「pls」→「please」'] })
+    const value = 'Fix the failing test.\nThen open a PR.\n- 「that failing」→「the failing」\n- 「pls」→「please」'
+    expect(ForeignVersions.line('fix test that failing pls. then PR', { ok: true, value }))
+      .toEqual({ restated: 'Fix the failing test. Then open a PR.', tips: ['「that failing」→「the failing」', '「pls」→「please」'] })
     expect(ForeignVersions.line('ログ見て', { ok: false, error: { reason: 'empty-reply' } })).toBeUndefined()
     expect(ForeignVersions.line('ログ見て')).toBeUndefined()
   })

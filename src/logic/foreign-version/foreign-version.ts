@@ -34,10 +34,11 @@ const line = (prompt: string, version?: ForeignVersion) => {
 }
 // 比べるときは大文字と文末の記号を見ない
 const plain = (text: string) => text.toLowerCase().replace(/[.!?。！？]+$/, '')
-// 返事の1行目が言い直し、"- " で始まる行がアドバイス。それ以外の行は捨てる
+// "- " で始まる行がアドバイス、残りの行をつないだものが言い直し（複数段落の指示でも切らない）
 const split = (value: string): Line => {
-  const [restated = '', ...rest] = value.split('\n').map(l => l.trim()).filter(Boolean)
-  return { restated, tips: rest.filter(l => l.startsWith('- ')).map(l => l.slice(2)) }
+  const lines = value.split('\n').map(l => l.trim()).filter(Boolean)
+  const isTip = (l: string) => l.startsWith('- ')
+  return { restated: lines.filter(l => !isTip(l)).join(' '), tips: lines.filter(isTip).map(l => l.slice(2)) }
 }
 // 言い直しの依頼：自分の言葉を <message> で渡し、答えず言い直させる。学ぶ言語で書いた所の間違いだけ、1点1行で母語のアドバイス
 const request = (settings: Settings, text: string) => ({

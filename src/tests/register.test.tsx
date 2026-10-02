@@ -51,9 +51,9 @@ describe('register', () => {
 
   test('直した所は太字で、アドバイスは1点ずつ出る', async ($, on) => {
     const { clock } = engine(on)
-    await $.prompt.submit({ text: 'fix **tests**\n- each の後は単数', wait: false, origin: composer })
+    await $.prompt.submit({ text: 'fix **tests**\n💡 each の後は単数', wait: false, origin: composer })
     await clock.advance(0)
-    const ui = await $.ui.mount({ ...row('fix **tests**\n- each の後は単数'), surface: 'desktop' })
+    const ui = await $.ui.mount({ ...row('fix **tests**\n💡 each の後は単数'), surface: 'desktop' })
     expect(await ui.find({ type: 'Markdown', text: 'EN: fix **tests**' })).toBeDefined()
     expect(await ui.find({ type: 'Markdown', text: '💡 each の後は単数' })).toBeDefined()
   })
@@ -117,7 +117,7 @@ describe('register', () => {
       await ui.press({ key: `enabled-${enabled ? 'on' : 'off'}` })
       await ui.input({ key: 'target', text: target })
       await ui.press({ key: `model-${model}` })
-      expect(store.get('settings')).toEqual({ enabled, native: 'Japanese', target, model })
+      expect(store.get('settings')).toEqual({ enabled, native: 'Japanese', target, model, live: true, liveModel: 'sonnet', livePause: '0.5' })
       expect((await ui.find({ type: 'Button', key: `model-${model}` }))?.props.variant).toBe('primary')
       expect((await ui.find({ type: 'Button', key: `enabled-${enabled ? 'on' : 'off'}` }))?.props.variant).toBe('primary')
     }

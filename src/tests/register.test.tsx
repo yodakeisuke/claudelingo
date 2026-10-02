@@ -130,6 +130,13 @@ describe('register', () => {
     }
   })
 
+  test('言語を空欄で確定しても、初期値のまま', async ($, on) => {
+    engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    await ui.input({ key: 'target', text: '' })
+    expect((await ui.find({ type: 'Input', key: 'target' }))?.props.value).toBe('English')
+  })
+
   test('無効にしても、モデルを変えても、出ている訳は消えない', async ($, on) => {
     const { clock } = engine(on, undefined, undefined, { card: false })
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })

@@ -20,8 +20,12 @@ type Completion = { isAnswered: true; text: string } | ({ isAnswered: false } & 
 // ビジネスルール
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの
 const isOwn = (from: string) => ['composer', 'sdk', 'bridge'].includes(from)
-// 自分の言葉は、engine が <pasted_content> で包んだ貼り付けを除いた部分
-const ownWords = (text: string) => text.replace(/<pasted_content[^>]*>[\s\S]*?<\/pasted_content[^>]*>/g, '').trim()
+// 自分の言葉は、engine が <pasted_content> で包んだ貼り付けを除いた部分。打った言葉がなく短い貼り付けだけなら、指示ごと貼ったとみてその中身
+const ownWords = (text: string) => typed(text) || (unwrapped(text).length <= 2000 ? unwrapped(text) : '')
+// 打った言葉：貼り付けを丸ごと除く
+const typed = (text: string) => text.replace(/<pasted_content[^>]*>[\s\S]*?<\/pasted_content[^>]*>/g, '').trim()
+// 貼り付けの中身：包みの印だけを除く
+const unwrapped = (text: string) => text.replace(/<\/?pasted_content[^>]*>/g, '').trim()
 // 外国語版を作るのは、オンのときに自分で打った指示だけ（空とスラッシュコマンドは除く。/tmp/a.log のようなパスで始まる指示は対象）
 const isWanted = (settings: Settings, from: string, text: string) =>
   settings.enabled && isOwn(from) && ownWords(text) !== '' && !/^\/[^\s/]*(\s|$)/.test(text)
@@ -34,8 +38,8 @@ const line = (from: string, prompt: string, version?: Translation) => {
 }
 // 訳せていれば、言い直しとアドバイスに分ける
 const parsed = (version?: Translation) => (version?.ok ? split(version.value) : undefined)
-// 言い直したとみなすのは、言い直しがあり（箇条書きだけの指示は全行がアドバイス扱いになり空になる）、元の文面と違うとき
-const isRestated = (restated: string, own: string) => restated !== '' && plain(restated) !== plain(own)
+// 言い直したとみなすのは、言い直しに言葉があり（箇条書きだけの指示は空に、資料だけの貼り付けは […] だけになる）、元の文面と違うとき
+const isRestated = (restated: string, own: string) => plain(restated) !== '' && plain(restated) !== plain(own)
 // 比べるのは文字・数字・アポストロフィだけ（強調の印・大文字・句読点・空白は見ない。dont → don't は直しとして出す）
 const plain = (text: string) => text.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '')
 // "- " で始まる行がアドバイス、残りの行をつないだものが言い直し（複数段落の指示でも切らない）

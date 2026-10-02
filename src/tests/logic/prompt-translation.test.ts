@@ -18,7 +18,8 @@ describe('prompt-translation', () => {
       [true, 'composer', '/clear', false],
       [true, 'composer', '/model sonnet', false],
       [true, 'composer', '/tmp/app.log を見て', true],
-      [true, 'composer', '<pasted_content id="1">Error: boom</pasted_content id="1">', false],
+      [true, 'composer', '<pasted_content id="1">以下の報告を調べて\nError: boom</pasted_content id="1">', true],
+      [true, 'composer', `<pasted_content id="1">${'x'.repeat(2001)}</pasted_content id="1">`, false],
     ] as const
     for (const [enabled, from, text, wanted] of rows) {
       expect(PromptTranslations.request({ ...on, enabled }, from, text) !== undefined).toBe(wanted)
@@ -37,6 +38,7 @@ describe('prompt-translation', () => {
     expect(PromptTranslations.line('composer', 'ログ見て', { ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.', tips: [] })
     expect(PromptTranslations.line('composer', 'fix the test', { ok: true, value: 'fix the test' })).toBeUndefined()
     expect(PromptTranslations.line('composer', 'ok', { ok: true, value: 'Ok.' })).toBeUndefined()
+    expect(PromptTranslations.line('composer', '<pasted_content id="1">Error: boom</pasted_content id="1">', { ok: true, value: '[…]' })).toBeUndefined()
     expect(PromptTranslations.line('composer', '- fix X\n- fix Y', { ok: true, value: '- fix X\n- fix Y' })).toBeUndefined()
     expect(PromptTranslations.line('composer', 'make the **title** bold', { ok: true, value: 'Make the title bold.' })).toBeUndefined()
     expect(PromptTranslations.line('composer', 'I dont know', { ok: true, value: "I don't know\n- 縮約形" })).toEqual({ restated: "I don't know", tips: ['縮約形'] })

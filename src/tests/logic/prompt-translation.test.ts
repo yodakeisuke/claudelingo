@@ -32,12 +32,12 @@ describe('prompt-translation', () => {
     expect(PromptTranslations.isNeeded([])).toBe(false)
   })
 
-  test('訳せていれば、言い直しとアドバイスに分けて出す', () => {
+  test('訳せていれば言い直しとアドバイスに分け、訳せなかったら理由を出す', () => {
     expect(PromptTranslations.line({ ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.', tips: [] })
     const value = 'Fix the failing test.\nThen open a PR.\n- 「that failing」→「the failing」\n- 「pls」→「please」'
     expect(PromptTranslations.line({ ok: true, value }))
       .toEqual({ restated: 'Fix the failing test. Then open a PR.', tips: ['「that failing」→「the failing」', '「pls」→「please」'] })
-    expect(PromptTranslations.line({ ok: false, error: 'empty-reply' })).toBeUndefined()
+    expect(PromptTranslations.line({ ok: false, error: 'empty-reply' })).toEqual({ restated: '訳せませんでした：empty-reply', tips: [] })
     expect(PromptTranslations.line()).toBeUndefined()
   })
 

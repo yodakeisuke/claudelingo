@@ -30,8 +30,8 @@ const isCommand = (text: string, commands: readonly string[]) => commands.includ
 const key = (text: string) => text.replace(/<\/?pasted_content[^>]*>|\s/g, '')
 // 訳を頼むのは、描く面があるときだけ（-p は誰も見ない）
 const isNeeded = (surfaces: readonly string[]) => surfaces.length > 0
-// 訳せていれば、言い直しとアドバイスに分けて出す
-const line = (version?: Translation) => (version?.ok ? split(version.value) : undefined)
+// 訳せていれば、言い直しとアドバイスに分けて出す。訳せなかったら、その理由を出す（訳がまだなら何も出さない）
+const line = (version?: Translation) => version && (version.ok ? split(version.value) : { restated: `訳せませんでした：${version.error}`, tips: [] })
 // "- " で始まる行がアドバイス、残りの行をつないだものが言い直し（複数段落の指示でも切らない）
 const split = (value: string): Line => {
   const lines = value.split('\n').map(l => l.trim()).filter(Boolean)

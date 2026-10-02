@@ -39,6 +39,8 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'lingo' }, async $ => {
+    // 開くたびに、保存してある値で描き直す（打って保存した値は描き直していないので）
+    await update($, saves, n => n + 1)
     await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 12 })
     return {}
   })

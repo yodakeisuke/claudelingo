@@ -32,7 +32,7 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'lingo' }, async $ => {
-    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 7 })
+    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 6 })
     return {}
   })
 
@@ -57,6 +57,6 @@ export const register: Register = (on, options) => {
     const row = await next(e)
     const text = e.props.text.trim()
     const line = ForeignVersions.isOwn(e.props.origin.kind) ? ForeignVersions.line(text, (await read($, versions))[text]) : undefined
-    return line ? withForeignVersion($.ui.resolve(e), row, line) : row
+    return line ? withForeignVersion($.ui.resolve(e), e.surface === 'terminal', row, line) : row
   })
 }

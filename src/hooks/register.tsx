@@ -30,9 +30,8 @@ const showTranslation = async ($: EngineInterface, from: string, text: string) =
 }
 
 // 手順書「打ちかけに外国語版と続きを示す」：打つ手が止まったら 1 回だけ頼み、その間に打たれたら捨てる
-const showSuggestion = async ($: EngineInterface, draft: string) => {
+const showSuggestion = async ($: EngineInterface, draft: string, signal: AbortSignal) => {
   const request = DraftSuggestions.request(await settingsOf($), draft, (await $.command.list()).map(c => c.name))
-  const { signal } = stop
   const version = request && (await $.model.complete(request, { signal }).then(PromptTranslations.of, PromptTranslations.of))
   const shown = version ? { draft, version } : null
   if (signal.aborted) return
@@ -40,11 +39,23 @@ const showSuggestion = async ($: EngineInterface, draft: string) => {
   $.ui.invalidate('ui.render')
 }
 
-const suggestAfterPause = ($: EngineInterface, draft: string) => {
+const cancelSuggestion = () => {
   pause?.cancel()
   stop.abort()
-  stop = new AbortController()
-  pause = $.clock.after(500, () => void showSuggestion($, draft))
+}
+
+const suggestAfterPause = ($: EngineInterface, draft: string) => {
+  cancelSuggestion()
+  const own = new AbortController()
+  stop = own
+  pause = $.clock.after(500, () => void showSuggestion($, draft, own.signal))
+}
+
+// 送ったら、入力欄が空になるのに合わせて帯もすぐ消す
+const hideSuggestion = async ($: EngineInterface) => {
+  cancelSuggestion()
+  await update($, suggestion, () => null)
+  $.ui.invalidate('ui.render')
 }
 
 // 手順書「言語設定を変える」：保存して、失敗の理由（成功なら空）を残す。パネルはそれを読んで描き直る
@@ -68,7 +79,7 @@ export const register: Register = on => {
     // 送信は待たせない。訳は自分の dispatch で走らせる
     $.clock.after(0, () => void showTranslation($, e.origin.kind, e.text.trim()))
     // 自分で送ったら下書きは空になる。通知などの送信では、打ちかけの帯を残す
-    if (PromptTranslations.isOwn(e.origin.kind)) suggestAfterPause($, '')
+    if (PromptTranslations.isOwn(e.origin.kind)) $.clock.after(0, () => void hideSuggestion($))
     return next(e)
   })
 
@@ -80,7 +91,7 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const shown = await read($, suggestion)
-    if (!shown || e.props.hasSurvey) return next(e)
+    if (!shown || e.props.hasSurvey || !(await settingsOf($)).enabled) return next(e)
     const band = DraftSuggestions.band(shown.version)
     // 続きを足すのは、候補を作った打ちかけのままのときだけ（待ちの間に打たれていたら、古い続きになる）
     const addNext = async () => {

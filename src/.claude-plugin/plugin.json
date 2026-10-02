@@ -31,7 +31,7 @@
         "sonnet",
         "opus"
       ],
-      "default": "haiku"
+      "default": "sonnet"
     }
   }
 }

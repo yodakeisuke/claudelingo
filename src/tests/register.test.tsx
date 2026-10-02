@@ -90,12 +90,12 @@ describe('register', () => {
   })
 
   for (const fail of ['api-error', 'reject'] as const) {
-    test(`訳に失敗（${fail}）しても何も足さず、送信も通る`, async ($, on) => {
+    test(`訳に失敗（${fail}）したら理由を出し、送信は通る`, async ($, on) => {
       const { clock } = engine(on, fail)
       expect(await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })).toEqual({ text: 'ログ見て' })
       await clock.advance(0)
       const ui = await $.ui.mount({ ...row('ログ見て'), surface: 'terminal' })
-      expect(await ui.find({ type: 'Markdown' })).toBeUndefined()
+      expect((await ui.find({ type: 'Markdown' }))?.props.text).toMatch(/^訳せませんでした：.+/)
     })
   }
 

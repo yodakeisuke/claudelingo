@@ -4,7 +4,7 @@ import { SuggestionRequest } from './suggestion-request'
 // 公開する操作
 export const DraftSuggestions = {
   request: (settings: Settings, draft: string, commands: readonly string[]) => request(settings, draft, commands),
-  band: (version: Translation | null) => band(version),
+  band: (version: Translation) => band(version),
 }
 
 // データ構造
@@ -22,8 +22,7 @@ const isCommand = (draft: string, commands: readonly string[]) => {
 // 言い直しと続きの依頼。見せない打ちかけには依頼がない
 const request = (settings: Settings, draft: string, commands: readonly string[]) => (isWanted(settings, draft, commands) ? SuggestionRequest.of(settings, draft.trim()) : undefined)
 // "→ " で始まる行が続き、残りの行をつないだものが言い直し。訳せなかったら、その理由だけ
-const band = (version: Translation | null): Band | undefined => {
-  if (!version) return undefined
+const band = (version: Translation): Band => {
   if (!version.ok) return { restated: `訳せませんでした：${version.error}`, next: '' }
   const lines = version.value.split('\n').map(l => l.trim()).filter(Boolean)
   const isNext = (l: string) => l.startsWith('→ ')

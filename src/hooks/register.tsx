@@ -10,7 +10,7 @@ import { SETTINGS_PANE, draftBand, settingsPane, withTranslation } from './ui'
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
 // 設定の保存に失敗したときの理由
 const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
-// 打ちかけの外国語版と続き。まだ無いときは null
+// 打ちかけと、その外国語版と続き。まだ無いときは null
 const suggestion = atom({ plugin: 'claudelingo', key: 'suggestion' } as const, null)
 // 打つ手が止まるのを待つタイマーと、走っている依頼の止め手。次の打鍵で両方やめる
 let pause: Timer | undefined
@@ -33,7 +33,8 @@ const showTranslation = async ($: EngineInterface, from: string, text: string) =
 const showSuggestion = async ($: EngineInterface, draft: string) => {
   const request = DraftSuggestions.request(await settingsOf($), draft, (await $.command.list()).map(c => c.name))
   const { signal } = stop
-  const shown = request ? await $.model.complete(request, { signal }).then(PromptTranslations.of, PromptTranslations.of) : null
+  const version = request && (await $.model.complete(request, { signal }).then(PromptTranslations.of, PromptTranslations.of))
+  const shown = version ? { draft, version } : null
   if (signal.aborted) return
   await update($, suggestion, () => shown)
   $.ui.invalidate('ui.render')
@@ -66,7 +67,8 @@ export const register: Register = on => {
   on('prompt.submit', ($, e, next) => {
     // 送信は待たせない。訳は自分の dispatch で走らせる
     $.clock.after(0, () => void showTranslation($, e.origin.kind, e.text.trim()))
-    suggestAfterPause($, '')
+    // 自分で送ったら下書きは空になる。通知などの送信では、打ちかけの帯を残す
+    if (PromptTranslations.isOwn(e.origin.kind)) suggestAfterPause($, '')
     return next(e)
   })
 
@@ -77,9 +79,12 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const band = DraftSuggestions.band(await read($, suggestion))
-    if (!band || e.props.hasSurvey) return next(e)
+    const shown = await read($, suggestion)
+    if (!shown || e.props.hasSurvey) return next(e)
+    const band = DraftSuggestions.band(shown.version)
+    // 続きを足すのは、候補を作った打ちかけのままのときだけ（待ちの間に打たれていたら、古い続きになる）
     const addNext = async () => {
+      if ((await $.prompt.read()).text.trim() !== shown.draft.trim()) return
       const { isFilled } = await $.prompt.fill({ text: ` ${band.next}`, mode: 'append' })
       if (isFilled) suggestAfterPause($, (await $.prompt.read()).text)
     }

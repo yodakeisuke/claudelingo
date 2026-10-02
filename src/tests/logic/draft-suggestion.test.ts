@@ -31,6 +31,5 @@ describe('draft-suggestion', () => {
     expect(DraftSuggestions.band({ ok: true, value: 'Write **the** tests\n→ and run them.' })).toEqual({ restated: 'Write **the** tests', next: 'and run them.' })
     expect(DraftSuggestions.band({ ok: true, value: 'Write tests' })).toEqual({ restated: 'Write tests', next: '' })
     expect(DraftSuggestions.band({ ok: false, error: 'api-error' })).toEqual({ restated: '訳せませんでした：api-error', next: '' })
-    expect(DraftSuggestions.band(null)).toBeUndefined()
   })
 })

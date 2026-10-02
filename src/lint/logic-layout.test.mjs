@@ -28,7 +28,7 @@ const cases = {
   'shared-util': [file('// 公開する操作\nexport const A = { f: () => c() }', data, '// ビジネスルール', util),
     file('// 公開する操作\nexport const A = { f: () => b(), g: () => b() }', data, '// ビジネスルール\n// b は c\nconst b = () => c()', util)],
   'comment-run': ['// a\n// b\n// c\nconst x = 1'],
-  'result-only': ["throw new Error('x')", 'try { f() } catch { g() }', 'p.catch(() => 1)', "Promise.reject('x')"],
+  'result-only': ["throw new Error('x')", 'try { f() } catch { g() }', 'p.catch(() => 1)', "Promise.reject('x')", 'p.then(f, g)', 'r.ok ? 1 : 2'],
 }
 for (const [name, invalid] of Object.entries(cases)) {
   tester.run(name, plugin.rules[name], { valid: [valid], invalid: invalid.map(code => ({ code, errors: 1 })) })

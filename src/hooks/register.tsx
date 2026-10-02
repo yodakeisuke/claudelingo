@@ -3,7 +3,7 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import { PromptTranslations } from '../logic/prompt-translation/prompt-translation'
 import { TranslationSettings } from '../logic/translation-settings/translation-settings'
-import { SETTINGS_PANE, settingsPane, withTranslation } from './ui'
+import { SETTINGS_PANE, settingsPane, withRestated, withTranslation } from './ui'
 
 // 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
@@ -52,8 +52,7 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
-    const row = await next(e)
     const line = PromptTranslations.line((await read($, translations))[PromptTranslations.key(e.props.text)])
-    return line ? withTranslation($.ui.resolve(e), row, line) : row
+    return line ? withTranslation($.ui.resolve(e), await next({ ...e, props: { ...e.props, text: withRestated(e.props.text, line.restated) } }), line.tips) : next(e)
   })
 }

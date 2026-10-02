@@ -39,6 +39,15 @@ describe('register', () => {
     expect(asked).toEqual([])
   })
 
+  test('直した所は太字で、アドバイスは1点ずつ出る', async ($, on) => {
+    const { clock } = engine(on)
+    await $.prompt.submit({ text: 'fix **tests**\n- each の後は単数', wait: false, origin: composer })
+    await clock.advance(0)
+    const ui = await $.ui.mount({ ...row('fix **tests**\n- each の後は単数'), surface: 'desktop' })
+    expect(await ui.find({ type: 'Text', text: 'tests' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'each の後は単数' })).toBeDefined()
+  })
+
   test('同じ文は訳し直さず、出ている訳も消えない', async ($, on) => {
     const { clock, asked } = engine(on)
     for (let i = 0; i < 2; i++) {

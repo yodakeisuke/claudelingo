@@ -18,7 +18,7 @@ describe('foreign-version', () => {
       [true, 'composer', '/clear', false],
       [true, 'composer', '/model sonnet', false],
       [true, 'composer', '/tmp/app.log を見て', true],
-      [true, 'composer', '<pasted_content id="1">Error: boom</pasted_content>', false],
+      [true, 'composer', '<pasted_content id="1">Error: boom</pasted_content id="1">', false],
     ] as const
     for (const [enabled, from, text, wanted] of rows) {
       expect(ForeignVersions.isWanted({ ...on, enabled }, from, text)).toBe(wanted)
@@ -33,17 +33,19 @@ describe('foreign-version', () => {
   })
 
   test('訳の行を出すのは、訳せていて、元の指示と違うときだけ', () => {
-    expect(ForeignVersions.line('ログ見て', { ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.' })
+    expect(ForeignVersions.line('ログ見て', { ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.', tips: [] })
     expect(ForeignVersions.line('fix the test', { ok: true, value: 'fix the test' })).toBeUndefined()
-    expect(ForeignVersions.line('fix test that failing', { ok: true, value: 'Fix the failing test.\n"that failing" → "the failing"' }))
-      .toEqual({ restated: 'Fix the failing test.', tip: '"that failing" → "the failing"' })
+    expect(ForeignVersions.line('ok', { ok: true, value: 'Ok.' })).toBeUndefined()
+    const value = 'Fix the failing test.\n- 「that failing」→「the failing」\n- 「pls」→「please」\n---\nsrc/a.ts'
+    expect(ForeignVersions.line('fix test that failing pls', { ok: true, value }))
+      .toEqual({ restated: 'Fix the failing test.', tips: ['「that failing」→「the failing」', '「pls」→「please」'] })
     expect(ForeignVersions.line('ログ見て', { ok: false, error: { reason: 'empty-reply' } })).toBeUndefined()
     expect(ForeignVersions.line('ログ見て')).toBeUndefined()
   })
 
   test('貼り付けは訳に送らず、自分の言葉だけ送る', () => {
-    const text = 'これ何で落ちてる？\n<pasted_content id="1">\nError: boom\n</pasted_content>'
-    expect(ForeignVersions.request(on, text).prompt).toBe('これ何で落ちてる？')
+    const text = 'これ何で落ちてる？\n<pasted_content id="1">\nError: boom\n</pasted_content id="1">'
+    expect(ForeignVersions.request(on, text).prompt).toBe('<message>これ何で落ちてる？</message>')
   })
 
   test('返事が来れば訳文、来なければその失敗をそのまま持つ', () => {

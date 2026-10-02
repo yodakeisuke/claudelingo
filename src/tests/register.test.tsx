@@ -11,12 +11,13 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
   const asked: string[] = []
   const models: string[] = []
   on('model.complete', (_$, e) => {
-    asked.push(e.prompt)
+    const prompt = e.prompt.replace(/<\/?message>/g, '')
+    asked.push(prompt)
     models.push(e.model)
     if (fail === 'reject') throw new Error('model blocked')
     const value: ModelCompleteResult = fail === 'api-error'
       ? { isAnswered: false, reason: 'api-error', status: 500, error: 'server_error', usage }
-      : { isAnswered: true, text: `EN: ${e.prompt}`, usage }
+      : { isAnswered: true, text: `EN: ${prompt}`, usage }
     return { value }
   })
   on('prompt.submit', (_$, e) => ({ text: e.text }))

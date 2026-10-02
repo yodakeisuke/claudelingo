@@ -22,12 +22,12 @@ type Completion = { isAnswered: true; text: string } | { isAnswered: false; reas
 type Saved = Record<string, Card>
 
 // ビジネスルール
-// 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は小文字の英字だけにして渡す
+// 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す
 const words = (restated: string) => restated.split(/\s+/).filter(Boolean).map(w => ({ label: plain(w), word: bare(w) })).filter(w => w.word)
 // 直した所の ** は外す
 const plain = (text: string) => text.replace(/\*\*/g, '')
-// 語は小文字にし、英字と ' と - 以外を落とす
-const bare = (word: string) => word.toLowerCase().replace(/[^a-z'-]/g, '')
+// 語は小文字にし、文字・数字と ' と - 以外（句読点など）を落とす
+const bare = (word: string) => word.toLowerCase().replace(/[^\p{L}\p{N}'-]/gu, '')
 // 句の語（carry on なら carry と on）
 const parts = (unit: string) => unit.split(/\s+/).map(bare).filter(Boolean)
 // 同じ文の同じ語なら、同じ絵

@@ -94,9 +94,11 @@ const drawCard = async ($: EngineInterface, row: string, word: string, restated:
   await showCards($, row, list => list.flatMap(s => (s.word !== word ? [s] : isUp ? [] : [{ ...s, card, isFailed: !card }])))
 }
 
-// 絵の保存に失敗しても、出ている絵はそのまま（次に押したとき描き直す）
-const saveCard = async ($: EngineInterface, card: Card, word: string, restated: string) =>
-  $.store.set('cards', WordCards.saving(await $.store.get('cards'), card, { word, restated })).then(() => undefined, () => undefined)
+// 保存領域（設定と共有）があふれたら、それまでの絵を捨てて今の絵だけ残す。それでも失敗したら、出ている絵はそのまま
+const saveCard = async ($: EngineInterface, card: Card, word: string, restated: string) => {
+  const save = (all: unknown) => $.store.set('cards', WordCards.saving(all, card, { word, restated }))
+  await save(await $.store.get('cards')).then(() => undefined, () => save(undefined).then(() => undefined, () => undefined))
+}
 
 // 開いている絵は置き換えで変える（中を書き換えると Desktop が描き直さない）
 const showCards = async ($: EngineInterface, row: string, change: (list: Shown[]) => Shown[]) => {

@@ -11,10 +11,10 @@ const versions = atom({ plugin: 'claudelingo', key: 'versions' } as const, {})
 const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
 
 // 手順書「指示を外国語で示す」：言い直しを頼み、外国語版を残す
-async function showForeignVersion($: EngineInterface, request: ReturnType<typeof ForeignVersions.request>) {
-  if (!ForeignVersions.isNeeded(await $.session.surfaces(), (await read($, versions))[request.prompt])) return
+async function showForeignVersion($: EngineInterface, text: string, request: ReturnType<typeof ForeignVersions.request>) {
+  if (!ForeignVersions.isNeeded(await $.session.surfaces(), (await read($, versions))[text])) return
   const version = await $.model.complete(request).then(ForeignVersions.of, ForeignVersions.failed)
-  await update($, versions, all => ({ ...all, [request.prompt]: version }))
+  await update($, versions, all => ({ ...all, [text]: version }))
 }
 
 // 手順書「言語設定を変える」：設定に書く。拒否されたら理由を残す
@@ -40,7 +40,7 @@ export const register: Register = (on, options) => {
     const text = e.text.trim()
     // 送信は待たせない。訳は自分の dispatch で走らせる
     if (ForeignVersions.isWanted(settings, e.origin.kind, text)) {
-      $.clock.after(0, () => void showForeignVersion($, ForeignVersions.request(settings, text)))
+      $.clock.after(0, () => void showForeignVersion($, text, ForeignVersions.request(settings, text)))
     }
     return next(e)
   })

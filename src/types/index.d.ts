@@ -7,10 +7,10 @@ export type TranslationError =
   | { message: string }
 
 // 外国語版：訳文か、エラー
-export type ForeignVersion = Result<string, TranslationError>
+export type Translation = Result<string, TranslationError>
 
 declare module 'claude-code' {
   interface PluginState {
-    claudelingo: { versions: Record<string, ForeignVersion>; denied: string; saves: number }
+    claudelingo: { translations: Record<string, Translation & { languages: string }>; denied: string; saves: number }
   }
 }

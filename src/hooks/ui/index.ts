@@ -1,2 +1,2 @@
-export * from './foreign-version-line'
+export * from './translation-line'
 export * from './settings-pane'

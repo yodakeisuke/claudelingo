@@ -1,5 +1,5 @@
 // 公開する操作
-export const RestatementPrompt = {
+export const TranslationRequest = {
   of: (settings: Settings, words: string) => of(settings, words),
 }
 

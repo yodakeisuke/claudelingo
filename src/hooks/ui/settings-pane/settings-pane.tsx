@@ -1,8 +1,8 @@
 import type { Elements, RenderElement } from 'claude-code'
 
-import { LanguageSettings } from '../../../logic/language-settings/language-settings'
+import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
 
-type Settings = ReturnType<typeof LanguageSettings.of>
+type Settings = ReturnType<typeof TranslationSettings.of>
 type Save = (field: keyof Settings, value: string | boolean, isTyping?: boolean) => void
 
 export const SETTINGS_PANE = 'claudelingo'
@@ -32,7 +32,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
       {field('claudelingo', choice('enabled', settings.enabled ? 'on' : 'off', [{ value: 'on', label: '有効' }, { value: 'off', label: '無効' }]))}
       {field('母語', text('native'))}
       {field('学ぶ言語', text('target'))}
-      {field('翻訳モデル', choice('model', settings.model, LanguageSettings.models().map(value => ({ value }))))}
+      {field('翻訳モデル', choice('model', settings.model, TranslationSettings.models().map(value => ({ value }))))}
       {denied && <Text color="red">保存できませんでした：{denied}</Text>}
     </Box>
   )

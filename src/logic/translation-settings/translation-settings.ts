@@ -1,5 +1,5 @@
 // 公開する操作
-export const LanguageSettings = {
+export const TranslationSettings = {
   of: (saved: unknown) => of(saved),
   models: () => models(),
 }

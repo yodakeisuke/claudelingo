@@ -133,7 +133,18 @@ describe('register', () => {
     }
   })
 
-  test('設定を変えたら、同じ指示も訳し直す', async ($, on) => {
+  test('無効にしても、モデルを変えても、出ている訳は消えない', async ($, on) => {
+    const { clock } = engine(on)
+    await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
+    await clock.advance(0)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    await ui.press({ key: 'model-opus' })
+    await ui.press({ key: 'enabled-off' })
+    const message = await $.ui.mount({ ...row('ログ見て'), surface: 'desktop' })
+    expect(await message.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
+  })
+
+  test('学ぶ言語を変えたら、同じ指示も訳し直す', async ($, on) => {
     const { clock, asked } = engine(on)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
     for (const target of ['German', 'French']) {

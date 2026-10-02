@@ -18,9 +18,9 @@ const system = (native: string, target: string) =>
 async function translate($: EngineInterface, request: ModelCompleteRequest): Promise<ForeignVersion> {
   try {
     const r = await $.model.complete(request)
-    return r.isAnswered ? { text: r.text.trim() } : { error: r }
+    return r.isAnswered ? { ok: true, value: r.text.trim() } : { ok: false, error: r }
   } catch (error) {
-    return { error: { message: String(error) } }
+    return { ok: false, error: { message: String(error) } }
   }
 }
 
@@ -73,7 +73,7 @@ export const register: Register = (on, options) => {
         const version = await translate($, { model, system: system(native, target), prompt: text, timeoutMs: 30_000 })
         await update($, versions, all => ({ ...all, [text]: version }))
         // エラーは画面に出さず、デバッグログに1行だけ
-        if ('error' in version) $.ui.log(`translation failed: ${JSON.stringify(version.error)}`, { to: 'debug' })
+        if (!version.ok) $.ui.log(`translation failed: ${JSON.stringify(version.error)}`, { to: 'debug' })
       })
     }
     return next(e)
@@ -82,12 +82,12 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const row = await next(e)
     const version = e.props.origin.kind === 'composer' ? (await read($, versions))[e.props.text.trim()] : undefined
-    if (!version || !('text' in version)) return row
+    if (!version?.ok) return row
     const { Box, Text } = $.ui.resolve(e)
     return (
       <Box flexDirection="column">
         {row}
-        <Text dimColor>  ↳ {version.text}</Text>
+        <Text dimColor>  ↳ {version.value}</Text>
       </Box>
     )
   })

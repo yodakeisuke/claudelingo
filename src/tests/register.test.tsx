@@ -175,10 +175,10 @@ describe('register', () => {
     await clock.advance(0)
     expect(models).toEqual(['haiku'])
   })
-  const sent = async ($: Engine, clock: ReturnType<typeof mock.clock>, surface: RenderSurface = 'desktop') => {
+  const sent = async ($: Engine, clock: ReturnType<typeof mock.clock>, surface: RenderSurface = 'desktop', requestId?: string) => {
     await $.prompt.submit({ text: 'fix the tests and carry on', wait: false, origin: composer })
     await clock.advance(0)
-    return $.ui.mount({ ...row('fix the tests and carry on'), surface })
+    return $.ui.mount({ ...row('fix the tests and carry on'), surface, requestId })
   }
 
   test('訳の行の語を押すとその句の絵が出て、句のどの語を押しても閉じ、二度目は描き直さない', async ($, on) => {
@@ -193,6 +193,15 @@ describe('register', () => {
     await ui.press({ key: 'word-6' })
     expect(await ui.find({ type: 'Svg' })).toBeDefined()
     expect(asked).toEqual(['fix the tests and carry on', '{"pressed":"carry","sentence":"EN: fix the tests and carry on"}'])
+  })
+
+  test('同じ文面を二度送っても、絵は押した行の下にだけ出る', async ($, on) => {
+    const { clock } = engine(on)
+    const first = await sent($, clock, 'desktop', 'm1')
+    const second = await sent($, clock, 'desktop', 'm2')
+    await first.press({ key: 'word-5' })
+    expect(await first.find({ type: 'Svg' })).toBeDefined()
+    expect(await second.find({ type: 'Svg' })).toBeUndefined()
   })
 
   test('別の語の絵は並んで出て、拡大・縮小はその絵だけ', async ($, on) => {

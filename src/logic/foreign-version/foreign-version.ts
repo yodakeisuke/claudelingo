@@ -1,5 +1,4 @@
 import type { ForeignVersion, TranslationError } from '../../types'
-import { Let } from '../let/let'
 import { Result } from '../result/result'
 
 // 公開する操作
@@ -7,7 +6,7 @@ export const ForeignVersions = {
   isWanted: (settings: Settings, from: string, text: string) => isWanted(settings, from, text),
   request: (settings: Settings, text: string) => request(settings, text),
   of: (completion: Completion) => of(completion),
-  failed: (error: unknown): ForeignVersion => Result.fail({ message: String(error) }),
+  failed: (error: unknown): ForeignVersion => Result.fail({ message: String(error) }).data,
 }
 
 // データ構造
@@ -27,6 +26,6 @@ const request = (settings: Settings, text: string) => ({
 })
 // 返事が来れば訳文、来なければその失敗をそのまま持つ
 const of = (completion: Completion): ForeignVersion =>
-  Let.of(completion)
-    .let(c => (c.isAnswered ? Result.succeed(c.text) : Result.fail(c)))
-    .let(Result.map(text => text.trim())).value
+  (completion.isAnswered ? Result.ok(completion.text) : Result.fail(completion))
+    .map(text => text.trim())
+    .data

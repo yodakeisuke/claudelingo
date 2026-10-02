@@ -1,12 +1,13 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
-import type { Translation } from '../types'
+import type { Card, Shown, Translation } from '../types'
 import { DraftTranslations } from '../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../logic/prompt-translation/prompt-translation'
 import { Result } from '../logic/result/result'
 import { TranslationSettings } from '../logic/translation-settings/translation-settings'
-import { SETTINGS_PANE, draftBand, settingsPane, withTranslation } from './ui'
+import { WordCards } from '../logic/word-card/word-card'
+import { SETTINGS_PANE, draftBand, settingsPane, withTranslation, wordCard, wordLine } from './ui'
 
 // 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
@@ -14,6 +15,8 @@ const translations = atom({ plugin: 'claudelingo', key: 'translations' } as cons
 const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
 // 打ちかけと、その校正。まだ無いときは null
 const draft = atom({ plugin: 'claudelingo', key: 'draft' } as const, null)
+// 指示の鍵 → その下に開いている単語の絵
+const cards = atom({ plugin: 'claudelingo', key: 'cards' } as const, {})
 // 打つ手が止まるのを待つタイマーと、走っている依頼の止め手。次の打鍵で両方やめる
 let pause: Timer | undefined
 let stop = new AbortController()
@@ -73,6 +76,34 @@ const hideDraftTranslation = async ($: EngineInterface) => {
   $.ui.invalidate('ui.render')
 }
 
+// 手順書「単語の絵を出す」：同じ絵が開いていれば閉じ、なければ下に並べる。描いた絵は残し、二度目からはすぐ出す
+const pressWord = async ($: EngineInterface, row: string, word: string, restated: string) => {
+  const saved = WordCards.saved(await $.store.get('cards'), { word, restated })
+  const isSame = (s: Shown) => s.word === word || (saved !== undefined && s.card?.unit === saved.unit)
+  if (((await read($, cards))[row] ?? []).some(isSame)) return showCards($, row, list => list.filter(s => !isSame(s)))
+  await showCards($, row, list => [...list, { word, card: saved }])
+  if (!saved) await drawCard($, row, word, restated)
+}
+
+// 押した語の絵を頼む。同じ句の絵が先に出ていれば（swap を押し、続けて over）、後から来た方は捨てる
+const drawCard = async ($: EngineInterface, row: string, word: string, restated: string) => {
+  const request = WordCards.request(await settingsOf($), word, restated)
+  const card = await $.model.complete(request).then(c => WordCards.of(c, { word, restated }), (error: Error) => WordCards.of(error, { word, restated }))
+  const isUp = card !== undefined && ((await read($, cards))[row] ?? []).some(s => s.word !== word && s.card?.unit === card.unit)
+  if (card && !isUp) await saveCard($, card, word, restated)
+  await showCards($, row, list => list.flatMap(s => (s.word !== word ? [s] : isUp ? [] : [{ ...s, card, isFailed: !card }])))
+}
+
+// 絵の保存に失敗しても、出ている絵はそのまま（次に押したとき描き直す）
+const saveCard = async ($: EngineInterface, card: Card, word: string, restated: string) =>
+  $.store.set('cards', WordCards.saving(await $.store.get('cards'), card, { word, restated })).then(() => undefined, () => undefined)
+
+// 開いている絵は置き換えで変える（中を書き換えると Desktop が描き直さない）
+const showCards = async ($: EngineInterface, row: string, change: (list: Shown[]) => Shown[]) => {
+  await update($, cards, all => ({ ...all, [row]: change(all[row] ?? []) }))
+  $.ui.invalidate('ui.render')
+}
+
 // 手順書「言語設定を変える」：保存して、失敗の理由（成功なら空）を残す。パネルはそれを読んで描き直る
 const changeSetting = async ($: EngineInterface, field: string, value: string | boolean) => {
   const reason = (await Result.given($.store.set('settings', { ...(await settingsOf($)), [field]: value }))).either(() => '', error => error)
@@ -88,7 +119,7 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'lingo' }, async $ => {
-    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 16 })
+    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 20 })
     return {}
   })
 
@@ -131,7 +162,15 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const row = await next(e)
-    const line = PromptTranslations.line((await read($, translations))[PromptTranslations.key(e.props.text)])
-    return line ? withTranslation($.ui.resolve(e), row, line) : row
+    const key = PromptTranslations.key(e.props.text)
+    const version = (await read($, translations))[key]
+    const line = PromptTranslations.line(version)
+    if (!line) return row
+    const t = $.ui.resolve(e)
+    if (!version?.ok || !(await settingsOf($)).card) return withTranslation(t, row, line)
+    // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
+    const shown = (await read($, cards))[key] ?? []
+    const words = wordLine(t, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated))
+    return withTranslation(t, row, line, words, shown.map(s => wordCard(t, s, isWide => void showCards($, key, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))))))
   })
 }

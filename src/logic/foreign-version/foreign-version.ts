@@ -27,13 +27,15 @@ const isWanted = (settings: Settings, from: string, text: string) =>
   settings.enabled && isOwn(from) && ownWords(text) !== '' && !/^\/[^\s/]*(\s|$)/.test(text)
 // 訳を頼むのは、描く面があり（-p は誰も見ない）、同じ文をまだ訳せていないときだけ
 const isNeeded = (surfaces: readonly string[], existing?: ForeignVersion) => surfaces.length > 0 && existing?.ok !== true
-// 出すのは、訳せていて、言い直しが元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
+// 出すのは、訳せていて、言い直しが元の指示から変わったときだけ（自然に書けた外国語はそのまま返るので出さない）
 const line = (prompt: string, version?: ForeignVersion) => {
   const shown = version?.ok ? split(version.value) : undefined
-  return shown && plain(shown.restated) !== plain(ownWords(prompt)) ? shown : undefined
+  return shown && isChanged(shown.restated, ownWords(prompt)) ? shown : undefined
 }
-// 比べるときは強調の印・大文字・句読点・空白を見ない
-const plain = (text: string) => text.toLowerCase().replace(/[\p{P}\s*]/gu, '')
+// 変わったとみなすのは、直した印があるか、文面が違うとき（dont → don't のような句読点だけの直しも拾う）
+const isChanged = (restated: string, own: string) => restated.includes('**') || plain(restated) !== plain(own)
+// 比べるときは大文字・句読点・空白を見ない
+const plain = (text: string) => text.toLowerCase().replace(/[\p{P}\s]/gu, '')
 // "- " で始まる行がアドバイス、残りの行をつないだものが言い直し（複数段落の指示でも切らない）
 const split = (value: string): Line => {
   const lines = value.split('\n').map(l => l.trim()).filter(Boolean)

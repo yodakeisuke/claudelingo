@@ -123,7 +123,9 @@ describe('register', () => {
     for (const [surface, enabled, target, model] of [['terminal', false, 'Spanish', 'opus'], ['desktop', true, 'French', 'haiku']] as const) {
       const ui = await $.ui.mount({ plugin: 'claudelingo', surface, component: 'Pane', requestId: 'claudelingo', props: pane })
       await ui.press({ key: `enabled-${enabled ? 'on' : 'off'}` })
-      await ui.input({ key: 'target', text: target })
+      // Enter を押さず、打っただけでも保存される
+      await ui.input({ key: 'target', text: 'x', kind: 'change' })
+      await ui.input({ key: 'target', text: target, kind: 'change' })
       await ui.press({ key: `model-${model}` })
       expect(store.get('settings')).toEqual({ enabled, native: 'Japanese', target, model })
       expect((await ui.find({ type: 'Button', key: `model-${model}` }))?.props.variant).toBe('primary')

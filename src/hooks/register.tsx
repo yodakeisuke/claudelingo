@@ -25,10 +25,11 @@ async function showForeignVersion($: EngineInterface, from: string, text: string
 }
 
 // 手順書「言語設定を変える」：保存して、パネルを描き直す。失敗したら理由を残す
-async function changeSetting($: EngineInterface, field: string, value: string | boolean) {
+// 打っている途中の保存では描き直さない（打ちかけの文字を、描き直しが巻き戻さないように）
+async function changeSetting($: EngineInterface, field: string, value: string | boolean, isTyping = false) {
   const reason = await $.store.set('settings', { ...(await settingsOf($)), [field]: value }).then(() => '', (error: unknown) => (error instanceof Error ? error.message : String(error)))
-  await update($, denied, () => reason)
-  await update($, saves, n => n + 1)
+  if (reason !== (await read($, denied))) await update($, denied, () => reason)
+  if (!isTyping) await update($, saves, n => n + 1)
 }
 
 export const register: Register = on => {
@@ -51,7 +52,7 @@ export const register: Register = on => {
   on('ui.render', { component: 'Pane', requestId: SETTINGS_PANE }, async ($, e) => {
     await read($, saves)
     // スマホには入力欄がないので描けず、engine が自前で描く
-    return settingsPane($.ui.resolve(e) as Parameters<typeof settingsPane>[0], e.surface === 'terminal', await settingsOf($), await read($, denied), (field, value) => void changeSetting($, field, value))
+    return settingsPane($.ui.resolve(e) as Parameters<typeof settingsPane>[0], e.surface === 'terminal', await settingsOf($), await read($, denied), (field, value, isTyping) => void changeSetting($, field, value, isTyping))
   })
 
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {

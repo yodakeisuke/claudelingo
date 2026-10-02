@@ -3,6 +3,13 @@
   "jsPlugins": [
     "./lint/logic-layout.js"
   ],
+  "rules": {
+    "func-style": [
+      "error",
+      "expression"
+    ],
+    "logic-layout/comment-run": "error"
+  },
   "overrides": [
     {
       "files": [
@@ -68,7 +75,16 @@
           {
             "max": 3
           }
-        ]
+        ],
+        "logic-layout/result-only": "error"
+      }
+    },
+    {
+      "files": [
+        "**/hooks/**"
+      ],
+      "rules": {
+        "logic-layout/result-only": "error"
       }
     }
   ]

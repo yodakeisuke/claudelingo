@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "oxlint --deny-warnings --no-error-on-unmatched-pattern logic && npm run lint:disable -- logic && node --test lint/logic-layout.test.mjs",
+    "lint": "oxlint --deny-warnings --no-error-on-unmatched-pattern logic hooks && npm run lint:disable -- logic hooks && node --test lint/logic-layout.test.mjs",
     "lint:disable": "! grep -rnE '(oxlint|eslint)-disable'",
     "typecheck": "tsc --noEmit"
   },

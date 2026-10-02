@@ -28,4 +28,4 @@ const request = (settings: Settings, text: string) => ({
 const of = (completion: Completion): ForeignVersion =>
   (completion.isAnswered ? Result.ok(completion.text) : Result.fail(completion))
     .and(text => text.trim())
-    .match<ForeignVersion>(value => ({ ok: true, value }), error => ({ ok: false, error }))
+    .either<ForeignVersion>(value => ({ ok: true, value }), error => ({ ok: false, error }))

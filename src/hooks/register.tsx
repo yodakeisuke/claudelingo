@@ -1,17 +1,17 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
-import { DraftSuggestions } from '../logic/draft-suggestion/draft-suggestion'
+import { DraftTranslations } from '../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../logic/prompt-translation/prompt-translation'
 import { TranslationSettings } from '../logic/translation-settings/translation-settings'
-import { SETTINGS_PANE, draftBand, settingsPane, withTranslation } from './ui'
+import { SETTINGS_PANE, settingsPane, translationLine, withTranslation } from './ui'
 
 // 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
 // 設定の保存に失敗したときの理由
 const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
-// 打ちかけと、その外国語版と続き。まだ無いときは null
-const suggestion = atom({ plugin: 'claudelingo', key: 'suggestion' } as const, null)
+// 打ちかけの外国語版。まだ無いときは null
+const draft = atom({ plugin: 'claudelingo', key: 'draft' } as const, null)
 // 打つ手が止まるのを待つタイマーと、走っている依頼の止め手。次の打鍵で両方やめる
 let pause: Timer | undefined
 let stop = new AbortController()
@@ -29,32 +29,31 @@ const showTranslation = async ($: EngineInterface, from: string, text: string) =
   $.ui.invalidate('ui.render')
 }
 
-// 手順書「打ちかけに外国語版と続きを示す」：打つ手が止まったら 1 回だけ頼み、その間に打たれたら捨てる
-const showSuggestion = async ($: EngineInterface, draft: string, signal: AbortSignal) => {
-  const request = DraftSuggestions.request(await settingsOf($), draft, (await $.command.list()).map(c => c.name))
-  const version = request && (await $.model.complete(request, { signal }).then(PromptTranslations.of, PromptTranslations.of))
-  const shown = version ? { draft, version } : null
+// 手順書「打ちかけを外国語で示す」：打つ手が止まったら 1 回だけ頼み、その間に打たれたら捨てる
+const showDraftTranslation = async ($: EngineInterface, text: string, signal: AbortSignal) => {
+  const request = DraftTranslations.request(await settingsOf($), text, (await $.command.list()).map(c => c.name))
+  const shown = request ? await $.model.complete(request, { signal }).then(PromptTranslations.of, PromptTranslations.of) : null
   if (signal.aborted) return
-  await update($, suggestion, () => shown)
+  await update($, draft, () => shown)
   $.ui.invalidate('ui.render')
 }
 
-const cancelSuggestion = () => {
+const cancelDraftTranslation = () => {
   pause?.cancel()
   stop.abort()
 }
 
-const suggestAfterPause = ($: EngineInterface, draft: string) => {
-  cancelSuggestion()
+const translateAfterPause = ($: EngineInterface, text: string) => {
+  cancelDraftTranslation()
   const own = new AbortController()
   stop = own
-  pause = $.clock.after(500, () => void showSuggestion($, draft, own.signal))
+  pause = $.clock.after(500, () => void showDraftTranslation($, text, own.signal))
 }
 
 // 送ったら、入力欄が空になるのに合わせて帯もすぐ消す
-const hideSuggestion = async ($: EngineInterface) => {
-  cancelSuggestion()
-  await update($, suggestion, () => null)
+const hideDraftTranslation = async ($: EngineInterface) => {
+  cancelDraftTranslation()
+  await update($, draft, () => null)
   $.ui.invalidate('ui.render')
 }
 
@@ -81,27 +80,20 @@ export const register: Register = on => {
     // 送信は待たせない。訳は自分の dispatch で走らせる
     $.clock.after(0, () => void showTranslation($, e.origin.kind, e.text.trim()))
     // 自分で送ったら下書きは空になる。通知などの送信では、打ちかけの帯を残す
-    if (PromptTranslations.isOwn(e.origin.kind)) $.clock.after(0, () => void hideSuggestion($))
+    if (PromptTranslations.isOwn(e.origin.kind)) $.clock.after(0, () => void hideDraftTranslation($))
     return next(e)
   })
 
   on('prompt.edit', async ($, e, next) => {
     const box = await next(e)
-    if (box.text !== e.text) suggestAfterPause($, box.text)
+    if (box.text !== e.text) translateAfterPause($, box.text)
     return box
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const shown = await read($, suggestion)
-    if (!shown || e.props.hasSurvey || !(await settingsOf($)).enabled) return next(e)
-    const band = DraftSuggestions.band(shown.version)
-    // 続きを足すのは、候補を作った打ちかけのままのときだけ（待ちの間に打たれていたら、古い続きになる）
-    const addNext = async () => {
-      if ((await $.prompt.read()).text.trim() !== shown.draft.trim()) return
-      const { isFilled } = await $.prompt.fill({ text: ` ${band.next}`, mode: 'append' })
-      if (isFilled) suggestAfterPause($, (await $.prompt.read()).text)
-    }
-    return draftBand($.ui.resolve(e), band, () => void addNext())
+    const line = PromptTranslations.line((await read($, draft)) ?? undefined)
+    if (!line || e.props.hasSurvey || !(await settingsOf($)).enabled) return next(e)
+    return translationLine($.ui.resolve(e), line)
   })
 
   on('ui.render', { component: 'Pane', requestId: SETTINGS_PANE }, async ($, e) => {

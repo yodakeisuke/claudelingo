@@ -31,19 +31,20 @@ const operationOf = (node, ops) => {
 }
 const rule = (description, check) => ({ meta: { type: 'problem', docs: { description } }, create: context => ({ Program: program => check(context, program) }) })
 
-// 失敗を投げる・受け止める書き方。Result で返す
-const isThrowing = node => node.type === 'ThrowStatement' || node.type === 'TryStatement' ||
-  (node.type === 'CallExpression' && node.callee.type === 'MemberExpression' &&
-    (node.callee.property.name === 'catch' || (node.callee.object.name === 'Promise' && node.callee.property.name === 'reject')))
+// 失敗を投げる・受け止める書き方と、Result を素手で扱う書き方（2 引数の then、.ok での分岐）。Result で返し、Result.given で受ける
+const isMethod = (node, name) => node.type === 'CallExpression' && node.callee.type === 'MemberExpression' && node.callee.property.name === name
+const isThrowing = node => node.type === 'ThrowStatement' || node.type === 'TryStatement' || isMethod(node, 'catch') ||
+  (isMethod(node, 'reject') && node.callee.object.name === 'Promise') || (isMethod(node, 'then') && node.arguments.length > 1) ||
+  (node.type === 'MemberExpression' && !node.computed && node.property.name === 'ok')
 
 export default {
   meta: { name: 'logic-layout' },
   rules: {
     'result-only': {
-      meta: { type: 'problem', docs: { description: '失敗は投げずに Result で返す' } },
+      meta: { type: 'problem', docs: { description: '失敗は投げずに Result で返し、Result.given で受ける' } },
       create: context => {
-        const report = node => isThrowing(node) && context.report({ node, message: '失敗は throw / try / catch / Promise.reject でなく Result で返す（engine の Promise は .then(成功, 失敗) で受ける）' })
-        return { ThrowStatement: report, TryStatement: report, CallExpression: report }
+        const report = node => isThrowing(node) && context.report({ node, message: '失敗は throw / try / catch / Promise.reject でなく Result で返す。engine の Promise は Result.given で受け、.ok で分けずに and / either / data を使う' })
+        return { ThrowStatement: report, TryStatement: report, CallExpression: report, MemberExpression: report }
       },
     },
     exports: rule('export は、操作をまとめたオブジェクト 1 つだけ', (context, program) => {

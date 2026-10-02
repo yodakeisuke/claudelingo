@@ -8,7 +8,7 @@ export const PromptTranslations = {
   isOwn: (from: string) => isOwn(from),
   isNeeded: (surfaces: readonly string[]) => isNeeded(surfaces),
   key: (text: string) => key(text),
-  of: (outcome: Completion | Error) => of(outcome),
+  of: (reply: Promise<Completion>) => of(reply),
   line: (version?: Translation) => line(version),
 }
 
@@ -32,7 +32,7 @@ const key = (text: string) => text.replace(/<\/?pasted_content[^>]*>|\s/g, '')
 // 訳を頼むのは、描く面があるときだけ（-p は誰も見ない）
 const isNeeded = (surfaces: readonly string[]) => surfaces.length > 0
 // 訳せていれば、言い直しとアドバイスに分けて出す。訳せなかったら、その理由を出す（訳がまだなら何も出さない）
-const line = (version?: Translation) => version && (version.ok ? split(version.value) : { restated: `訳せませんでした：${version.error}`, tips: [] })
+const line = (version?: Translation) => version && Result.given(version).either(split, error => ({ restated: `訳せませんでした：${error}`, tips: [] }))
 // "💡 " で始まる行がアドバイス（指示の箇条書き "- " と区別する）、残りの行をつないだものが言い直し（複数段落の指示でも切らない）
 const split = (value: string): Line => {
   const lines = value.split('\n').map(l => l.trim()).filter(Boolean)
@@ -44,8 +44,7 @@ const request = (settings: Settings, sent: Sent, commands: readonly string[]) =>
 // モデルの下書き（<think> などで囲んだ考え）は捨て、残ったタグも外す。訳文だけを残す
 const withoutScratch = (text: string) => text.replace(/<(think|thinking|reasoning|scratchpad)>[\s\S]*?<\/\1>/g, '').replace(/<\/?(message|think|thinking|reasoning|scratchpad)>/g, '').trim()
 // 返事が来れば訳文、来なければその理由。呼び出し自体が拒まれたときは、その message
-const of = (outcome: Completion | Error): Translation =>
-  Result.given(outcome)
-    .and(o => (o instanceof Error ? Result.fail(o.message) : o))
+const of = async (reply: Promise<Completion>): Promise<Translation> =>
+  (await Result.given(reply))
     .and(c => (c.isAnswered ? withoutScratch(c.text) : Result.fail(c.reason)))
-    .either<Translation>(value => ({ ok: true, value }), error => ({ ok: false, error }))
+    .data()

@@ -86,6 +86,14 @@
       "rules": {
         "logic-layout/result-only": "error"
       }
+    },
+    {
+      "files": [
+        "**/logic/result/**"
+      ],
+      "rules": {
+        "logic-layout/result-only": "off"
+      }
     }
   ]
 }

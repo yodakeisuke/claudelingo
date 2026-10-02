@@ -6,7 +6,7 @@ export const ForeignVersions = {
   isWanted: (settings: Settings, from: string, text: string) => isWanted(settings, from, text),
   request: (settings: Settings, text: string) => request(settings, text),
   of: (completion: Completion) => of(completion),
-  failed: (error: unknown): ForeignVersion => Result.fail({ message: String(error) }).data,
+  failed: (error: unknown): ForeignVersion => ({ ok: false, error: { message: String(error) } }),
 }
 
 // データ構造
@@ -28,4 +28,4 @@ const request = (settings: Settings, text: string) => ({
 const of = (completion: Completion): ForeignVersion =>
   (completion.isAnswered ? Result.ok(completion.text) : Result.fail(completion))
     .and(text => text.trim())
-    .data
+    .match<ForeignVersion>(value => ({ ok: true, value }), error => ({ ok: false, error }))

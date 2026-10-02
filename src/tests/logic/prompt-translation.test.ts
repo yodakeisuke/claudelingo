@@ -18,8 +18,6 @@ describe('prompt-translation', () => {
       [true, 'composer', '/clear', false],
       [true, 'composer', '/model sonnet', false],
       [true, 'composer', '/tmp/app.log を見て', true],
-      [true, 'composer', '<pasted_content id="1">以下の報告を調べて\nError: boom</pasted_content id="1">', true],
-      [true, 'composer', `<pasted_content id="1">${'x'.repeat(2001)}</pasted_content id="1">`, false],
     ] as const
     for (const [enabled, from, text, wanted] of rows) {
       expect(PromptTranslations.request({ ...on, enabled }, from, text) !== undefined).toBe(wanted)
@@ -51,9 +49,9 @@ describe('prompt-translation', () => {
     expect(PromptTranslations.line('task-notification', 'ログ見て', { ok: true, value: 'Check the logs.' })).toBeUndefined()
   })
 
-  test('貼り付けは訳に送らず、自分の言葉だけ送る', () => {
+  test('貼り付けも含め、文面をそのまま送る（資料を省くのは訳す側に任せる）', () => {
     const text = 'これ何で落ちてる？\n<pasted_content id="1">\nError: boom\n</pasted_content id="1">'
-    expect(PromptTranslations.request(on, 'composer', text)?.prompt).toBe('<message>これ何で落ちてる？</message>')
+    expect(PromptTranslations.request(on, 'composer', text)?.prompt).toBe(`<message>${text}</message>`)
   })
 
   test('返事が来れば訳文、来なければその失敗をそのまま持つ', () => {

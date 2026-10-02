@@ -7,7 +7,7 @@ export const TranslationRequest = {
 type Settings = { native: string; target: string; model: string }
 
 // ビジネスルール
-// 指示を <message> で渡し、答えず言い直させる。貼り付けた資料は写させない（長いと遅い）。直した所だけ、母語で1点1行の理由
+// 指示を丸ごと <message> で渡し、答えず言い直させる。資料（コード・ログ）は写させず […] にさせる（長いと遅い）。直した所だけ、母語で1点1行の理由
 const of = (settings: Settings, words: string) => ({
   model: settings.model,
   system: [

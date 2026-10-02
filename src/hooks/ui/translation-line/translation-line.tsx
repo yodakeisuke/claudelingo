@@ -1,12 +1,12 @@
 import type { Elements, RenderElement } from 'claude-code'
 
-// 指示の行のすぐ下に、外国語版を薄く。Markdown で描く（直した所の ** が太字になる）。アドバイスがあれば1点ずつ続けて
+// 指示の行のすぐ下に外国語版を。Desktop で選択・コピーできる描き方は行番号つきの Code だけ（issue #5）。アドバイスがあれば1点ずつ続けて
 export const withTranslation = (t: Elements[keyof Elements], row: RenderElement, line: { restated: string; tips: string[] }) => {
-  const { Box, Markdown } = t
+  const { Box, Code, Markdown } = t
   return (
     <Box flexDirection="column">
       {row}
-      <Markdown dimColor text={line.restated} />
+      <Code source={line.restated} startLine={1} />
       {line.tips.map(tip => <Markdown dimColor text={`💡 ${tip}`} />)}
     </Box>
   )

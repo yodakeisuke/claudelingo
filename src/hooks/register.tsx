@@ -4,6 +4,7 @@ import type { EngineInterface, Register, Timer } from 'claude-code'
 import type { Translation } from '../types'
 import { DraftTranslations } from '../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../logic/prompt-translation/prompt-translation'
+import { Result } from '../logic/result/result'
 import { TranslationSettings } from '../logic/translation-settings/translation-settings'
 import { SETTINGS_PANE, draftBand, settingsPane, withTranslation } from './ui'
 
@@ -24,7 +25,7 @@ const settingsOf = async ($: EngineInterface) => TranslationSettings.of(await $.
 const showTranslation = async ($: EngineInterface, from: string, text: string) => {
   const request = PromptTranslations.request(await settingsOf($), { from, text }, (await $.command.list()).map(c => c.name))
   if (!request || !PromptTranslations.isNeeded(await $.session.surfaces())) return
-  const translation = await $.model.complete(request).then(PromptTranslations.of, PromptTranslations.of)
+  const translation = await PromptTranslations.of($.model.complete(request))
   await update($, translations, all => ({ ...all, [PromptTranslations.key(text)]: translation }))
   // 訳が届いたらすぐ描き直させる（状態の変化だけでは、面によっては次の描画まで行が出ない）
   $.ui.invalidate('ui.render')
@@ -33,7 +34,7 @@ const showTranslation = async ($: EngineInterface, from: string, text: string) =
 // 手順書「打ちかけを外国語で示す」：打つ手が止まったら 1 回だけ頼み、その間に打たれたら捨てる
 const showDraftTranslation = async ($: EngineInterface, text: string, signal: AbortSignal) => {
   const request = DraftTranslations.request(await settingsOf($), text, (await $.command.list()).map(c => c.name))
-  const version = request && (await $.model.complete(request, { signal }).then(PromptTranslations.of, PromptTranslations.of))
+  const version = request && (await PromptTranslations.of($.model.complete(request, { signal })))
   const shown = version ? { text, version } : null
   if (signal.aborted) return
   await update($, draft, () => shown)
@@ -74,7 +75,7 @@ const hideDraftTranslation = async ($: EngineInterface) => {
 
 // 手順書「言語設定を変える」：保存して、失敗の理由（成功なら空）を残す。パネルはそれを読んで描き直る
 const changeSetting = async ($: EngineInterface, field: string, value: string | boolean) => {
-  const reason = await $.store.set('settings', { ...(await settingsOf($)), [field]: value }).then(() => '', (error: unknown) => (error instanceof Error ? error.message : String(error)))
+  const reason = (await Result.given($.store.set('settings', { ...(await settingsOf($)), [field]: value }))).either(() => '', error => error)
   await update($, denied, () => reason)
   // 帯は設定を $.store から読むので、変えたら描き直させる（オフにした帯をすぐ消す）
   $.ui.invalidate('ui.render')

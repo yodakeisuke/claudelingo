@@ -4,6 +4,9 @@ import type { Register } from 'claude-code'
 // 指示の文面 → 学ぶ言語での言い方
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
 
+const PANE = 'claudelingo'
+const MODELS = ['haiku', 'sonnet', 'opus']
+
 const system = (native: string, target: string) =>
   `The user is a ${native} speaker learning ${target}. Rewrite their message to an AI assistant as one natural ${target} message, the way a fluent speaker would write it, keeping its meaning and tone. Leave out long pasted content (logs, code, file contents) and translate only the user's own words. Reply with the ${target} text only.`
 
@@ -14,15 +17,33 @@ export const register: Register = (on, options) => {
   const enabled = options.enabled === true
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'lingo', description: '外国語版の表示をオン/オフ', immediate: true })
+    await $.command.register({ name: 'lingo', description: 'claudelingo の設定を開く', immediate: true })
     return next(e)
   })
 
-  // 設定を切り替えるだけ。変わると module が新しい options で読み直される
   on('command.run', { command: 'lingo' }, async $ => {
-    await $.config.set({ key: 'claudelingo.enabled', value: !enabled })
-    $.ui.toast(enabled ? 'オフ' : `オン · ${native} → ${target} · ${model}`)
+    await $.ui.open({ id: PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 7 })
     return {}
+  })
+
+  // 値は userConfig に書く。変わると module が新しい options で読み直され、パネルも描き直る
+  on('ui.render', { component: 'Pane', requestId: PANE }, ($, e) => {
+    if (e.surface === 'mobile') {
+      const { Text } = $.ui.resolve(e)
+      return <Text dimColor>設定は Desktop か CLI で開いてください</Text>
+    }
+    const { Box, Text, Select, Input } = $.ui.resolve(e)
+    const set = (field: string, value: string | boolean) => void $.config.set({ key: `claudelingo.${field}`, value })
+    return (
+      <Box flexDirection="column">
+        <Text bold>claudelingo</Text>
+        <Select key="enabled" label="外国語版" value={enabled ? 'on' : 'off'} options={[{ value: 'on', label: 'オン' }, { value: 'off', label: 'オフ' }]} onSelect={v => set('enabled', v === 'on')} />
+        <Input key="native" label="母語" value={native} onSubmit={v => set('native', v.trim() || native)} />
+        <Input key="target" label="学ぶ言語" value={target} onSubmit={v => set('target', v.trim() || target)} />
+        <Select key="model" label="翻訳モデル" value={model} options={MODELS.map(value => ({ value }))} onSelect={v => set('model', v)} />
+        <Text dimColor>変更はすぐ反映 · Esc で閉じる</Text>
+      </Box>
+    )
   })
 
   on('prompt.submit', ($, e, next) => {

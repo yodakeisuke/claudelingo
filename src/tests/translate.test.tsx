@@ -59,12 +59,23 @@ test('オフの設定では訳さない', { options: { enabled: false } }, async
   expect(asked).toHaveLength(0)
 })
 
-test('/lingo はオン/オフの設定を切り替える', async ($, on) => {
+test('/lingo で設定パネルが開き、選ぶ・入力するとすぐ設定に書く', async ($, on) => {
   engine(on)
+  const opened: string[] = []
   const set: unknown[] = []
+  on('ui.open', (_$, e) => (opened.push(e.id), { value: { isPlaced: true } }))
   on('config.set', (_$, e) => (set.push([e.key, e.value]), { value: e.value }))
   await $.command.run({ command: 'lingo', args: '', origin: composer, presentation: { isFullscreen: false, columns: 80 } })
-  expect(set).toEqual([['claudelingo.enabled', false]])
+  expect(opened).toEqual(['claudelingo'])
+  const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
+  for (const surface of ['terminal', 'desktop'] as const) {
+    set.length = 0
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface, component: 'Pane', requestId: 'claudelingo', props: pane })
+    await ui.select({ key: 'enabled', value: 'off' })
+    await ui.input({ key: 'target', text: 'Spanish' })
+    await ui.select({ key: 'model', value: 'sonnet' })
+    expect(set).toEqual([['claudelingo.enabled', false], ['claudelingo.target', 'Spanish'], ['claudelingo.model', 'sonnet']])
+  }
 })
 
 test('翻訳モデルを設定で変えられる', { options: { model: 'sonnet' } }, async ($, on) => {

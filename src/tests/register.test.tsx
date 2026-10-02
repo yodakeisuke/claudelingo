@@ -223,12 +223,14 @@ describe('register', () => {
     expect(await ui.find({ type: 'Text', text: '描けませんでした：tests' })).toBeDefined()
   })
 
-  test('絵を描けない端末では、句と一文を1行で出す', async ($, on) => {
+  test('端末では語の間に空白を挟み、絵の代わりに句と一文を出す', async ($, on) => {
     const { clock } = engine(on)
     const ui = await sent($, clock, 'terminal')
+    expect(await ui.findAll({ type: 'Text', text: /^ $/ })).toHaveLength(6)
     await ui.press({ key: 'word-5' })
     expect(await ui.find({ type: 'Text', text: 'carry の絵' })).toBeDefined()
     expect(await ui.find({ type: 'Svg' })).toBeUndefined()
+    expect(await ui.find({ type: 'Button', key: 'resize-carry' })).toBeUndefined()
   })
 
   test('単語の絵を無効にすると、訳の行は今までどおり文で出る', async ($, on) => {

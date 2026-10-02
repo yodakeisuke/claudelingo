@@ -172,7 +172,8 @@ export const register: Register = on => {
     if (!version?.ok || !(await settingsOf($)).card) return withTranslation(t, row, line)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
     const shown = (await read($, cards))[key] ?? []
-    const words = wordLine(t, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated))
-    return withTranslation(t, row, line, words, shown.map(s => wordCard(t, s, isWide => void showCards($, key, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))))))
+    const isTerminal = e.surface === 'terminal'
+    const words = wordLine(t, isTerminal, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated))
+    return withTranslation(t, row, line, words, shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, key, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))))))
   })
 }

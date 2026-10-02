@@ -22,8 +22,8 @@ type Completion = { isAnswered: true; text: string } | { isAnswered: false; reas
 type Saved = Record<string, Card>
 
 // ビジネスルール
-// 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す
-const words = (restated: string) => restated.split(/\s+/).filter(Boolean).map(w => ({ label: plain(w), word: bare(w) })).filter(w => w.word)
+// 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す（記号だけの語は空）
+const words = (restated: string) => restated.split(/\s+/).filter(Boolean).map(w => ({ label: plain(w), word: bare(w) }))
 // 直した所の ** は外す
 const plain = (text: string) => text.replace(/\*\*/g, '')
 // 語は小文字にし、文字・数字と ' と - 以外（句読点など）を落とす
@@ -51,7 +51,7 @@ const parse = (text: string) => {
 const field = (text: string, name: string) => new RegExp(`^${name}:\\s*(.+)$`, 'm').exec(text)?.[1]?.trim() ?? ''
 // 句がすべて文の別の語なら、押した語の絵ではない（tests を押して carry on）。活用形の違いは通す（swapped → swap over）
 const isAstray = (unit: string, word: string, restated: string) => {
-  const others = new Set(words(restated).map(w => w.word).filter(w => w !== word))
+  const others = new Set(words(restated).map(w => w.word).filter(w => w && w !== word))
   return parts(unit).every(u => others.has(u))
 }
 // 絵の幅は 380px、拡大で 560px。大きさは SVG にも書き、左に寄せる（Desktop は両方そろって初めて大きさを変える）

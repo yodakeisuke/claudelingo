@@ -19,11 +19,11 @@ async function showForeignVersion($: EngineInterface, text: string, request: Ret
   await update($, versions, all => ({ ...all, [text]: version }))
 }
 
-// 手順書「言語設定を変える」：設定に書く。拒否されたら理由を残す
+// 手順書「言語設定を変える」：設定に書く。書けたら選んだ値を残し、拒否・失敗なら理由を残す
 async function changeSetting($: EngineInterface, field: string, value: string | boolean) {
-  const r = await $.config.set({ key: `claudelingo.${field}`, value })
-  if (!r.deny) await update($, chosen, all => ({ ...all, [field]: value }))
-  await update($, denied, () => r.deny ?? '')
+  const reason = await $.config.set({ key: `claudelingo.${field}`, value }).then(r => r.deny ?? '', error => String(error))
+  if (!reason) await update($, chosen, all => ({ ...all, [field]: value }))
+  await update($, denied, () => reason)
 }
 
 export const register: Register = (on, options) => {

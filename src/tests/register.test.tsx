@@ -114,14 +114,26 @@ describe('register', () => {
     await $.command.run({ command: 'lingo', args: '', origin: composer, presentation: { isFullscreen: false, columns: 80 } })
     expect(opened).toEqual(['claudelingo'])
     const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
-    for (const surface of ['terminal', 'desktop'] as const) {
+    // 面ごとに別の値を選ぶ（同じ値をもう一度選んでも保存しないので）
+    for (const [surface, enabled, target, model] of [['terminal', false, 'Spanish', 'opus'], ['desktop', true, 'French', 'haiku']] as const) {
       set.length = 0
       const ui = await $.ui.mount({ plugin: 'claudelingo', surface, component: 'Pane', requestId: 'claudelingo', props: pane })
-      await ui.press({ key: 'enabled-off' })
-      await ui.input({ key: 'target', text: 'Spanish' })
-      await ui.press({ key: 'model-sonnet' })
-      expect(set).toEqual([['claudelingo.enabled', false], ['claudelingo.target', 'Spanish'], ['claudelingo.model', 'sonnet']])
+      await ui.press({ key: `enabled-${enabled ? 'on' : 'off'}` })
+      await ui.input({ key: 'target', text: target })
+      await ui.press({ key: `model-${model}` })
+      await ui.input({ key: 'target', text: target })
+      expect(set).toEqual([['claudelingo.enabled', enabled], ['claudelingo.target', target], ['claudelingo.model', model]])
     }
+  })
+
+  test('設定の保存に失敗したら、選んだ値は示さず、理由を出す', async ($, on) => {
+    engine(on)
+    // config.set に応える者がいない＝呼び出しそのものが失敗する
+    const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    await ui.press({ key: 'model-opus' })
+    expect(await ui.find({ type: 'Text', text: /保存できませんでした：.+/ })).toBeDefined()
+    expect((await ui.find({ type: 'Button', key: 'model-opus' }))?.props.variant).toBe('secondary')
   })
 
   test('設定は Claude 本体の /config に並べない', async ($, on) => {

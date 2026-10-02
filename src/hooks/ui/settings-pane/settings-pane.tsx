@@ -10,8 +10,10 @@ export const SETTINGS_PANE = 'claudelingo'
 // /lingo の設定パネル：押す・Enter で即保存。選択肢は全部見せて1回で選べるボタンに（選ばれている方が強調）
 // 一番上は mod そのものの有効・無効。項目名と入力欄は幅を揃える。保存が拒否されたら理由を赤で1行
 // 端末は行を詰め、それ以外の面は余白と行間を取る
-export function settingsPane(t: Elements[Exclude<keyof Elements, 'mobile'>], isTerminal: boolean, settings: Settings, denied: string, save: Save) {
+export function settingsPane(t: Elements[Exclude<keyof Elements, 'mobile'>], isTerminal: boolean, settings: Settings, denied: string, write: Save) {
   const { Box, Text, Button, Input } = t
+  // 変わっていない値は保存しない（入力欄は外をクリックしただけでも確定が飛び、他の項目を古い値で書き戻すことがあった）
+  const save: Save = (field, value) => { if (value !== settings[field]) write(field, value) }
   const room = isTerminal ? 0 : 1
   const field = (label: string, control: RenderElement) => (
     <Box alignItems="center" gap={1}>

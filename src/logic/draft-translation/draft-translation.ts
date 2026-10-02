@@ -35,11 +35,8 @@ const isMark = (l: string) => l.trim().startsWith('! ')
 const markLines = (value: string) => value.split('\n').filter(isMark).map(l => l.trim().slice(2)).filter(Boolean)
 // 帯に出すのは、"! " の行を除いた残り
 const withoutMarks = (value: string) => value.split('\n').filter(l => !isMark(l)).join('\n')
-// 帯には "! " の行を除いて、送信後の訳と同じ形で出す。指摘（💡）は一度に 1 つ
-const line = (version: Translation) => {
-  const shown = PromptTranslations.line(Result.given(version).and(withoutMarks).data())
-  return shown && { ...shown, tips: shown.tips.slice(0, 1) }
-}
+// 帯には "! " の行を除いて、送信後の訳と同じ形で出す
+const line = (version: Translation) => PromptTranslations.line(Result.given(version).and(withoutMarks).data())
 // 下書きの中で、その文字列が単語として現れる最初の位置（"this" の中の "is" は拾わない）
 const wordAt = (draft: string, mark: string) => new RegExp(`(?<![\\p{L}\\p{N}])${mark.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').exec(draft)?.index ?? -1
 // 赤線は一度に 1 つ。"! " の行の文字列が今の下書きに残っている所のうち、一番前。直せば次が出る

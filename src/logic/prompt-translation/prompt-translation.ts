@@ -33,11 +33,11 @@ const key = (text: string) => text.replace(/<\/?pasted_content[^>]*>|\s/g, '')
 const isNeeded = (surfaces: readonly string[]) => surfaces.length > 0
 // 訳せていれば、言い直しとアドバイスに分けて出す。訳せなかったら、その理由を出す（訳がまだなら何も出さない）
 const line = (version?: Translation) => version && Result.given(version).either(split, error => ({ restated: `訳せませんでした：${error}`, tips: [] }))
-// "💡 " で始まる行がアドバイス（指示の箇条書き "- " と区別する）、残りの行をつないだものが言い直し（複数段落の指示でも切らない）
+// "💡 " で始まる行がアドバイス（指示の箇条書き "- " と区別する）、残りの行をつないだものが言い直し（複数段落の指示でも切らない）。アドバイスは一度に 1 つ
 const split = (value: string): Line => {
   const lines = value.split('\n').map(l => l.trim()).filter(Boolean)
   const isTip = (l: string) => l.startsWith('💡 ')
-  return { restated: lines.filter(l => !isTip(l)).join(' '), tips: lines.filter(isTip).map(l => l.slice('💡 '.length)) }
+  return { restated: lines.filter(l => !isTip(l)).join(' '), tips: lines.filter(isTip).map(l => l.slice('💡 '.length)).slice(0, 1) }
 }
 // 言い直しの依頼：外国語版を作る指示なら、文面をそのまま渡す。作らない指示には依頼がない
 const request = (settings: Settings, sent: Sent, commands: readonly string[]) => (isWanted(settings, sent, commands) ? TranslationRequest.of(settings, sent.text) : undefined)

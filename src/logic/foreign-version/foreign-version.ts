@@ -27,5 +27,5 @@ const request = (settings: Settings, text: string) => ({
 // 返事が来れば訳文、来なければその失敗をそのまま持つ
 const of = (completion: Completion): ForeignVersion =>
   (completion.isAnswered ? Result.ok(completion.text) : Result.fail(completion))
-    .map(text => text.trim())
+    .and(text => text.trim())
     .data

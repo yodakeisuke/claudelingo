@@ -7,21 +7,21 @@ export const Result = {
 }
 
 // データ構造
-// 鎖でつなげる Result。data は保存できるただのデータ
+// 鎖でつなげる Result。data は保存できるただのデータで、鎖を抜けるときに使う
 type Fluent<T, E> = {
   data: Data<T, E>
-  map: <U>(fn: (value: T) => U) => Fluent<U, E>
-  flatMap: <U, F>(fn: (value: T) => Fluent<U, F>) => Fluent<U, E | F>
+  and: <U, F = never>(fn: (value: T) => U | Fluent<U, F>) => Fluent<U, E | F>
   mapError: <F>(fn: (error: E) => F) => Fluent<T, F>
-  let: <R>(fn: (data: Data<T, E>) => R) => R
 }
 
 // ビジネスルール
-// map・flatMap は成功のときだけ、mapError は失敗のときだけ働き、もう片方はそのまま流す。let は成否を問わず全体を渡す
+// and は成功のときだけ通す。戻りが Result ならそのままつなぎ、普通の値なら成功に包む。mapError は失敗のときだけエラーを変える
 const wrap = <T, E>(data: Data<T, E>): Fluent<T, E> => ({
   data,
-  map: fn => wrap(data.ok ? { ok: true, value: fn(data.value) } : data),
-  flatMap: <U, F>(fn: (value: T) => Fluent<U, F>): Fluent<U, E | F> => (data.ok ? fn(data.value) : wrap<U, E | F>(data)),
+  and: <U, F>(fn: (value: T) => U | Fluent<U, F>) => (data.ok ? lift(fn(data.value)) : wrap<U, E | F>(data)),
   mapError: fn => wrap(data.ok ? data : { ok: false, error: fn(data.error) }),
-  let: fn => fn(data),
 })
+// 関数の戻りが Result ならそのまま、普通の値なら成功に包む
+const lift = <U, F>(returned: U | Fluent<U, F>): Fluent<U, F> => (isFluent(returned) ? returned : Result.ok(returned)) as Fluent<U, F>
+// 鎖でつなげる Result かどうか
+const isFluent = (value: unknown) => typeof value === 'object' && value !== null && 'and' in value && 'data' in value

@@ -17,10 +17,9 @@ const settingsOf = async ($: EngineInterface) => LanguageSettings.of(await $.sto
 
 // 手順書「指示を外国語で示す」：訳す指示なら言い直しを頼み、外国語版を残す
 const showForeignVersion = async ($: EngineInterface, from: string, text: string) => {
-  const settings = await settingsOf($)
-  if (!ForeignVersions.isWanted(settings, from, text)) return
-  if (!ForeignVersions.isNeeded(await $.session.surfaces(), (await read($, versions))[text])) return
-  const version = await $.model.complete(ForeignVersions.request(settings, text)).then(ForeignVersions.of, ForeignVersions.failed)
+  const request = ForeignVersions.request(await settingsOf($), from, text)
+  if (!request || !ForeignVersions.isNeeded(await $.session.surfaces(), (await read($, versions))[text])) return
+  const version = await $.model.complete(request).then(ForeignVersions.of, ForeignVersions.of)
   await update($, versions, all => ({ ...all, [text]: version }))
 }
 
@@ -62,7 +61,7 @@ export const register: Register = on => {
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const row = await next(e)
     const text = e.props.text.trim()
-    const line = ForeignVersions.isOwn(e.props.origin.kind) ? ForeignVersions.line(text, (await read($, versions))[text]) : undefined
+    const line = ForeignVersions.line(e.props.origin.kind, text, (await read($, versions))[text])
     return line ? withForeignVersion($.ui.resolve(e), e.surface === 'terminal', row, line) : row
   })
 }

@@ -4,13 +4,10 @@ import { RestatementPrompt } from './restatement-prompt'
 
 // 公開する操作
 export const ForeignVersions = {
-  isOwn: (from: string) => isOwn(from),
-  isWanted: (settings: Settings, from: string, text: string) => isWanted(settings, from, text),
+  request: (settings: Settings, from: string, text: string) => request(settings, from, text),
   isNeeded: (surfaces: readonly string[], existing?: ForeignVersion) => isNeeded(surfaces, existing),
-  line: (prompt: string, version?: ForeignVersion) => line(prompt, version),
-  request: (settings: Settings, text: string) => request(settings, text),
-  of: (completion: Completion) => of(completion),
-  failed: (error: unknown): ForeignVersion => ({ ok: false, error: { message: error instanceof Error ? error.message : String(error) } }),
+  of: (outcome: Completion | Error) => of(outcome),
+  line: (from: string, prompt: string, version?: ForeignVersion) => line(from, prompt, version),
 }
 
 // データ構造
@@ -28,11 +25,13 @@ const isWanted = (settings: Settings, from: string, text: string) =>
   settings.enabled && isOwn(from) && ownWords(text) !== '' && !/^\/[^\s/]*(\s|$)/.test(text)
 // 訳を頼むのは、描く面があり（-p は誰も見ない）、同じ文をまだ訳せていないときだけ
 const isNeeded = (surfaces: readonly string[], existing?: ForeignVersion) => surfaces.length > 0 && existing?.ok !== true
-// 出すのは、訳せていて、言い直しがあり、元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
-const line = (prompt: string, version?: ForeignVersion) => {
-  const shown = version?.ok ? split(version.value) : undefined
+// 出すのは、自分の指示が訳せていて、言い直しがあり、元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
+const line = (from: string, prompt: string, version?: ForeignVersion) => {
+  const shown = isOwn(from) ? parsed(version) : undefined
   return shown && isRestated(shown.restated, ownWords(prompt)) ? shown : undefined
 }
+// 訳せていれば、言い直しとアドバイスに分ける
+const parsed = (version?: ForeignVersion) => (version?.ok ? split(version.value) : undefined)
 // 言い直したとみなすのは、言い直しがあり（箇条書きだけの指示は全行がアドバイス扱いになり空になる）、元の文面と違うとき
 const isRestated = (restated: string, own: string) => restated !== '' && plain(restated) !== plain(own)
 // 比べるのは文字・数字・アポストロフィだけ（強調の印・大文字・句読点・空白は見ない。dont → don't は直しとして出す）
@@ -43,10 +42,11 @@ const split = (value: string): Line => {
   const isTip = (l: string) => l.startsWith('- ')
   return { restated: lines.filter(l => !isTip(l)).join(' '), tips: lines.filter(isTip).map(l => l.slice(2)) }
 }
-// 言い直しの依頼：自分の言葉だけを渡す（貼り付けは渡さない）
-const request = (settings: Settings, text: string) => RestatementPrompt.of(settings, ownWords(text))
-// 返事が来れば訳文、来なければその失敗をそのまま持つ
-const of = (completion: Completion): ForeignVersion =>
-  Result.given(completion)
+// 言い直しの依頼：外国語版を作る指示なら、自分の言葉だけを渡す（貼り付けは渡さない）。作らない指示には依頼がない
+const request = (settings: Settings, from: string, text: string) => (isWanted(settings, from, text) ? RestatementPrompt.of(settings, ownWords(text)) : undefined)
+// 返事が来れば訳文、来なければその失敗をそのまま持つ。呼び出し自体が拒まれたときは、その message を持つ
+const of = (outcome: Completion | Error): ForeignVersion =>
+  Result.given(outcome)
+    .and(o => (o instanceof Error ? Result.fail({ message: o.message }) : o))
     .and(c => (c.isAnswered ? c.text.trim() : Result.fail(c)))
     .either<ForeignVersion>(value => ({ ok: true, value }), error => ({ ok: false, error }))

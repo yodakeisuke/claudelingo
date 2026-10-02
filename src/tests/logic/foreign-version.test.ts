@@ -21,7 +21,7 @@ describe('foreign-version', () => {
       [true, 'composer', '<pasted_content id="1">Error: boom</pasted_content id="1">', false],
     ] as const
     for (const [enabled, from, text, wanted] of rows) {
-      expect(ForeignVersions.isWanted({ ...on, enabled }, from, text)).toBe(wanted)
+      expect(ForeignVersions.request({ ...on, enabled }, from, text) !== undefined).toBe(wanted)
     }
   })
 
@@ -33,23 +33,24 @@ describe('foreign-version', () => {
   })
 
   test('訳の行を出すのは、訳せていて、元の指示と違うときだけ', () => {
-    expect(ForeignVersions.line('ログ見て', { ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.', tips: [] })
-    expect(ForeignVersions.line('fix the test', { ok: true, value: 'fix the test' })).toBeUndefined()
-    expect(ForeignVersions.line('ok', { ok: true, value: 'Ok.' })).toBeUndefined()
-    expect(ForeignVersions.line('- fix X\n- fix Y', { ok: true, value: '- fix X\n- fix Y' })).toBeUndefined()
-    expect(ForeignVersions.line('make the **title** bold', { ok: true, value: 'Make the title bold.' })).toBeUndefined()
-    expect(ForeignVersions.line('I dont know', { ok: true, value: "I don't know\n- 縮約形" })).toEqual({ restated: "I don't know", tips: ['縮約形'] })
-    expect(ForeignVersions.line('which file? just the path please', { ok: true, value: 'Which file? Just the path, please.' })).toBeUndefined()
+    expect(ForeignVersions.line('composer', 'ログ見て', { ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.', tips: [] })
+    expect(ForeignVersions.line('composer', 'fix the test', { ok: true, value: 'fix the test' })).toBeUndefined()
+    expect(ForeignVersions.line('composer', 'ok', { ok: true, value: 'Ok.' })).toBeUndefined()
+    expect(ForeignVersions.line('composer', '- fix X\n- fix Y', { ok: true, value: '- fix X\n- fix Y' })).toBeUndefined()
+    expect(ForeignVersions.line('composer', 'make the **title** bold', { ok: true, value: 'Make the title bold.' })).toBeUndefined()
+    expect(ForeignVersions.line('composer', 'I dont know', { ok: true, value: "I don't know\n- 縮約形" })).toEqual({ restated: "I don't know", tips: ['縮約形'] })
+    expect(ForeignVersions.line('composer', 'which file? just the path please', { ok: true, value: 'Which file? Just the path, please.' })).toBeUndefined()
     const value = 'Fix the failing test.\nThen open a PR.\n- 「that failing」→「the failing」\n- 「pls」→「please」'
-    expect(ForeignVersions.line('fix test that failing pls. then PR', { ok: true, value }))
+    expect(ForeignVersions.line('composer', 'fix test that failing pls. then PR', { ok: true, value }))
       .toEqual({ restated: 'Fix the failing test. Then open a PR.', tips: ['「that failing」→「the failing」', '「pls」→「please」'] })
-    expect(ForeignVersions.line('ログ見て', { ok: false, error: { reason: 'empty-reply' } })).toBeUndefined()
-    expect(ForeignVersions.line('ログ見て')).toBeUndefined()
+    expect(ForeignVersions.line('composer', 'ログ見て', { ok: false, error: { reason: 'empty-reply' } })).toBeUndefined()
+    expect(ForeignVersions.line('composer', 'ログ見て')).toBeUndefined()
+    expect(ForeignVersions.line('task-notification', 'ログ見て', { ok: true, value: 'Check the logs.' })).toBeUndefined()
   })
 
   test('貼り付けは訳に送らず、自分の言葉だけ送る', () => {
     const text = 'これ何で落ちてる？\n<pasted_content id="1">\nError: boom\n</pasted_content id="1">'
-    expect(ForeignVersions.request(on, text).prompt).toBe('<message>これ何で落ちてる？</message>')
+    expect(ForeignVersions.request(on, 'composer', text)?.prompt).toBe('<message>これ何で落ちてる？</message>')
   })
 
   test('返事が来れば訳文、来なければその失敗をそのまま持つ', () => {
@@ -59,6 +60,6 @@ describe('foreign-version', () => {
   })
 
   test('呼び出し自体が拒まれたら、その message を持つ', () => {
-    expect(ForeignVersions.failed(new Error('model blocked'))).toEqual({ ok: false, error: { message: 'model blocked' } })
+    expect(ForeignVersions.of(new Error('model blocked'))).toEqual({ ok: false, error: { message: 'model blocked' } })
   })
 })

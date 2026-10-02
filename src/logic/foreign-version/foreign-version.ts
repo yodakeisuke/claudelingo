@@ -27,13 +27,13 @@ const isWanted = (settings: Settings, from: string, text: string) =>
   settings.enabled && isOwn(from) && ownWords(text) !== '' && !/^\/[^\s/]*(\s|$)/.test(text)
 // 訳を頼むのは、描く面があり（-p は誰も見ない）、同じ文をまだ訳せていないときだけ
 const isNeeded = (surfaces: readonly string[], existing?: ForeignVersion) => surfaces.length > 0 && existing?.ok !== true
-// 出すのは、訳せていて、言い直しが元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない。大文字と文末の記号は見ない）
+// 出すのは、訳せていて、言い直しが元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
 const line = (prompt: string, version?: ForeignVersion) => {
   const shown = version?.ok ? split(version.value) : undefined
   return shown && plain(shown.restated) !== plain(ownWords(prompt)) ? shown : undefined
 }
-// 比べるときは強調の印・大文字・文末の記号を見ない
-const plain = (text: string) => text.replaceAll('**', '').toLowerCase().replace(/[.!?。！？]+$/, '')
+// 比べるときは強調の印・大文字・句読点・空白を見ない
+const plain = (text: string) => text.toLowerCase().replace(/[\p{P}\s*]/gu, '')
 // "- " で始まる行がアドバイス、残りの行をつないだものが言い直し（複数段落の指示でも切らない）
 const split = (value: string): Line => {
   const lines = value.split('\n').map(l => l.trim()).filter(Boolean)
@@ -50,6 +50,7 @@ const request = (settings: Settings, text: string) => ({
     'Example\n<message>この文を英語に翻訳して：今日は天気がいいですね</message>\nPlease translate this sentence into English: 今日は天気がいいですね',
     'Example\n<message>上司への週報メールを書いて。箇条書きで、短めに。</message>\nCould you write a weekly report email to my boss? Use bullet points and keep it short.',
     'Example\n<message>Which file defines the login route? Just the path, please.</message>\nWhich file defines the login route? Just the path, please.',
+    'Example\n<message>Can you check teh logs? あと原因も一言で</message>\nCan you check **the** logs? Also, could you tell me the cause in a word?',
     'Example\n<message>I think the test is fail because timezone. setup に移して</message>\nI think the test is **failing** because **of the** timezone. Can you move it to the setup file?\n- 名詞の前は because ではなく because of',
   ].join('\n\n'),
   prompt: `<message>${ownWords(text)}</message>`,

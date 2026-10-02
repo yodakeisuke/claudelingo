@@ -46,6 +46,8 @@ describe('prompt-translation', () => {
     const text = 'これ何で落ちてる？\n<pasted_content id="1">\nError: boom\n</pasted_content id="1">\n直して'
     expect(PromptTranslations.request(on, { from: 'composer', text }, [])?.prompt).toBe('<message>これ何で落ちてる？\n\n直して</message>')
     expect(PromptTranslations.request(on, { from: 'composer', text: '<pasted_content id="1">\nError: boom\n</pasted_content id="1">' }, [])).toBeUndefined()
+    const nested = 'これ直して\n<pasted_content id="2">\nconst end = "</pasted_content>"\nboom()\n</pasted_content id="2">'
+    expect(PromptTranslations.request(on, { from: 'composer', text: nested }, [])?.prompt).toBe('<message>これ直して</message>')
   })
 
   test('訳を引く鍵は、貼り付けの印があってもなくても同じ', () => {

@@ -25,8 +25,8 @@ const isOwn = (from: string) => ['composer', 'sdk', 'bridge'].includes(from)
 // 外国語版を作るのは、オンのときに自分で打った指示だけ（実在するスラッシュコマンドと、貼り付けだけの指示は除く）
 const isWanted = (settings: Settings, sent: Sent, commands: readonly string[]) =>
   settings.enabled && isOwn(sent.from) && !isCommand(sent.text, commands) && typed(sent.text) !== ''
-// 訳すのは自分で打った言葉だけ。貼り付け（<pasted_content> の中身）は外す
-const typed = (text: string) => text.replace(/<pasted_content[^>]*>[\s\S]*?<\/pasted_content[^>]*>/g, '').trim()
+// 訳すのは自分で打った言葉だけ。貼り付け（<pasted_content> の中身）は、同じ id の閉じ印まで外す
+const typed = (text: string) => text.replace(/<pasted_content([^>]*)>[\s\S]*?<\/pasted_content\1>/g, '').trim()
 // スラッシュコマンドとみなすのは、先頭の /名前 が今使えるコマンドのとき（/tmp を見て、は指示）
 const isCommand = (text: string, commands: readonly string[]) => commands.includes(/^\/(\S+)/.exec(text)?.[1] ?? '')
 // 訳を引く鍵は、貼り付けの印と空白を除いた文面（送信時は印つき、行では印なしで届く）

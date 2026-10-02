@@ -27,6 +27,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
       : { isAnswered: true, text: `EN: ${prompt}`, usage }
     return { value }
   })
+  on('command.list', () => ({ value: [{ name: 'clear', description: '', source: 'builtin' }] }))
   on('prompt.submit', (_$, e) => ({ text: e.text }))
   on('ui.render', { component: 'UserMessage' }, ($, e) => {
     const { Text } = $.ui.resolve(e)

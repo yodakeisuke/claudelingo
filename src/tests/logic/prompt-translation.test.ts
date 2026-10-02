@@ -15,12 +15,16 @@ describe('prompt-translation', () => {
       [true, 'task-notification', 'ログ見て', false],
       [true, 'peer', 'ログ見て', false],
       [true, 'composer', '', false],
+      [true, 'composer', '/tmp/app.log を見て', true],
       [true, 'composer', '/clear', false],
       [true, 'composer', '/model sonnet', false],
-      [true, 'composer', '/tmp/app.log を見て', true],
+      [true, 'composer', '/spec-usecase-as-sop 価値2', false],
+      [true, 'composer', '/nosuchcmd です', true],
+      [true, 'composer', '/tmp を見て', true],
+      [true, 'composer', '/README.md を確認して', true],
     ] as const
     for (const [enabled, from, text, wanted] of rows) {
-      expect(PromptTranslations.request({ ...on, enabled }, from, text) !== undefined).toBe(wanted)
+      expect(PromptTranslations.request({ ...on, enabled }, { from, text }, ['clear', 'model', 'spec-usecase-as-sop']) !== undefined).toBe(wanted)
     }
   })
 
@@ -51,7 +55,7 @@ describe('prompt-translation', () => {
 
   test('貼り付けも含め、文面をそのまま送る（資料を省くのは訳す側に任せる）', () => {
     const text = 'これ何で落ちてる？\n<pasted_content id="1">\nError: boom\n</pasted_content id="1">'
-    expect(PromptTranslations.request(on, 'composer', text)?.prompt).toBe(`<message>${text}</message>`)
+    expect(PromptTranslations.request(on, { from: 'composer', text }, [])?.prompt).toBe(`<message>${text}</message>`)
   })
 
   test('返事が来れば訳文、来なければその失敗をそのまま持つ', () => {

@@ -1,0 +1,75 @@
+// logic の構成ルール（README「構造」）。.oxlintrc.json で logic/ の下だけに掛ける。
+const SECTIONS = ['公開する操作', 'データ構造', 'ビジネスルール', 'util']
+const [OPERATIONS, DATA, RULES, UTIL] = SECTIONS.keys()
+
+const unwrap = node => ['TSAsExpression', 'TSSatisfiesExpression', 'ParenthesizedExpression'].includes(node?.type) ? unwrap(node.expression) : node
+const isFunction = node => ['ArrowFunctionExpression', 'FunctionExpression'].includes(unwrap(node)?.type)
+// 公開する操作: `export const X = { … }` で、中身は関数式か関数を指す名前だけ。
+const operationsOf = statement => {
+  const declarators = statement.type === 'ExportNamedDeclaration' && statement.declaration?.type === 'VariableDeclaration'
+    ? statement.declaration.declarations : []
+  const object = declarators.length === 1 ? unwrap(declarators[0].init) : undefined
+  return object?.type === 'ObjectExpression' && object.properties.every(p => p.type === 'Property' && (isFunction(p.value) || p.value.type === 'Identifier'))
+    ? object.properties : undefined
+}
+const isFunctionStatement = s => s.type === 'FunctionDeclaration' || (s.type === 'VariableDeclaration' && s.declarations.every(d => isFunction(d.init)))
+const isType = s => ['TSTypeAliasDeclaration', 'TSInterfaceDeclaration'].includes(s.type)
+const belongs = [s => !!operationsOf(s), isType, isFunctionStatement, isFunctionStatement]
+
+const sectionOf = comment => comment.type === 'Line' ? SECTIONS.indexOf(comment.value.trim()) : -1
+const sectionComments = context => context.sourceCode.getAllComments().filter(c => sectionOf(c) >= 0)
+// 一番外側の文は、その前にある最後のセクションコメントの節に属する。
+const placed = (context, program) => {
+  const headers = sectionComments(context)
+  return program.body.filter(s => s.type !== 'ImportDeclaration').map(statement =>
+    ({ statement, section: headers.filter(c => c.range[1] <= statement.range[0]).map(sectionOf).at(-1) ?? -1 }))
+}
+const operations = program => program.body.flatMap(s => operationsOf(s) ?? [])
+// 参照を含む操作。操作の外（ルールや util の中）からの参照は数えない。
+const operationOf = (node, ops) => {
+  for (let p = node.parent; p; p = p.parent) if (ops.includes(p)) return p
+}
+const rule = (description, check) => ({ meta: { type: 'problem', docs: { description } }, create: context => ({ Program: program => check(context, program) }) })
+
+export default {
+  meta: { name: 'logic-layout' },
+  rules: {
+    exports: rule('export は、操作をまとめたオブジェクト 1 つだけ', (context, program) => {
+      const exports = program.body.filter(s => s.type.startsWith('Export'))
+      for (const s of exports) if (!operationsOf(s)) context.report({ node: s, message: 'export は `export const X = { 操作: 関数 }` だけ。関数でない値・型・export function・default・再 export は出さない' })
+      if (exports.length !== 1) context.report({ node: program, message: `export はモジュールに 1 つ（今は ${exports.length} つ）` })
+    }),
+    sections: rule('セクションコメントが決まった順に 1 回ずつある', (context, program) => {
+      const order = sectionComments(context).map(sectionOf).join()
+      if (order !== [OPERATIONS, DATA, RULES].join() && order !== [OPERATIONS, DATA, RULES, UTIL].join()) {
+        context.report({ node: program, message: `セクションコメントは // ${SECTIONS.slice(0, 3).join(' → // ')}（→ // util）の順に 1 回ずつ` })
+      }
+    }),
+    placement: rule('一番外側の文が正しいセクションにある', (context, program) => {
+      for (const { statement, section } of placed(context, program)) {
+        if (!belongs[section]?.(statement)) {
+          context.report({ node: statement, message: '公開する操作には操作のオブジェクト、データ構造には型、ビジネスルールと util には export しない関数だけを置く' })
+        }
+      }
+    }),
+    'rule-comment': rule('ビジネスルールの直前の行にルールを言うコメントがある', (context, program) => {
+      const comments = context.sourceCode.getAllComments()
+      for (const { statement } of placed(context, program).filter(({ section }) => section === RULES)) {
+        const above = comments.find(c => c.loc.end.line === statement.loc.start.line - 1)
+        if (above?.type !== 'Line' || !above.value.trim() || sectionOf(above) >= 0) {
+          context.report({ node: statement, message: 'ビジネスルールの直前の行に、ルールを言う 1 行コメントを書く' })
+        }
+      }
+    }),
+    'shared-util': rule('util は 2 つ以上の操作から直接使う', (context, program) => {
+      const ops = operations(program)
+      for (const { statement } of placed(context, program).filter(({ section }) => section === UTIL)) {
+        const names = statement.type === 'FunctionDeclaration' ? [statement.id.name] : statement.declarations.map(d => d.id.name)
+        for (const variable of context.sourceCode.getDeclaredVariables(statement).filter(v => names.includes(v.name))) {
+          const users = new Set(variable.references.filter(r => !r.init).map(r => operationOf(r.identifier, ops)).filter(Boolean))
+          if (users.size < 2) context.report({ node: statement, message: `util の ${variable.name} を直接使う操作が ${users.size} つ。2 つ未満ならビジネスルールにする` })
+        }
+      }
+    }),
+  },
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": [
+    "./lint/logic-layout.js"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "**/logic/**"
+      ],
+      "rules": {
+        "logic-layout/exports": "error",
+        "logic-layout/sections": "error",
+        "logic-layout/placement": "error",
+        "logic-layout/shared-util": "error",
+        "logic-layout/rule-comment": "error",
+        "no-unused-vars": [
+          "error",
+          {
+            "ignoreRestSiblings": true
+          }
+        ],
+        "complexity": [
+          "error",
+          {
+            "max": 5
+          }
+        ],
+        "max-lines": [
+          "error",
+          {
+            "max": 70
+          }
+        ],
+        "max-lines-per-function": [
+          "error",
+          {
+            "max": 15,
+            "skipBlankLines": true,
+            "skipComments": true
+          }
+        ],
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:*",
+                  "claude-code",
+                  "claude-code/*",
+                  "**/hooks",
+                  "**/hooks/**"
+                ],
+                "message": "logic は I/O をせず、engine（claude-code）と hooks を読まない"
+              }
+            ]
+          }
+        ],
+        "max-depth": [
+          "error",
+          {
+            "max": 2
+          }
+        ],
+        "max-params": [
+          "error",
+          {
+            "max": 3
+          }
+        ]
+      }
+    }
+  ]
+}

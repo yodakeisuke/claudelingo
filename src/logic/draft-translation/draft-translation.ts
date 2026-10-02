@@ -22,11 +22,11 @@ const isCommand = (draft: string, commands: readonly string[]) => {
   const name = /^\/(\S*)/.exec(draft)?.[1]
   return name !== undefined && commands.some(c => c.startsWith(name))
 }
-// 頼み方は送信後の訳と同じ。加えて、直した所が下書きのどこかを "! " の行で返させる（入力欄に赤線を引く）
+// 頼み方は送信後の訳と同じ。加えて、直した所が下書きのどこかを "! " の行で返させる（入力欄に赤線を引く。大文字・句読点だけの直しは除く）
 const request = (settings: Settings, draft: string, commands: readonly string[]) => {
   if (!isWanted(settings, draft, commands)) return undefined
   const asked = TranslationRequest.of({ ...settings, model: settings.liveModel }, draft.trim())
-  const marking = `Finally, for each mistake in the ${settings.target} parts of the message, in the order they appear, add one line starting with "! " followed by only the wrong word or words, copied exactly from the message (as few words as possible, never the whole sentence). Add none for parts you only translated.`
+  const marking = `Finally, for each mistake in the ${settings.target} parts of the message, in the order they appear, add one line starting with "! " followed by only the wrong word or words, copied exactly from the message (as few words as possible, never the whole sentence). Add none for parts you only translated, and none for capitalization or punctuation alone.`
   return { ...asked, system: `${asked.system}\n\n${marking}` }
 }
 // "! " で始まる行が、赤線を引く所

@@ -54,9 +54,11 @@ export const register: Register = (on, options) => {
     return settingsPane($.ui.resolve(e), settings, await read($, denied), (field, value) => void changeSetting($, field, value))
   })
 
+  // 設定は /lingo だけに出し、Claude 本体の /config には並べない
+  on('config.describe', ($, e, next) => next(e.key.startsWith('claudelingo.') ? { ...e, isHidden: true } : e))
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const row = await next(e)
-    const version = e.props.origin.kind === 'composer' ? (await read($, versions))[e.props.text.trim()] : undefined
+    const version = ForeignVersions.isOwn(e.props.origin.kind) ? (await read($, versions))[e.props.text.trim()] : undefined
     return version?.ok ? withForeignVersion($.ui.resolve(e), row, version.value) : row
   })
 }

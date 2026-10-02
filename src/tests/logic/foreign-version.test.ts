@@ -10,7 +10,10 @@ describe('foreign-version', () => {
     const rows = [
       [true, 'composer', 'ログ見て', true],
       [false, 'composer', 'ログ見て', false],
+      [true, 'sdk', 'ログ見て', true],
+      [true, 'bridge', 'ログ見て', true],
       [true, 'task-notification', 'ログ見て', false],
+      [true, 'peer', 'ログ見て', false],
       [true, 'composer', '', false],
       [true, 'composer', '/clear', false],
     ] as const
@@ -23,5 +26,9 @@ describe('foreign-version', () => {
     expect(ForeignVersions.of({ isAnswered: true, text: ' Check the logs. \n' })).toEqual({ ok: true, value: 'Check the logs.' })
     const failure = { isAnswered: false, reason: 'empty-reply' } as const
     expect(ForeignVersions.of(failure)).toEqual({ ok: false, error: failure })
+  })
+
+  test('呼び出し自体が拒まれたら、その message を持つ', () => {
+    expect(ForeignVersions.failed(new Error('model blocked'))).toEqual({ ok: false, error: { message: 'model blocked' } })
   })
 })

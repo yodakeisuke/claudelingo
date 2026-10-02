@@ -33,8 +33,10 @@ describe('foreign-version', () => {
   })
 
   test('訳の行を出すのは、訳せていて、元の指示と違うときだけ', () => {
-    expect(ForeignVersions.line('ログ見て', { ok: true, value: 'Check the logs.' })).toBe('Check the logs.')
+    expect(ForeignVersions.line('ログ見て', { ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.' })
     expect(ForeignVersions.line('fix the test', { ok: true, value: 'fix the test' })).toBeUndefined()
+    expect(ForeignVersions.line('fix test that failing', { ok: true, value: 'Fix the failing test.\n"that failing" → "the failing"' }))
+      .toEqual({ restated: 'Fix the failing test.', tip: '"that failing" → "the failing"' })
     expect(ForeignVersions.line('ログ見て', { ok: false, error: { reason: 'empty-reply' } })).toBeUndefined()
     expect(ForeignVersions.line('ログ見て')).toBeUndefined()
   })

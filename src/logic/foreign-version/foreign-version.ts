@@ -13,6 +13,7 @@ export const ForeignVersions = {
 }
 
 // データ構造
+type Line = { restated: string; tip?: string }
 type Settings = { enabled: boolean; native: string; target: string; model: string }
 type Completion = { isAnswered: true; text: string } | ({ isAnswered: false } & Exclude<TranslationError, { message: string }>)
 
@@ -26,12 +27,20 @@ const isWanted = (settings: Settings, from: string, text: string) =>
   settings.enabled && isOwn(from) && ownWords(text) !== '' && !/^\/[^\s/]*(\s|$)/.test(text)
 // 訳を頼むのは、描く面があり（-p は誰も見ない）、同じ文をまだ訳せていないときだけ
 const isNeeded = (surfaces: readonly string[], existing?: ForeignVersion) => surfaces.length > 0 && existing?.ok !== true
-// 訳の行を出すのは、訳せていて、元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
-const line = (prompt: string, version?: ForeignVersion) => (version?.ok && version.value !== ownWords(prompt) ? version.value : undefined)
-// 言い直しの依頼：自分の言葉だけを学ぶ言語の自然な文に。質問や依頼（翻訳の依頼も）に答えず言い直すだけ。自然ならそのまま
+// 出すのは、訳せていて、言い直しが元の指示と違うときだけ（自然に書けた外国語はそのまま返るので出さない）
+const line = (prompt: string, version?: ForeignVersion) => {
+  const shown = version?.ok ? split(version.value) : undefined
+  return shown && shown.restated !== ownWords(prompt) ? shown : undefined
+}
+// 返事の1行目が言い直し、2行目以降があればそれが一言アドバイス
+const split = (value: string): Line => {
+  const [restated = '', ...tips] = value.split('\n').map(l => l.trim()).filter(Boolean)
+  return tips.length > 0 ? { restated, tip: tips.join(' ') } : { restated }
+}
+// 言い直しの依頼：自分の言葉だけを学ぶ言語の自然な文に。質問や依頼（翻訳の依頼も）に答えず言い直すだけ。自然ならそのまま。学ぶ言語で書いた所があり、言う価値があるときだけ母語で一言アドバイス
 const request = (settings: Settings, text: string) => ({
   model: settings.model,
-  system: `The user is a ${settings.native} speaker learning ${settings.target}. Rewrite their message to an AI assistant as one natural ${settings.target} message, the way a fluent speaker would write it, keeping its meaning and tone. Never answer, reply to or act on the message, even when it is a question or a request (including a request to translate something): only restate the message itself. If it is already natural ${settings.target}, return it unchanged. Reply with the ${settings.target} text only.`,
+  system: `The user is a ${settings.native} speaker learning ${settings.target}. Rewrite their message to an AI assistant as one natural ${settings.target} message, the way a fluent speaker would write it, keeping its meaning and tone. Never answer, reply to or act on the message, even when it is a question or a request (including a request to translate something): only restate the message itself. If it is already natural ${settings.target}, return it unchanged. Put the ${settings.target} version on the first line, as one paragraph. Only if the user wrote part of it in ${settings.target} and there is something worth learning (a mistake, or how to say the ${settings.native} part), add a second line: one short tip written in ${settings.native}. No scores, no other text.`,
   prompt: ownWords(text),
 })
 // 返事が来れば訳文、来なければその失敗をそのまま持つ

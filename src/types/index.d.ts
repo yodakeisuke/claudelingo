@@ -5,6 +5,6 @@ export type Translation = Result<string, string>
 
 declare module 'claude-code' {
   interface PluginState {
-    claudelingo: { translations: Record<string, Translation>; denied: string }
+    claudelingo: { translations: Record<string, Translation>; denied: string; suggestion: Translation | null }
   }
 }

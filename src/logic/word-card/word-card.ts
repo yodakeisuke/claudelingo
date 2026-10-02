@@ -22,8 +22,15 @@ type Completion = { isAnswered: true; text: string } | { isAnswered: false; reas
 type Saved = Record<string, Card>
 
 // ビジネスルール
-// 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す（記号だけの語は空）
-const words = (restated: string) => restated.split(/\s+/).filter(Boolean).map(w => ({ label: plain(w), word: bare(w) }))
+// 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す（記号だけの語は空）。** の中（直した語）は isFixed
+const words = (restated: string) => {
+  let isOpen = false
+  return restated.split(/\s+/).filter(Boolean).map(w => {
+    const isFixed = isOpen || w.includes('**')
+    isOpen = isOpen !== (w.split('**').length % 2 === 0)
+    return { label: plain(w), word: bare(w), isFixed }
+  })
+}
 // 直した所の ** は外す
 const plain = (text: string) => text.replace(/\*\*/g, '')
 // 語は小文字にし、文字・数字と ' と - 以外（句読点など）を落とす

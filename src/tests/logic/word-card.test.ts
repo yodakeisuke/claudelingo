@@ -12,7 +12,8 @@ describe('word-card', () => {
     expect(WordCards.words(restated)).toEqual([
       { label: "I'll", word: "i'll" }, { label: 'carry', word: 'carry' }, { label: 'on', word: 'on' },
       { label: 'with', word: 'with' }, { label: 'the', word: 'the' }, { label: 'tests.', word: 'tests' },
-    ])
+    ].map(w => ({ ...w, isFixed: w.word === 'carry' || w.word === 'on' })))
+    expect(WordCards.words('It **doesn\'t** use **it**.').map(w => w.isFixed)).toEqual([false, true, false, true])
     expect(WordCards.words('Déjà vu, ça va ?').map(w => w.word)).toEqual(['déjà', 'vu', 'ça', 'va', ''])
     expect(WordCards.words('テストを直して').map(w => w.word)).toEqual(['テストを直して'])
     expect(WordCards.request({ native: 'Japanese', target: 'English', cardModel: 'sonnet' }, 'carry', restated).prompt).toBe(`{"pressed":"carry","sentence":"I'll carry on with the tests."}`)

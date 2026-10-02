@@ -3,9 +3,9 @@ import type { Elements } from 'claude-code'
 import type { Shown } from '../../../types'
 import { WordCards } from '../../../logic/word-card/word-card'
 
-type Word = { label: string; word: string }
+type Word = { label: string; word: string; isFixed: boolean }
 
-// 訳の行を、押せる語の並びで。飾りのないボタンは灰色の文字に見える（リンクは青になる）。絵が開いている語は濃く
+// 訳の行を、押せる語の並びで。飾りのないボタンは灰色の文字に見える（リンクは青になる）。絵が開いている語と直した語は濃く
 // 記号だけの語（? や —）は押せない文字のまま。端末はボタンの間に空白が無いので、空白を挟む
 export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, words: Word[], up: Set<string>, press: (word: string) => void) => {
   const { Box, Button, Text } = t
@@ -13,7 +13,7 @@ export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, words
     <Box flexWrap="wrap">
       {words.map((w, i) => [
         isTerminal && i > 0 && <Text> </Text>,
-        w.word ? <Button key={`word-${i}`} label={w.label} plain dimColor={!up.has(w.word)} onPress={() => press(w.word)} /> : <Text dimColor>{w.label}</Text>,
+        w.word ? <Button key={`word-${i}`} label={w.label} plain dimColor={!w.isFixed && !up.has(w.word)} onPress={() => press(w.word)} /> : <Text dimColor>{w.label}</Text>,
       ])}
     </Box>
   )

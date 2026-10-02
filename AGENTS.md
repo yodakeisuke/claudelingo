@@ -9,3 +9,5 @@
 コード・仕様のROAを最大化することがポリシーです。
 
 ミニマリストでいましょう
+
+mods の仕様は https://code.claude.com/docs/en/plugins/mods/reference と、engine が生成する型定義（src/.claude-plugin/types/）を正とする。記憶で書かない。

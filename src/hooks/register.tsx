@@ -62,6 +62,8 @@ const hideSuggestion = async ($: EngineInterface) => {
 const changeSetting = async ($: EngineInterface, field: string, value: string | boolean) => {
   const reason = await $.store.set('settings', { ...(await settingsOf($)), [field]: value }).then(() => '', (error: unknown) => (error instanceof Error ? error.message : String(error)))
   await update($, denied, () => reason)
+  // 帯は設定を $.store から読むので、変えたら描き直させる（オフにした帯をすぐ消す）
+  $.ui.invalidate('ui.render')
 }
 
 export const register: Register = on => {

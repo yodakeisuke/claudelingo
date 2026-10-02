@@ -31,9 +31,21 @@ const operationOf = (node, ops) => {
 }
 const rule = (description, check) => ({ meta: { type: 'problem', docs: { description } }, create: context => ({ Program: program => check(context, program) }) })
 
+// 失敗を投げる・受け止める書き方。Result で返す
+const isThrowing = node => node.type === 'ThrowStatement' || node.type === 'TryStatement' ||
+  (node.type === 'CallExpression' && node.callee.type === 'MemberExpression' &&
+    (node.callee.property.name === 'catch' || (node.callee.object.name === 'Promise' && node.callee.property.name === 'reject')))
+
 export default {
   meta: { name: 'logic-layout' },
   rules: {
+    'result-only': {
+      meta: { type: 'problem', docs: { description: '失敗は投げずに Result で返す' } },
+      create: context => {
+        const report = node => isThrowing(node) && context.report({ node, message: '失敗は throw / try / catch / Promise.reject でなく Result で返す（engine の Promise は .then(成功, 失敗) で受ける）' })
+        return { ThrowStatement: report, TryStatement: report, CallExpression: report }
+      },
+    },
     exports: rule('export は、操作をまとめたオブジェクト 1 つだけ', (context, program) => {
       const exports = program.body.filter(s => s.type.startsWith('Export'))
       for (const s of exports) if (!operationsOf(s)) context.report({ node: s, message: 'export は `export const X = { 操作: 関数 }` だけ。関数でない値・型・export function・default・再 export は出さない' })

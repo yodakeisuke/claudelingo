@@ -27,6 +27,7 @@ const cases = {
   'rule-comment': [file(operations, data, '// ビジネスルール\nconst b = () => 1', util)],
   'shared-util': [file('// 公開する操作\nexport const A = { f: () => c() }', data, '// ビジネスルール', util),
     file('// 公開する操作\nexport const A = { f: () => b(), g: () => b() }', data, '// ビジネスルール\n// b は c\nconst b = () => c()', util)],
+  'result-only': ["throw new Error('x')", 'try { f() } catch { g() }', 'p.catch(() => 1)', "Promise.reject('x')"],
 }
 for (const [name, invalid] of Object.entries(cases)) {
   tester.run(name, plugin.rules[name], { valid: [valid], invalid: invalid.map(code => ({ code, errors: 1 })) })

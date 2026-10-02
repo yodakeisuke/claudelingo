@@ -68,7 +68,16 @@
           {
             "max": 3
           }
-        ]
+        ],
+        "logic-layout/result-only": "error"
+      }
+    },
+    {
+      "files": [
+        "**/hooks/**"
+      ],
+      "rules": {
+        "logic-layout/result-only": "error"
       }
     }
   ]

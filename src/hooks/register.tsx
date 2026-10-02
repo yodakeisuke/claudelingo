@@ -3,7 +3,6 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import { ForeignVersions } from '../logic/foreign-version/foreign-version'
 import { LanguageSettings } from '../logic/language-settings/language-settings'
-import type { ForeignVersion } from '../types'
 import { SETTINGS_PANE, settingsPane, withForeignVersion } from './ui'
 
 // 指示の文面 → その外国語版
@@ -13,12 +12,7 @@ const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
 
 // 手順書「指示を外国語で示す」：言い直しを頼み、外国語版を残す。エラーはデバッグログに1行
 async function showForeignVersion($: EngineInterface, request: ReturnType<typeof ForeignVersions.request>) {
-  let version: ForeignVersion
-  try {
-    version = ForeignVersions.of(await $.model.complete(request))
-  } catch (error) {
-    version = ForeignVersions.failed(error)
-  }
+  const version = await $.model.complete(request).then(ForeignVersions.of, ForeignVersions.failed)
   await update($, versions, all => ({ ...all, [request.prompt]: version }))
   if (!version.ok) $.ui.log(`translation failed: ${JSON.stringify(version.error)}`, { to: 'debug' })
 }

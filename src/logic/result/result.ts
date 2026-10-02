@@ -2,7 +2,7 @@ import type { Result as Data } from '../../types'
 
 // 公開する操作
 export const Result = {
-  ok: <T>(value: T) => wrap<T, never>({ ok: true, value }),
+  given: <T>(value: T) => wrap<T, never>({ ok: true, value }),
   fail: <E>(error: E) => wrap<never, E>({ ok: false, error }),
 }
 
@@ -27,6 +27,6 @@ const wrap = <T, E>(data: Data<T, E>): Fluent<T, E> => ({
   either: (onOk, onError) => (data.ok ? onOk(data.value) : onError(data.error)),
 })
 // 関数の戻りが Result ならそのまま、普通の値なら成功に包む
-const lift = <U, F>(returned: U | Fluent<U, F>): Fluent<U, F> => (isFluent(returned) ? returned : Result.ok(returned)) as Fluent<U, F>
+const lift = <U, F>(returned: U | Fluent<U, F>): Fluent<U, F> => (isFluent(returned) ? returned : Result.given(returned)) as Fluent<U, F>
 // 鎖でつなげる Result かどうか
 const isFluent = (value: unknown) => typeof value === 'object' && value !== null && 'and' in value && 'either' in value

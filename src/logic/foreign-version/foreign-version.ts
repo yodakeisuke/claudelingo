@@ -26,6 +26,6 @@ const request = (settings: Settings, text: string) => ({
 })
 // 返事が来れば訳文、来なければその失敗をそのまま持つ
 const of = (completion: Completion): ForeignVersion =>
-  (completion.isAnswered ? Result.ok(completion.text) : Result.fail(completion))
-    .and(text => text.trim())
+  Result.given(completion)
+    .and(c => (c.isAnswered ? c.text.trim() : Result.fail(c)))
     .either<ForeignVersion>(value => ({ ok: true, value }), error => ({ ok: false, error }))

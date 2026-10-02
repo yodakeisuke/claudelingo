@@ -38,13 +38,14 @@ const showDraftTranslation = async ($: EngineInterface, text: string, signal: Ab
   if (signal.aborted) return
   await update($, draft, () => shown)
   $.ui.invalidate('ui.render')
-  if (shown) await underlineNow($, shown)
+  if (shown) await underlineNow($, shown, signal)
 }
 
 // 赤線は打鍵の応答か fill でしか付かない。校正が届いたら、同じ文面を fill し直して赤線だけ付ける
 // 文字もカーソルも変わらないよう、入力欄が校正した下書きのままで、カーソルが末尾のときだけ
-const underlineNow = async ($: EngineInterface, shown: { text: string; version: Translation }) => {
+const underlineNow = async ($: EngineInterface, shown: { text: string; version: Translation }, signal: AbortSignal) => {
   const box = await $.prompt.read()
+  if (signal.aborted) return
   const decorations = underlines(box.text, shown.version)
   if (box.text === shown.text && box.cursor === box.text.length && decorations.length > 0) await $.prompt.fill({ text: box.text, mode: 'replace', decorations })
 }

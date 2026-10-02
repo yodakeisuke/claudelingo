@@ -54,17 +54,8 @@ describe('register', () => {
     await $.prompt.submit({ text: 'fix **tests**\n- each の後は単数', wait: false, origin: composer })
     await clock.advance(0)
     const ui = await $.ui.mount({ ...row('fix **tests**\n- each の後は単数'), surface: 'desktop' })
-    expect(await ui.find({ type: 'Text', text: 'tests' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'each の後は単数' })).toBeDefined()
-  })
-
-  test('同じ文は訳し直さず、出ている訳も消えない', async ($, on) => {
-    const { clock, asked } = engine(on)
-    for (let i = 0; i < 2; i++) {
-      await $.prompt.submit({ text: 'つづけて', wait: false, origin: composer })
-      await clock.advance(0)
-    }
-    expect(asked).toEqual(['つづけて'])
+    expect(await ui.find({ type: 'Markdown', text: '↳ EN: fix **tests**' })).toBeDefined()
+    expect(await ui.find({ type: 'Markdown', text: '💡 each の後は単数' })).toBeDefined()
   })
 
   test('自分の指示の下に訳が出る（どの面でも）', async ($, on) => {
@@ -73,7 +64,7 @@ describe('register', () => {
     await clock.advance(0)
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ ...row('ログ見て'), surface })
-      expect(await ui.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
+      expect(await ui.find({ type: 'Markdown', text: '↳ EN: ログ見て' })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: 'ログ見て' })).toBeDefined()
     }
   })
@@ -95,7 +86,7 @@ describe('register', () => {
   test('訳ができるまでは何も足さない', async ($, on) => {
     engine(on)
     const ui = await $.ui.mount({ ...row('まだ'), surface: 'terminal' })
-    expect(await ui.find({ type: 'Text', text: /↳/ })).toBeUndefined()
+    expect(await ui.find({ type: 'Markdown', text: /↳/ })).toBeUndefined()
   })
 
   for (const fail of ['api-error', 'reject'] as const) {
@@ -104,7 +95,7 @@ describe('register', () => {
       expect(await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })).toEqual({ text: 'ログ見て' })
       await clock.advance(0)
       const ui = await $.ui.mount({ ...row('ログ見て'), surface: 'terminal' })
-      expect(await ui.find({ type: 'Text', text: /↳/ })).toBeUndefined()
+      expect(await ui.find({ type: 'Markdown', text: /↳/ })).toBeUndefined()
     })
   }
 
@@ -115,7 +106,7 @@ describe('register', () => {
     expect(asked).toHaveLength(0)
   })
 
-  test('/lingo で設定パネルが開き、押す・入力するとすぐ保存され、選んだ方が強調される', async ($, on) => {
+  test('/lingo で設定パネルが開き、押す・確定するとすぐ保存され、選んだ方が強調される', async ($, on) => {
     const { store } = engine(on)
     const opened: string[] = []
     on('ui.open', (_$, e) => (opened.push(e.id), { value: { isPlaced: true } }))
@@ -124,9 +115,7 @@ describe('register', () => {
     for (const [surface, enabled, target, model] of [['terminal', false, 'Spanish', 'opus'], ['desktop', true, 'French', 'haiku']] as const) {
       const ui = await $.ui.mount({ plugin: 'claudelingo', surface, component: 'Pane', requestId: 'claudelingo', props: pane })
       await ui.press({ key: `enabled-${enabled ? 'on' : 'off'}` })
-      // Enter を押さず、打っただけでも保存される
-      await ui.input({ key: 'target', text: 'x', kind: 'change' })
-      await ui.input({ key: 'target', text: target, kind: 'change' })
+      await ui.input({ key: 'target', text: target })
       await ui.press({ key: `model-${model}` })
       expect(store.get('settings')).toEqual({ enabled, native: 'Japanese', target, model })
       expect((await ui.find({ type: 'Button', key: `model-${model}` }))?.props.variant).toBe('primary')
@@ -142,10 +131,10 @@ describe('register', () => {
     await ui.press({ key: 'model-opus' })
     await ui.press({ key: 'enabled-off' })
     const message = await $.ui.mount({ ...row('ログ見て'), surface: 'desktop' })
-    expect(await message.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
+    expect(await message.find({ type: 'Markdown', text: '↳ EN: ログ見て' })).toBeDefined()
   })
 
-  test('学ぶ言語を変えたら、同じ指示も訳し直す', async ($, on) => {
+  test('同じ指示も、送るたびに今の設定で訳す', async ($, on) => {
     const { clock, asked } = engine(on)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
     for (const target of ['German', 'French']) {

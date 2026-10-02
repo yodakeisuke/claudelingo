@@ -22,9 +22,11 @@ type Completion = { isAnswered: true; text: string } | { isAnswered: false; reas
 // ビジネスルール
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの
 const isOwn = (from: string) => ['composer', 'sdk', 'bridge'].includes(from)
-// 外国語版を作るのは、オンのときに自分で打った指示だけ（実在するスラッシュコマンドは除く）
+// 外国語版を作るのは、オンのときに自分で打った指示だけ（実在するスラッシュコマンドと、貼り付けだけの指示は除く）
 const isWanted = (settings: Settings, sent: Sent, commands: readonly string[]) =>
-  settings.enabled && isOwn(sent.from) && !isCommand(sent.text, commands)
+  settings.enabled && isOwn(sent.from) && !isCommand(sent.text, commands) && typed(sent.text) !== ''
+// 訳すのは自分で打った言葉だけ。貼り付け（<pasted_content> の中身）は外す
+const typed = (text: string) => text.replace(/<pasted_content[^>]*>[\s\S]*?<\/pasted_content[^>]*>/g, '').trim()
 // スラッシュコマンドとみなすのは、先頭の /名前 が今使えるコマンドのとき（/tmp を見て、は指示）
 const isCommand = (text: string, commands: readonly string[]) => commands.includes(/^\/(\S+)/.exec(text)?.[1] ?? '')
 // 訳を引く鍵は、貼り付けの印と空白を除いた文面（送信時は印つき、行では印なしで届く）
@@ -39,8 +41,8 @@ const split = (value: string): Line => {
   const isTip = (l: string) => l.startsWith('💡 ')
   return { restated: lines.filter(l => !isTip(l)).join(' '), tips: lines.filter(isTip).map(l => l.slice('💡 '.length)) }
 }
-// 言い直しの依頼：外国語版を作る指示なら、文面をそのまま渡す。作らない指示には依頼がない
-const request = (settings: Settings, sent: Sent, commands: readonly string[]) => (isWanted(settings, sent, commands) ? TranslationRequest.of(settings, sent.text) : undefined)
+// 言い直しの依頼：外国語版を作る指示なら、打った言葉を渡す。作らない指示には依頼がない
+const request = (settings: Settings, sent: Sent, commands: readonly string[]) => (isWanted(settings, sent, commands) ? TranslationRequest.of(settings, typed(sent.text)) : undefined)
 // モデルの下書き（<think> などで囲んだ考え）は捨て、残ったタグも外す。訳文だけを残す
 const withoutScratch = (text: string) => text.replace(/<(think|thinking|reasoning|scratchpad)>[\s\S]*?<\/\1>/g, '').replace(/<\/?(message|think|thinking|reasoning|scratchpad)>/g, '').trim()
 // 返事が来れば訳文、来なければその理由。呼び出し自体が拒まれたときは、その message

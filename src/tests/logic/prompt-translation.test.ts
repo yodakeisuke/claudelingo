@@ -42,9 +42,10 @@ describe('prompt-translation', () => {
     expect(PromptTranslations.line()).toBeUndefined()
   })
 
-  test('貼り付けも含め、文面をそのまま送る', () => {
-    const text = 'これ何で落ちてる？\n<pasted_content id="1">\nError: boom\n</pasted_content id="1">'
-    expect(PromptTranslations.request(on, { from: 'composer', text }, [])?.prompt).toBe(`<message>${text}</message>`)
+  test('貼り付けは外し、打った言葉だけを送る。貼り付けだけの指示は訳さない', () => {
+    const text = 'これ何で落ちてる？\n<pasted_content id="1">\nError: boom\n</pasted_content id="1">\n直して'
+    expect(PromptTranslations.request(on, { from: 'composer', text }, [])?.prompt).toBe('<message>これ何で落ちてる？\n\n直して</message>')
+    expect(PromptTranslations.request(on, { from: 'composer', text: '<pasted_content id="1">\nError: boom\n</pasted_content id="1">' }, [])).toBeUndefined()
   })
 
   test('訳を引く鍵は、貼り付けの印があってもなくても同じ', () => {

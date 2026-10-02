@@ -13,13 +13,15 @@ export const translationLine = (t: Elements[keyof Elements], line: Line) => {
   )
 }
 
-// 指示の行のすぐ下に、その外国語版
-export const withTranslation = (t: Elements[keyof Elements], row: RenderElement, line: Line) => {
-  const { Box } = t
+// 指示の行のすぐ下に、その外国語版（押せる語の並びがあればそれで）。アドバイスと単語の絵は 1 行空けて続ける
+export const withTranslation = (t: Elements[keyof Elements], row: RenderElement, line: Line, words?: RenderElement, cards: RenderElement[] = []) => {
+  const { Box, Markdown } = t
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" marginBottom={cards.length > 0 || line.tips.length > 0 ? 1 : 0}>
       {row}
-      {translationLine(t, line)}
+      {words ?? <Markdown dimColor text={line.restated} />}
+      {line.tips.length > 0 && <Box flexDirection="column" marginTop={1}>{line.tips.map(tip => <Markdown dimColor text={`💡 ${tip}`} />)}</Box>}
+      {cards}
     </Box>
   )
 }

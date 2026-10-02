@@ -23,7 +23,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
       {options.map(o => <Box flexShrink={0}><Button key={`${field}-${o.value}`} label={o.label ?? o.value} variant={o.value === now ? 'primary' : 'secondary'} onPress={() => save(field, typeof settings[field] === 'boolean' ? o.value === 'on' : o.value)} /></Box>)}
     </Box>
   )
-  const onOff = (field: 'enabled' | 'live', now: boolean) => choice(field, now ? 'on' : 'off', [{ value: 'on', label: '有効' }, { value: 'off', label: '無効' }])
+  const onOff = (field: 'enabled' | 'live' | 'card', now: boolean) => choice(field, now ? 'on' : 'off', [{ value: 'on', label: '有効' }, { value: 'off', label: '無効' }])
   const text = (field: 'native' | 'target') => <Box width={28} flexDirection="column"><Input key={field} value={settings[field]} onSubmit={v => save(field, v)} /></Box>
   return (
     <Box flexDirection="column" gap={room} paddingX={room * 2} paddingY={room}>
@@ -34,6 +34,8 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
       {field('入力中の校正', onOff('live', settings.live))}
       {field('校正モデル', choice('liveModel', settings.liveModel, TranslationSettings.models().map(value => ({ value }))))}
       {field('反応の速さ', choice('livePause', settings.livePause, TranslationSettings.pauses().map(value => ({ value, label: `${value}秒` }))))}
+      {field('単語の絵', onOff('card', settings.card))}
+      {field('絵のモデル', choice('cardModel', settings.cardModel, TranslationSettings.models().map(value => ({ value }))))}
       {denied && <Text color="red">保存できませんでした：{denied}</Text>}
     </Box>
   )

@@ -54,7 +54,7 @@ describe('register', () => {
     await $.prompt.submit({ text: 'fix **tests**\n- each の後は単数', wait: false, origin: composer })
     await clock.advance(0)
     const ui = await $.ui.mount({ ...row('fix **tests**\n- each の後は単数'), surface: 'desktop' })
-    expect(await ui.find({ type: 'Markdown', text: '↳ EN: fix **tests**' })).toBeDefined()
+    expect(await ui.find({ type: 'Markdown', text: 'EN: fix **tests**' })).toBeDefined()
     expect(await ui.find({ type: 'Markdown', text: '💡 each の後は単数' })).toBeDefined()
   })
 
@@ -64,7 +64,7 @@ describe('register', () => {
     await clock.advance(0)
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ ...row('ログ見て'), surface })
-      expect(await ui.find({ type: 'Markdown', text: '↳ EN: ログ見て' })).toBeDefined()
+      expect(await ui.find({ type: 'Markdown', text: 'EN: ログ見て' })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: 'ログ見て' })).toBeDefined()
     }
   })
@@ -86,7 +86,7 @@ describe('register', () => {
   test('訳ができるまでは何も足さない', async ($, on) => {
     engine(on)
     const ui = await $.ui.mount({ ...row('まだ'), surface: 'terminal' })
-    expect(await ui.find({ type: 'Markdown', text: /↳/ })).toBeUndefined()
+    expect(await ui.find({ type: 'Markdown' })).toBeUndefined()
   })
 
   for (const fail of ['api-error', 'reject'] as const) {
@@ -95,7 +95,7 @@ describe('register', () => {
       expect(await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })).toEqual({ text: 'ログ見て' })
       await clock.advance(0)
       const ui = await $.ui.mount({ ...row('ログ見て'), surface: 'terminal' })
-      expect(await ui.find({ type: 'Markdown', text: /↳/ })).toBeUndefined()
+      expect(await ui.find({ type: 'Markdown' })).toBeUndefined()
     })
   }
 
@@ -131,7 +131,7 @@ describe('register', () => {
     await ui.press({ key: 'model-opus' })
     await ui.press({ key: 'enabled-off' })
     const message = await $.ui.mount({ ...row('ログ見て'), surface: 'desktop' })
-    expect(await message.find({ type: 'Markdown', text: '↳ EN: ログ見て' })).toBeDefined()
+    expect(await message.find({ type: 'Markdown', text: 'EN: ログ見て' })).toBeDefined()
   })
 
   test('同じ指示も、送るたびに今の設定で訳す', async ($, on) => {

@@ -54,6 +54,6 @@ export const register: Register = on => {
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const row = await next(e)
     const line = PromptTranslations.line((await read($, translations))[PromptTranslations.key(e.props.text)])
-    return line ? withTranslation($.ui.resolve(e), e.surface === 'terminal', row, line) : row
+    return line ? withTranslation($.ui.resolve(e), row, line) : row
   })
 }

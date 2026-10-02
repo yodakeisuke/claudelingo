@@ -5,6 +5,7 @@ import { TranslationRequest } from './translation-request'
 // 公開する操作
 export const PromptTranslations = {
   request: (settings: Settings, sent: Sent, commands: readonly string[]) => request(settings, sent, commands),
+  isOwn: (from: string) => isOwn(from),
   isNeeded: (surfaces: readonly string[]) => isNeeded(surfaces),
   key: (text: string) => key(text),
   of: (outcome: Completion | Error) => of(outcome),

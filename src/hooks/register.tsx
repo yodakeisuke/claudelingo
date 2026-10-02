@@ -1,8 +1,10 @@
 import { atom, read, update } from 'claude-code'
-import type { Register } from 'claude-code'
+import type { EngineInterface, ModelCompleteRequest, Register } from 'claude-code'
 
-// 指示の文面 → 学ぶ言語での言い方
-const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
+import type { ForeignVersion } from '../types'
+
+// 指示の文面 → その外国語版
+const versions = atom({ plugin: 'claudelingo', key: 'versions' } as const, {})
 
 // 設定の保存が拒否されたときの理由（パネルに出す）
 const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
@@ -12,6 +14,15 @@ const MODELS = ['haiku', 'sonnet', 'opus']
 
 const system = (native: string, target: string) =>
   `The user is a ${native} speaker learning ${target}. Rewrite their message to an AI assistant as one natural ${target} message, the way a fluent speaker would write it, keeping its meaning and tone. Leave out long pasted content (logs, code, file contents) and translate only the user's own words. Reply with the ${target} text only.`
+
+async function translate($: EngineInterface, request: ModelCompleteRequest): Promise<ForeignVersion> {
+  try {
+    const r = await $.model.complete(request)
+    return r.isAnswered ? { text: r.text.trim() } : { error: r }
+  } catch (error) {
+    return { error: { message: String(error) } }
+  }
+}
 
 export const register: Register = (on, options) => {
   const native = String(options.native)
@@ -59,15 +70,10 @@ export const register: Register = (on, options) => {
     if (e.origin.kind === 'composer' && text && !text.startsWith('/') && enabled) {
       // 送信は待たせない。訳は自分の dispatch で走らせる
       $.clock.after(0, async () => {
-        // 失敗は画面に出さず、デバッグログに1行だけ
-        const fail = (why: string) => $.ui.log(`translation failed: ${why}`, { to: 'debug' })
-        try {
-          const r = await $.model.complete({ model, system: system(native, target), prompt: text, timeoutMs: 30_000 })
-          if (r.isAnswered) await update($, translations, all => ({ ...all, [text]: r.text.trim() }))
-          else fail(r.reason)
-        } catch (error) {
-          fail(String(error))
-        }
+        const version = await translate($, { model, system: system(native, target), prompt: text, timeoutMs: 30_000 })
+        await update($, versions, all => ({ ...all, [text]: version }))
+        // エラーは画面に出さず、デバッグログに1行だけ
+        if ('error' in version) $.ui.log(`translation failed: ${JSON.stringify(version.error)}`, { to: 'debug' })
       })
     }
     return next(e)
@@ -75,13 +81,13 @@ export const register: Register = (on, options) => {
 
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const row = await next(e)
-    const translation = e.props.origin.kind === 'composer' ? (await read($, translations))[e.props.text.trim()] : undefined
-    if (!translation) return row
+    const version = e.props.origin.kind === 'composer' ? (await read($, versions))[e.props.text.trim()] : undefined
+    if (!version || !('text' in version)) return row
     const { Box, Text } = $.ui.resolve(e)
     return (
       <Box flexDirection="column">
         {row}
-        <Text dimColor>  ↳ {translation}</Text>
+        <Text dimColor>  ↳ {version.text}</Text>
       </Box>
     )
   })

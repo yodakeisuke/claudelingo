@@ -12,7 +12,7 @@ export const DraftTranslations = {
 }
 
 // --- I/O
-type Settings = { enabled: boolean; live: boolean; native: string; target: string; liveModel: string }
+type Settings = { enabled: boolean; live: boolean; native: string; target: string; level: string; liveModel: string }
 
 // --- operations
 // 打ちかけを校正するときだけ、送信後の訳と同じ頼み方（入力中の校正のモデル）に、赤線の場所を返させる指示を足す

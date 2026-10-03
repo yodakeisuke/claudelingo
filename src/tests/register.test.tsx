@@ -122,8 +122,9 @@ describe('register', () => {
     for (const [surface, target, model] of [['terminal', 'Spanish', 'opus'], ['desktop', 'French', 'haiku']] as const) {
       const ui = await $.ui.mount({ plugin: 'claudelingo', surface, component: 'Pane', requestId: 'claudelingo', props: pane })
       await ui.input({ key: 'target', text: target })
+      await ui.input({ key: 'level', text: `${target} 初級` })
       await ui.press({ key: `model-${model}` })
-      expect(store.get('settings')).toEqual({ enabled: true, native: 'Japanese', target, model, afterSend: true, live: true, liveModel: 'sonnet', livePause: '0.5', card: true, cardModel: 'sonnet' })
+      expect(store.get('settings')).toEqual({ enabled: true, native: 'Japanese', target, level: `${target} 初級`, model, afterSend: true, live: true, liveModel: 'sonnet', livePause: '0.5', card: true, cardModel: 'sonnet' })
       expect((await ui.find({ type: 'Button', key: `model-${model}` }))?.props.variant).toBe('primary')
       for (const enabled of [false, true]) {
         await ui.press({ key: 'enabled' })

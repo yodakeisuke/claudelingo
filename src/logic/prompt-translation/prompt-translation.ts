@@ -15,7 +15,7 @@ export const PromptTranslations = {
 // --- I/O
 // 送られた指示：送り元と文面
 type Sent = { from: string; text: string }
-type Settings = { enabled: boolean; afterSend: boolean; native: string; target: string; model: string }
+type Settings = { enabled: boolean; afterSend: boolean; native: string; target: string; level: string; model: string }
 
 // --- operations
 // 外国語版を作る指示なら、文面をそのまま渡して言い直しを頼む。作らない指示には依頼がない

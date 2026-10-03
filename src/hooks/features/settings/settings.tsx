@@ -26,7 +26,7 @@ export const settings = (on: On) => {
   })
 
   on('command.run', { command: 'lingo' }, async $ => {
-    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 20 })
+    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 20, columns: 100 })
     return {}
   })
 

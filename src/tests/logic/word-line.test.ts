@@ -22,5 +22,13 @@ describe('word-line', () => {
   test('表：区切りの行を落とし、行はセルごとの語に。区切りの前の行（見出し）は語をすべて濃く', () => {
     const cells = (text: string) => WordLines.all(text).map(line => line.cells?.map(cell => cell.map(w => (w.isFixed ? `*${w.label}` : w.label)).join(' ')))
     expect(cells('| Line | Shown |\n|---|:---:|\n| `- ` | • kept |\nafter')).toEqual([['*Line', '*Shown'], ['-', '• kept'], undefined])
+    expect(cells('|  | Before |\n|---|---|\n| speed | 1 |')).toEqual([['', '*Before'], ['speed', '1']])
+    expect(cells('Name | Value\n--- | ---\na | b')).toEqual([['*Name', '*Value'], ['a', 'b']])
+    expect(cells('|x| = |y|')).toEqual([undefined])
+  })
+
+  test('印のない行も字下げを保ち、行をまたぐコードの印（```）は崩さない', () => {
+    expect(shape('   Run the tests first.')).toEqual([3, '', 'Run the tests first.'])
+    expect(shape('```sh')).toEqual([0, '', '```sh'])
   })
 })

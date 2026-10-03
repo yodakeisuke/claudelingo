@@ -89,8 +89,8 @@ const sounds = atom({ plugin: 'claudelingo', key: 'sounds' } as const, {})
 // 手順書「読み上げる」：押したらすぐ設定の声で読ませる。段落は 1 つずつ渡せば順に読まれる。読み終わりは待たず、読めなくても何も出さない
 const say = async ($: EngineInterface, lines: string[]) => {
   const { voice } = await settingsOf($)
-  // 声の欄が空なら渡さず、既定の声で読む
-  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(line, { voice: voice.trim() || undefined })))
+  // 声の欄が空なら渡さず、既定の声で読む。Bluetooth だと再生の遅れぶん終わりが切れるので、say の [[slnc]] で無音を足して切れるのを無音にする
+  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(`${line} [[slnc 500]]`, { voice: voice.trim() || undefined })))
 }
 
 // 文は読ませながら、発音記号も頼む。書いた記号は残してすぐ出し、書けなかったら次に押したときに頼み直す
@@ -114,31 +114,34 @@ const voiceOf = async ($: EngineInterface): Promise<Voice> => {
 }
 const first = (symbols?: string[] | null) => symbols && symbols[0]
 
-// 返事の文面 → その訳。訳している間は null
+// 返事の鍵（ReplyTranslations.key：言語の組み合わせと文面）→ その訳。訳している間は null
 const replies = atom({ plugin: 'claudelingo', key: 'replies' } as const, {})
 
 // 返事の訳を頼み、届いたら描き直させる
-const translateReply = async ($: EngineInterface, text: string, request: NonNullable<ReturnType<typeof ReplyTranslations.request>>) => {
-  await showReply($, text, null)
-  await showReply($, text, await PromptTranslations.of($.model.complete(request)))
+const translateReply = async ($: EngineInterface, key: string, request: NonNullable<ReturnType<typeof ReplyTranslations.request>>) => {
+  await showReply($, key, null)
+  await showReply($, key, await PromptTranslations.of($.model.complete(request)))
 }
 
-const showReply = async ($: EngineInterface, text: string, version: Translation | null) => {
-  await update($, replies, all => ({ ...all, [text]: version }))
+const showReply = async ($: EngineInterface, key: string, version: Translation | null) => {
+  await update($, replies, all => ({ ...all, [key]: version }))
   $.ui.invalidate('ui.render')
 }
 
-// 横のパネルに出している返事の文面
-const paneReply = atom({ plugin: 'claudelingo', key: 'paneReply' } as const, '')
+// 横のパネルに出している返事の文面と、その訳の鍵（開いたときの設定のもの）
+const paneReply = atom({ plugin: 'claudelingo', key: 'paneReply' } as const, { text: '', key: '' })
 
-// 手順書「返事の訳を横に出す」：押した返事をパネルに出す。まだ頼んでいないか、訳せなかったなら頼む
+// 手順書「返事の訳を横に出す」：押した返事をパネルに出す。今の設定でまだ頼んでいないか、訳せなかったなら頼む
 // パネルは最初の await より前に開く（後だと押したことへの応答とみなされず、144 桁未満の端末では置かれない）
-const openReply = async ($: EngineInterface, text: string, request: NonNullable<ReturnType<typeof ReplyTranslations.request>>) => {
+const openReply = async ($: EngineInterface, text: string) => {
   const opened = $.ui.open({ id: REPLY_PANE, title: '訳' })
-  await update($, paneReply, () => text)
+  const settings = await settingsOf($)
+  const key = ReplyTranslations.key(settings, text)
+  await update($, paneReply, () => ({ text, key }))
   await opened
-  const version = (await read($, replies))[text]
-  if (version === undefined || (version !== null && Result.given(version).either(() => false, () => true))) await translateReply($, text, request)
+  const request = ReplyTranslations.request(settings, text)
+  const version = (await read($, replies))[key]
+  if (request && (version === undefined || (version !== null && Result.given(version).either(() => false, () => true)))) await translateReply($, key, request)
 }
 
 // 開いている話す練習。開いていなければ null
@@ -284,11 +287,10 @@ export const translation = (on: On) => {
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     const settings = await settingsOf($)
     const text = e.props.text
-    const request = ReplyTranslations.request(settings, text)
-    if (!settings.enabled || !request) return next(e)
+    if (!settings.enabled || !ReplyTranslations.request(settings, text)) return next(e)
     // 端末の返事の頭の行は「● 」の 2 マス下げで描かれる。🌐 もそこにそろえる
     const indent = e.surface === 'terminal' && e.props.isFirstOfReply ? 2 : 0
-    return replyBlock($.ui.resolve(e), ElementKeys.of('reply', e.requestId), await next(e), indent, () => void openReply($, text, request))
+    return replyBlock($.ui.resolve(e), ElementKeys.of('reply', e.requestId), await next(e), indent, () => void openReply($, text))
   })
 
   // パネルに出している返事の訳を段落ごとに描く。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る（訳は行ごと）
@@ -296,10 +298,10 @@ export const translation = (on: On) => {
   on('ui.render', { component: 'Pane', requestId: REPLY_PANE }, async ($, e) => {
     const t = $.ui.resolve(e)
     const isTerminal = e.surface === 'terminal'
-    const text = await read($, paneReply)
+    const { text, key: reply } = await read($, paneReply)
     const id = ElementKeys.of('reply', text)
     const head = ReplyTranslations.head(text)
-    const version = (await read($, replies))[text]
+    const version = (await read($, replies))[reply]
     // /clear で状態が空になっても、パネルは開いたまま残る
     if (!text) return replyPane(t, id, head, [], '返事の 🌐 を押すと、ここに訳が出ます')
     if (!version) return replyPane(t, id, head, [], '訳しています…')
@@ -314,7 +316,7 @@ export const translation = (on: On) => {
         const restated = p.translation
         if (!restated) return []
         const symbol = symbolLine(t, said && said[paragraphs.slice(0, i).filter(q => q.translation).length])
-        const key = `${text}#${i}`
+        const key = `${reply}#${i}`
         const shown = shownCards[key] ?? []
         if (!isIntoTarget || !settings.card) return [paragraphTranslation(t, restated, symbol)]
         const lines = WordLines.all(restated).map((line, j) => wordLine(t, isTerminal, line, WordCards.up(shown), word => void pressWord($, key, word, restated), `${id}-word-${i}-${j}`))

@@ -48,7 +48,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
       <Text>秒</Text>{nudge(1, '+')}<Box flexShrink={0}><Text dimColor>遅い</Text></Box>
     </Box>
   )
-  const text = (field: 'native' | 'target' | 'voice') => <Box width={28} flexDirection="column"><Input key={field} value={settings[field]} onSubmit={v => save(field, v)} /></Box>
+  const text = (field: 'native' | 'target' | 'voice', placeholder?: string) => <Box width={28} flexDirection="column"><Input key={field} value={settings[field]} placeholder={placeholder} onSubmit={v => save(field, v)} /></Box>
   // レベルは自由記述なので残りの幅を使い、書く粒度（できること・苦手なこと）を例で見せる
   const level = <Box flexGrow={1} flexDirection="column"><Input key="level" value={settings.level} placeholder="例: 技術文書は読める。書くと冠詞・前置詞が怪しい" onSubmit={v => save('level', v)} /></Box>
   return (
@@ -59,7 +59,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
         group('送った後の訳', 'afterSend', model('model')),
         group('入力中の校正', 'live', model('liveModel'), field('反応の速さ', pause)),
         group('単語の絵', 'card', model('cardModel')),
-        group('読み上げ', null, field('声', text('voice'))),
+        group('読み上げ', null, field('声', text('voice', 'Mac の声の名前（システム設定 › アクセシビリティ › 読み上げコンテンツ）'))),
       ]}
       {denied && <Text color="error">保存できませんでした：{denied}</Text>}
     </Box>

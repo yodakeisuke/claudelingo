@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
-import type { Card, Shown, Translation } from '../types'
+import type { Card, Shown, Translation } from '../engine-protocol'
 import { DraftTranslations } from '../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../logic/prompt-translation/prompt-translation'
 import { Result } from '../logic/result/result'

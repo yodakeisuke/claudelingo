@@ -1,6 +1,6 @@
 import type { Elements } from 'claude-code'
 
-import type { Shown } from '../../../types'
+import type { Shown } from '../../../engine-protocol'
 import { WordCards } from '../../../logic/word-card/word-card'
 
 type Word = { label: string; word: string }

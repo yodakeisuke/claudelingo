@@ -1,4 +1,4 @@
-import type { Completion, Translation } from '../../types'
+import type { Completion, Translation } from '../../engine-protocol'
 import { Result } from '../result/result'
 import { TranslationRequest } from './translation-request'
 

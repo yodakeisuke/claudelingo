@@ -1,4 +1,4 @@
-import type { Card, Completion, Shown } from '../../types'
+import type { Card, Completion, Shown } from '../../engine-protocol'
 import { Result } from '../result/result'
 import { CardRequest } from './card-request'
 

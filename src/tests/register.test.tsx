@@ -121,13 +121,33 @@ describe('register', () => {
     expect(opened).toEqual(['claudelingo'])
     for (const [surface, enabled, target, model] of [['terminal', false, 'Spanish', 'opus'], ['desktop', true, 'French', 'haiku']] as const) {
       const ui = await $.ui.mount({ plugin: 'claudelingo', surface, component: 'Pane', requestId: 'claudelingo', props: pane })
-      await ui.press({ key: `enabled-${enabled ? 'on' : 'off'}` })
+      await ui.press({ key: 'enabled' })
       await ui.input({ key: 'target', text: target })
       await ui.press({ key: `model-${model}` })
       expect(store.get('settings')).toEqual({ enabled, native: 'Japanese', target, model, afterSend: true, live: true, liveModel: 'sonnet', livePause: '0.5', card: true, cardModel: 'sonnet' })
       expect((await ui.find({ type: 'Button', key: `model-${model}` }))?.props.variant).toBe('primary')
-      expect((await ui.find({ type: 'Button', key: `enabled-${enabled ? 'on' : 'off'}` }))?.props.variant).toBe('primary')
+      expect((await ui.find({ type: 'Button', key: 'enabled' }))?.props.label).toBe(enabled ? 'オフにする' : 'オンにする')
     }
+  })
+
+  test('反応の速さは -/+ で 0.1 秒ずつ動き、打ち込んだ数は 0.1 秒刻みで 0.3〜2 秒に収め、数でなければ変えない', async ($, on) => {
+    const { store } = engine(on, undefined, undefined, { livePause: '1.9' })
+    const pause = () => (store.get('settings') as { livePause: string }).livePause
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    for (const [act, now] of [[() => ui.press({ key: 'livePause-+' }), '2'], [() => ui.press({ key: 'livePause-+' }), '2'], [() => ui.input({ key: 'livePause', text: '0.34' }), '0.3'], [() => ui.press({ key: 'livePause--' }), '0.3'], [() => ui.input({ key: 'livePause', text: '速め' }), '0.3'], [() => ui.press({ key: 'livePause-+' }), '0.4']] as const) {
+      await act()
+      expect(pause()).toBe(now)
+    }
+  })
+
+  test('オフにしたまとまりは見出しと切り替えだけになり、オンに戻すと下の設定がまた出る', async ($, on) => {
+    engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    await ui.press({ key: 'live' })
+    expect(await ui.find({ type: 'Input', key: 'livePause' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: '○ オフ' })).toBeDefined()
+    await ui.press({ key: 'live' })
+    expect(await ui.find({ type: 'Input', key: 'livePause' })).toBeDefined()
   })
 
   test('無効にしても、モデルを変えても、出ている訳は消えない', async ($, on) => {
@@ -136,7 +156,7 @@ describe('register', () => {
     await clock.advance(0)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
     await ui.press({ key: 'model-opus' })
-    await ui.press({ key: 'enabled-off' })
+    await ui.press({ key: 'enabled' })
     const message = await $.ui.mount({ ...row('ログ見て'), surface: 'desktop' })
     expect(await message.find({ type: 'Markdown', text: 'EN: ログ見て' })).toBeDefined()
   })

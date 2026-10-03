@@ -38,6 +38,17 @@ describe('word-card', () => {
     expect(WordCards.of({ ok: false, error: 'timeout' }, carry)).toBeUndefined()
   })
 
+  test('SVG が外を参照しうるなら、描けなかったとする（図形とアニメーション以外の要素、href、style 属性、文書の外への url()、image-set、それを隠す & と \\）', async () => {
+    const drawn = (svg: string) => answered(`UNIT: carry on\nPRON: /x/\nCAPTION: 運び続ける\nSVG:\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 288">${svg}</svg>`)
+    const carry = { word: 'carry', restated }
+    for (const svg of ['<image href="https://x.test/?q=carry"/>', '<img src="https://x.test/a"/>', '<meta http-equiv="refresh" content="0;url=https://x.test"/>', '<style>@import "https://x.test/a.css"</style>', '<animate attributeName="href" to="https://x.test"/>', '<rect style="fill:#f6c64f"/>', '<rect x="1"style="fill:#f6c64f"/>', '<rect fill="URL(https://x.test/a)"/>', '<rect fill="&#117;rl(https://x.test/a)"/>', '<rect fill="url&lpar;https://x.test/a)"/>', '<rect fill="\\75 rl(https://x.test/a)"/>', '<rect style="cursor:image-set(\'https://x.test/a\' 1x)"/>']) {
+      expect(WordCards.of(await drawn(svg), carry)).toBeUndefined()
+    }
+    const arrow = '<defs><marker id="a" viewBox="0 0 10 10" refX="5" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#7d84a3"/></marker></defs><line x1="40" y1="144" x2="440" y2="144" stroke="#7d84a3" marker-end="url(#a)"/>'
+    const motion = '<circle r="20" fill="#f6c64f"><animate attributeName="r" values="20;40" dur="7s" repeatCount="indefinite"/></circle><text x="60" y="100" font-style="italic" font-family="-apple-system, \'Hiragino Sans\', sans-serif">source・源</text>'
+    expect(WordCards.of(await drawn(arrow + motion), carry)?.unit).toBe('carry on')
+  })
+
   test('描いた絵は句のどの語からも引け、幅は 380px（拡大で 560px）で左に寄せる', async () => {
     const card = (WordCards.of(await reply('carry on'), { word: 'carry', restated }))!
     const all = WordCards.saving(undefined, card, { word: 'carry', restated })

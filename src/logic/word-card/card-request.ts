@@ -1,9 +1,9 @@
-// --- operations
+// --- public interface
 export const CardRequest = {
   of: (settings: Settings, word: string, sentence: string) => of(settings, word, sentence),
 }
 
-// --- data
+// --- I/O
 type Settings = { native: string; target: string; cardModel: string }
 
 // --- business rules

@@ -1,9 +1,9 @@
-// --- operations
+// --- public interface
 export const TranslationRequest = {
   of: (settings: Settings, words: string) => of(settings, words),
 }
 
-// --- data
+// --- I/O
 type Settings = { native: string; target: string; model: string }
 
 // --- business rules

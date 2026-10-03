@@ -89,8 +89,8 @@ const sounds = atom({ plugin: 'claudelingo', key: 'sounds' } as const, {})
 // 手順書「読み上げる」：押したらすぐ設定の声で読ませる。段落は 1 つずつ渡せば順に読まれる。読み終わりは待たず、読めなくても何も出さない
 const say = async ($: EngineInterface, lines: string[]) => {
   const { voice } = await settingsOf($)
-  // 声の欄が空なら渡さず、既定の声で読む
-  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(line, { voice: voice.trim() || undefined })))
+  // 声の欄が空なら渡さず、既定の声で読む。Bluetooth だと再生の遅れぶん終わりが切れるので、say の [[slnc]] で無音を足して切れるのを無音にする
+  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(`${line} [[slnc 500]]`, { voice: voice.trim() || undefined })))
 }
 
 // 文は読ませながら、発音記号も頼む。書いた記号は残してすぐ出し、書けなかったら次に押したときに頼み直す

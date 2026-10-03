@@ -22,7 +22,7 @@ type Settings = { enabled: boolean; afterSend: boolean; native: string; target: 
 const request = (settings: Settings, sent: Sent, commands: readonly string[]) =>
   Result.given(sent)
     .and(s => wanted(settings, s, commands))
-    .and(text => TranslationRequest.of(settings, text))
+    .and(text => withoutCopies(TranslationRequest.of(settings, text)))
     .either(asked => asked, () => undefined)
 // 返事が来れば下書きを捨てた訳文、来なければその理由。呼び出し自体が拒まれたときは、その message
 const of = async (reply: Promise<Completion>): Promise<Translation> => (await Result.given(reply)).and(answered).and(withoutScratch).data()
@@ -49,5 +49,7 @@ const split = (value: string) => {
 }
 // モデルの下書き（<think> などで囲んだ考え）は捨て、残ったタグも外す。訳文だけを残す
 const withoutScratch = (text: string) => text.replace(/<(think|thinking|reasoning|scratchpad)>[\s\S]*?<\/\1>/g, '').replace(/<\/?(message|think|thinking|reasoning|scratchpad)>/g, '').trim()
+// 送った後の訳だけ、貼り付けやコードを写させない（帯では置換で貼り付けが消えるため）
+const withoutCopies = (asked: { model: string; system: string; prompt: string }) => ({ ...asked, system: `${asked.system}\n\nDo not copy pasted content or code blocks; write [...] in their place.` })
 // 返事が来れば、その文面。来なければ、その理由で失敗
 const answered = (c: Completion) => (c.isAnswered ? c.text : Result.fail(c.reason))

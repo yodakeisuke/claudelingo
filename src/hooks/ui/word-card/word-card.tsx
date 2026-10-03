@@ -3,7 +3,7 @@ import type { Elements } from 'claude-code'
 import type { Aspect, Opened, Shown } from '../../../engine-protocol'
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
-import { microphone, speaker, symbolLine } from '../read-aloud/read-aloud'
+import { speaker, speakerAndMicrophone, symbolLine } from '../read-aloud/read-aloud'
 import type { Voice } from '../read-aloud/read-aloud'
 
 type Word = ReturnType<typeof WordCards.words>[number]
@@ -33,15 +33,15 @@ export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown
   const { word, card, aspects } = shown
   const Svg = !isTerminal && 'Svg' in t ? t.Svg : undefined
   const status = <Text dimColor>{shown.isFailed ? `描けませんでした：${word}` : `コアイメージを描画中… ${word}`}</Text>
+  const voiceButtons = card && speakerAndMicrophone(t, { speak: `${prefix}speak-${word}`, practise: `${prefix}practise-${word}` }, () => voice.say(card.unit), () => voice.practise(card.unit, card.pron))
   const head = !card ? status : Svg ? (
     <Box gap={2} alignItems="center">
       <Text bold>{card.unit}</Text>
       <Text dimColor>{card.pron}</Text>
-      {speaker(t, `${prefix}speak-${word}`, () => voice.say(card.unit))}
-      {microphone(t, `${prefix}practise-${word}`, () => voice.practise(card.unit, card.pron))}
+      {voiceButtons}
       <Button key={`${prefix}resize-${word}`} label={shown.isWide ? '縮小' : '拡大'} dimColor onPress={() => resize(!shown.isWide)} />
     </Box>
-  ) : <Box><Text bold>{card.unit}  </Text><Text dimColor>{card.pron}  {card.caption} </Text>{speaker(t, `${prefix}speak-${word}`, () => voice.say(card.unit))}<Text> </Text>{microphone(t, `${prefix}practise-${word}`, () => voice.practise(card.unit, card.pron))}</Box>
+  ) : <Box><Text bold>{card.unit}  </Text><Text dimColor>{card.pron}  {card.caption} </Text>{voiceButtons}</Box>
   const picture = Svg && (card ? (
     <Box flexWrap="wrap" alignItems="flex-end" gap={2}>
       <Svg {...WordCards.picture(card.svg, shown.isWide)} alt={card.caption} isInteractive />

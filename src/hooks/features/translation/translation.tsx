@@ -250,7 +250,7 @@ export const translation = (on: On) => {
     const opened = await read($, practice)
     if (!opened) return band ?? next(e)
     // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
-    const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: () => $.ui.toast(VOICE_HELP, { timeoutMs: 15000 }) }
+    const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: () => $.ui.toast(VOICE_HELP, { timeoutMs: 15000 }), close: () => void showPractice($, () => null) }
     const { Box } = t
     return <Box flexDirection="column" gap={1}>{practiceBand(t, e.surface === 'terminal', opened, SpeakingPractice.shown(opened.coach), hands)}{band}</Box>
   })

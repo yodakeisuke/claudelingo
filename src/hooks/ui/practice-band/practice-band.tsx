@@ -14,7 +14,7 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
   const { Box, Button, Input, Markdown, Text } = t
   return (
     <Box flexDirection="column" paddingRight={4}>
-      <Box gap={1}><Text dimColor bold>お手本</Text><Text>{practice.sample}</Text>{practice.pron && <Text dimColor>{practice.pron}</Text>}</Box>
+      <Box gap={1}><Text dimColor bold>お手本</Text><Text>{practice.sample}</Text>{practice.pron && <Text dimColor italic>{practice.pron}</Text>}</Box>
       <Input key="practice" label="練習" placeholder={`${isTerminal ? 'ctrl+x tab で欄へ移り、' : ''}声で入れて Enter（Claude には送られません）`} value={practice.heard ?? ''} autoFocus onInput={hands.keep} onSubmit={hands.hear} />
       {typeof coached === 'string' && <Text dimColor>{coached}</Text>}
       {typeof coached === 'object' && (

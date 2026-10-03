@@ -17,7 +17,7 @@ import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
 import { WordLines } from '../../../logic/word-line/word-line'
 import { draftBand } from '../../ui/draft-band/draft-band'
-import { practiceBand } from '../../ui/practice-band/practice-band'
+import { practiceBand, VOICE_HELP } from '../../ui/practice-band/practice-band'
 import { symbolLine } from '../../ui/read-aloud/read-aloud'
 import type { Voice } from '../../ui/read-aloud/read-aloud'
 import { REPLY_PANE, paragraphTranslation, replyBlock, replyPane } from '../../ui/reply-translation/reply-translation'
@@ -224,9 +224,6 @@ const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0
   }
   return draftBand(t, line, replacement ? () => void replace(replacement) : undefined)
 }
-
-// 声は手元の音声入力で欄に入れる（mods にマイクはない）
-const VOICE_HELP = '欄をクリックし、手元の音声入力アプリ（Mac 標準なら fn 2回）でお手本を話して Enter。アプリの言語は練習する言語に'
 
 export const translation = (on: On) => {
   on('prompt.submit', ($, e, next) => {

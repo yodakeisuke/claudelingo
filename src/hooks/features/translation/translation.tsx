@@ -12,12 +12,13 @@ import { CoachRequest } from '../../../logic/speaking-coach/coach-request'
 import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
+import { WordLines } from '../../../logic/word-line/word-line'
 import { draftBand } from '../../ui/draft-band/draft-band'
 import { practiceBand } from '../../ui/practice-band/practice-band'
 import type { Coached } from '../../ui/practice-band/practice-band'
 import { symbolLine } from '../../ui/read-aloud/read-aloud'
 import type { Voice } from '../../ui/read-aloud/read-aloud'
-import { paragraphTranslation, replyBlock } from '../../ui/reply-translation/reply-translation'
+import { REPLY_PANE, paragraphTranslation, replyBlock, replyPane } from '../../ui/reply-translation/reply-translation'
 import { withTranslation } from '../../ui/translation-line/translation-line'
 import { wordCard, wordLine } from '../../ui/word-card/word-card'
 
@@ -113,10 +114,10 @@ const voiceOf = async ($: EngineInterface): Promise<Voice> => {
 }
 const first = (symbols?: string[] | null) => symbols && symbols[0]
 
-// 返事の文面 → その訳。訳している間は null。閉じたら消す
+// 返事の文面 → その訳。訳している間は null
 const replies = atom({ plugin: 'claudelingo', key: 'replies' } as const, {})
 
-// 手順書「返事を訳す」：押したら訳を頼み、届いたら段落ごとに添える
+// 返事の訳を頼み、届いたら描き直させる
 const translateReply = async ($: EngineInterface, text: string, request: NonNullable<ReturnType<typeof ReplyTranslations.request>>) => {
   await showReply($, text, null)
   await showReply($, text, await PromptTranslations.of($.model.complete(request)))
@@ -127,11 +128,17 @@ const showReply = async ($: EngineInterface, text: string, version: Translation 
   $.ui.invalidate('ui.render')
 }
 
-// 閉じたら、訳と段落の下の絵を消す（開き直したとき前の絵が残らない）
-const closeReply = async ($: EngineInterface, text: string) => {
-  await update($, replies, all => Object.fromEntries(Object.entries(all).filter(([k]) => k !== text)))
-  await update($, cards, all => Object.fromEntries(Object.entries(all).filter(([k]) => !k.startsWith(`${text}#`))))
-  $.ui.invalidate('ui.render')
+// 横のパネルに出している返事の文面
+const paneReply = atom({ plugin: 'claudelingo', key: 'paneReply' } as const, '')
+
+// 手順書「返事の訳を横に出す」：押した返事をパネルに出す。まだ頼んでいないか、訳せなかったなら頼む
+// パネルは最初の await より前に開く（後だと押したことへの応答とみなされず、144 桁未満の端末では置かれない）
+const openReply = async ($: EngineInterface, text: string, request: NonNullable<ReturnType<typeof ReplyTranslations.request>>) => {
+  const opened = $.ui.open({ id: REPLY_PANE, title: '訳' })
+  await update($, paneReply, () => text)
+  await opened
+  const version = (await read($, replies))[text]
+  if (version === undefined || (version !== null && Result.given(version).either(() => false, () => true))) await translateReply($, text, request)
 }
 
 // 開いている話す練習。開いていなければ null
@@ -266,49 +273,54 @@ export const translation = (on: On) => {
     const voice = await voiceOf($)
     const isTranslated = Result.given(version).either(() => true, () => false)
     const isTerminal = e.surface === 'terminal'
-    const id = ElementKeys.of('line', e.props.text)
+    const id = ElementKeys.of('line', e.requestId)
     if (!isTranslated || !(await settingsOf($)).card) return withTranslation(t, isTerminal, id, row, line, isTranslated ? voice : undefined)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
     const shown = (await read($, cards))[key] ?? []
-    const words = wordLine(t, isTerminal, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated), `${id}-word`)
+    const words = wordLine(t, isTerminal, WordLines.of(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated), `${id}-word`)
     return withTranslation(t, isTerminal, id, row, line, voice, words, cardsOf($, t, isTerminal, key, line.restated, shown, voice, `${id}-`))
   })
 
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     const settings = await settingsOf($)
     const text = e.props.text
-    const version = (await read($, replies))[text]
     const request = ReplyTranslations.request(settings, text)
     if (!settings.enabled || !request) return next(e)
+    // 端末の返事の頭の行は「● 」の 2 マス下げで描かれる。🌐 もそこにそろえる
+    const indent = e.surface === 'terminal' && e.props.isFirstOfReply ? 2 : 0
+    return replyBlock($.ui.resolve(e), ElementKeys.of('reply', e.requestId), await next(e), indent, () => void openReply($, text, request))
+  })
+
+  // パネルに出している返事の訳を段落ごとに描く。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る（訳は行ごと）
+  // 読み上げは学ぶ言語の側（学ぶ言語への訳か、学ぶ言語で書かれた本文）を段落ごとに読み、その段落の訳の下に発音記号
+  on('ui.render', { component: 'Pane', requestId: REPLY_PANE }, async ($, e) => {
     const t = $.ui.resolve(e)
     const isTerminal = e.surface === 'terminal'
+    const text = await read($, paneReply)
     const id = ElementKeys.of('reply', text)
-    // 端末の返事の頭の行は「● 」の 2 マス下げで描かれる。訳とボタンもそこにそろえる
-    const indent = isTerminal && e.props.isFirstOfReply ? 2 : 0
-    const close = { label: '訳を閉じる', press: () => void closeReply($, text) }
-    if (version === undefined) return replyBlock(t, id, [{ row: await next(e) }], indent, isTerminal, { label: '訳す', press: () => void translateReply($, text, request) })
-    if (version === null) return replyBlock(t, id, [{ row: await next(e) }], indent, isTerminal, undefined, '訳しています…')
-    // 段落ごとに Claude Code の描き方で描き、その下に訳。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る（訳は行ごと）
-    // 読み上げは学ぶ言語の側（学ぶ言語への訳か、学ぶ言語で書かれた本文）を段落ごとに読み、その文の下に発音記号
+    const head = ReplyTranslations.head(text)
+    const version = (await read($, replies))[text]
+    // /clear で状態が空になっても、パネルは開いたまま残る
+    if (!text) return replyPane(t, id, head, [], '返事の 🌐 を押すと、ここに訳が出ます')
+    if (!version) return replyPane(t, id, head, [], '訳しています…')
+    const settings = await settingsOf($)
     return Result.given(version).either(async value => {
       const { paragraphs, isIntoTarget } = ReplyTranslations.shown(text, value)
       const shownCards = await read($, cards)
       const voice = await voiceOf($)
       const spoken = paragraphs.flatMap(p => (p.translation ? [isIntoTarget ? p.translation : p.text] : []))
       const said = (await read($, sounds))[Pronunciations.key(spoken)]
-      const rows = await Promise.all(paragraphs.map(async (p, i) => {
-        const row = await next({ ...e, props: { ...e.props, text: p.text, isFirstOfReply: e.props.isFirstOfReply && i === 0 } })
+      const translations = paragraphs.flatMap((p, i) => {
         const restated = p.translation
-        if (!restated) return { row }
+        if (!restated) return []
         const symbol = symbolLine(t, said && said[paragraphs.slice(0, i).filter(q => q.translation).length])
         const key = `${text}#${i}`
         const shown = shownCards[key] ?? []
-        if (!isIntoTarget) return { row, symbol, translation: paragraphTranslation(t, restated) }
-        if (!settings.card) return { row, translation: paragraphTranslation(t, restated, symbol) }
-        const lines = restated.split('\n').map((line, j) => wordLine(t, isTerminal, WordCards.words(line), WordCards.up(shown), word => void pressWord($, key, word, restated), `${id}-word-${i}-${j}`))
-        return { row, translation: paragraphTranslation(t, restated, symbol, lines, cardsOf($, t, isTerminal, key, restated, shown, voice, `${id}-word-${i}-`)) }
-      }))
-      return replyBlock(t, id, rows, indent, isTerminal, close, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)
-    }, async error => replyBlock(t, id, [{ row: await next(e) }], indent, isTerminal, close, `訳せませんでした：${error}`))
+        if (!isIntoTarget || !settings.card) return [paragraphTranslation(t, restated, symbol)]
+        const lines = WordLines.all(restated).map((line, j) => wordLine(t, isTerminal, line, WordCards.up(shown), word => void pressWord($, key, word, restated), `${id}-word-${i}-${j}`))
+        return [paragraphTranslation(t, restated, symbol, lines, cardsOf($, t, isTerminal, key, restated, shown, voice, `${id}-word-${i}-`))]
+      })
+      return replyPane(t, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)
+    }, async error => replyPane(t, id, head, [], `訳せませんでした：${error}`))
   })
 }

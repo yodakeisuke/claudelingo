@@ -1,23 +1,30 @@
 import type { Elements, RenderElement } from 'claude-code'
 
-import { glyph, glyphs } from '../glyph/glyph'
+import { glyph } from '../glyph/glyph'
 import { speaker } from '../read-aloud/read-aloud'
 
-// 返事のブロック：段落の行（空きは Claude Code の行が持つ）、その発音記号、その下の訳。最初の行の後は indent だけ下げて本文にそろえる
-// 最後に訳すボタン 🌐（訳した後は閉じる 🌐 と読み上げ）、訳している間などは 1 行空けて一言
-export const replyBlock = (t: Elements[keyof Elements], key: string, paragraphs: { row: RenderElement; symbol?: RenderElement; translation?: RenderElement }[], indent: number, isTerminal: boolean, button?: { label: string; press: () => void }, note?: string, speak?: () => void) => {
-  const { Box, Text } = t
-  const [first, ...rest] = paragraphs
+export const REPLY_PANE = 'claudelingo-reply'
+
+// 返事のブロック：Claude Code が描いた返事はそのまま、その下に訳を横のパネルに出す 🌐。端末の返事の頭の行の後は indent だけ下げて本文にそろえる
+export const replyBlock = (t: Elements[keyof Elements], key: string, row: RenderElement, indent: number, press: () => void) => {
+  const { Box } = t
   return (
     <Box flexDirection="column">
-      {first?.row}
-      <Box flexDirection="column" paddingLeft={indent}>
-        {first?.symbol}
-        {first?.translation}
-        {rest.map(p => [p.row, p.symbol, p.translation])}
-        {button && glyphs(t, isTerminal, [glyph(t, `${key}-translate`, '🌐', button.label, button.press, true), ...(speak ? [speaker(t, `${key}-speak`, speak, true)] : [])])}
-        {note && <Box marginTop={1}><Text dimColor>{note}</Text></Box>}
-      </Box>
+      {row}
+      <Box paddingLeft={indent}>{glyph(t, `${key}-translate`, '🌐', '訳を横に出す', press, true)}</Box>
+    </Box>
+  )
+}
+
+// 訳のパネル：どの返事の訳か分かるよう頭に返事の書き出し（薄く、パネルの幅で 1 行に切る）、段落ごとの訳を少し空けて並べ、最後に読み上げ。訳している間などは訳の代わりに一言
+export const replyPane = (t: Elements[keyof Elements], key: string, head: string, translations: RenderElement[], note?: string, speak?: () => void) => {
+  const { Box, Text } = t
+  return (
+    <Box flexDirection="column" gap={1}>
+      <Text dimColor wrap="truncate-end">{head}</Text>
+      {translations}
+      {note && <Text dimColor>{note}</Text>}
+      {speak && <Box>{speaker(t, `${key}-speak`, speak, true)}</Box>}
     </Box>
   )
 }

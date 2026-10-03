@@ -72,8 +72,8 @@ const showCards = async ($: EngineInterface, row: string, change: (list: Shown[]
 }
 
 // 開いている絵を描く。拡大・縮小と欄はその絵だけ
-const cardsOf = ($: EngineInterface, t: Parameters<typeof wordCard>[0], isTerminal: boolean, row: string, restated: string, shown: Shown[]) =>
-  shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, row, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))), aspect => void pressAspect($, row, s.word, restated, aspect)))
+const cardsOf = ($: EngineInterface, t: Parameters<typeof wordCard>[0], isTerminal: boolean, row: string, restated: string, shown: Shown[], prefix?: string) =>
+  shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, row, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))), aspect => void pressAspect($, row, s.word, restated, aspect), prefix))
 
 // 返事の文面 → その訳。訳している間は null。閉じたら消す
 const replies = atom({ plugin: 'claudelingo', key: 'replies' } as const, {})
@@ -205,7 +205,7 @@ export const translation = (on: On) => {
       const shown = shownCards[key] ?? []
       if (!isIntoTarget || !settings.card) return withTranslation(t, row, { restated, tips: [] })
       const words = wordLine(t, isTerminal, WordCards.words(restated), WordCards.up(shown), word => void pressWord($, key, word, restated), `word-${i}`)
-      return withTranslation(t, row, { restated, tips: [] }, words, cardsOf($, t, isTerminal, key, restated, shown))
+      return withTranslation(t, row, { restated, tips: [] }, words, cardsOf($, t, isTerminal, key, restated, shown, `word-${i}-`))
     }))
     return replyBlock(t, rows, { label: '訳を閉じる', press: () => void showReply($, text) }, error && `訳せませんでした：${error}`)
   })

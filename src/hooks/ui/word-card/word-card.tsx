@@ -25,8 +25,8 @@ export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, words
 const labels: Record<Aspect, string> = { examples: '例文', similar: '類似表現', origin: '語源' }
 
 // 押した語の絵：枠の中に、句（太字）と拡大、動く絵とその横に絵の一文（薄く）。描いている間は同じ大きさの地で場所を取り、描けなければ 1 行
-// 絵の下に例文・類似表現・語源のボタン（開いている欄は濃く）。描いている間も押せ、開いた欄はこの順に並ぶ。絵を描けない端末では枠を付けず、絵の代わりに句と一文の 1 行
-export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown: Shown, resize: (isWide: boolean) => void, open: (aspect: Aspect) => void) => {
+// 絵の下に例文・類似表現・語源のボタン（開いている欄は濃く）。ボタンの key の頭に prefix（返事では段落ごと）。描いている間も押せ、開いた欄はこの順に並ぶ。絵を描けない端末では枠を付けず、絵の代わりに句と一文の 1 行
+export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown: Shown, resize: (isWide: boolean) => void, open: (aspect: Aspect) => void, prefix = '') => {
   const { Box, Text, Button } = t
   const { word, card, aspects } = shown
   const Svg = !isTerminal && 'Svg' in t ? t.Svg : undefined
@@ -34,7 +34,7 @@ export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown
   const head = !card ? status : Svg ? (
     <Box gap={2} alignItems="center">
       <Text bold>{card.unit}</Text>
-      <Button key={`resize-${word}`} label={shown.isWide ? '縮小' : '拡大'} dimColor onPress={() => resize(!shown.isWide)} />
+      <Button key={`${prefix}resize-${word}`} label={shown.isWide ? '縮小' : '拡大'} dimColor onPress={() => resize(!shown.isWide)} />
     </Box>
   ) : <Box><Text bold>{card.unit}  </Text><Text dimColor>{card.caption}</Text></Box>
   const picture = Svg && (card ? (
@@ -48,7 +48,7 @@ export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown
       {head}
       {picture}
       <Box gap={1} flexWrap="wrap">
-        {WordAspects.all().map(a => <Button key={`aspect-${word}-${a}`} label={labels[a]} dimColor={!aspects?.[a]} onPress={() => open(a)} />)}
+        {WordAspects.all().map(a => <Button key={`${prefix}aspect-${word}-${a}`} label={labels[a]} dimColor={!aspects?.[a]} onPress={() => open(a)} />)}
       </Box>
       {WordAspects.all().map(a => aspects?.[a] && aspect(t, labels[a], aspects[a]))}
     </Box>

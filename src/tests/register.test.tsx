@@ -309,6 +309,7 @@ describe('register', () => {
     await ui.press({ key: 'word-2-1' })
     expect(await ui.find({ type: 'Text', text: 'carry on' })).toBeDefined()
     expect(asked.at(-1)).toBe('{"pressed":"carry","sentence":"EN carry on して"}')
+    expect(await ui.find({ type: 'Button', key: 'word-2-resize-carry' })).toBeDefined()
     await ui.press({ key: 'reply-translate' })
     expect(await ui.find({ type: 'Text', text })).toBeDefined()
     expect(await ui.find({ type: 'Button', key: 'word-2-1' })).toBeUndefined()

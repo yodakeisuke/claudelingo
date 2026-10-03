@@ -132,9 +132,11 @@ const showReply = async ($: EngineInterface, text: string, version: Translation 
 const paneReply = atom({ plugin: 'claudelingo', key: 'paneReply' } as const, '')
 
 // 手順書「返事の訳を横に出す」：押した返事をパネルに出す。まだ頼んでいないか、訳せなかったなら頼む
+// パネルは最初の await より前に開く（後だと押したことへの応答とみなされず、144 桁未満の端末では置かれない）
 const openReply = async ($: EngineInterface, text: string, request: NonNullable<ReturnType<typeof ReplyTranslations.request>>) => {
+  const opened = $.ui.open({ id: REPLY_PANE, title: '訳' })
   await update($, paneReply, () => text)
-  await $.ui.open({ id: REPLY_PANE, title: '訳' })
+  await opened
   const version = (await read($, replies))[text]
   if (version === undefined || (version !== null && Result.given(version).either(() => false, () => true))) await translateReply($, text, request)
 }
@@ -298,6 +300,8 @@ export const translation = (on: On) => {
     const id = ElementKeys.of('reply', text)
     const head = ReplyTranslations.head(text)
     const version = (await read($, replies))[text]
+    // /clear で状態が空になっても、パネルは開いたまま残る
+    if (!text) return replyPane(t, id, head, [], '返事の 🌐 を押すと、ここに訳が出ます')
     if (!version) return replyPane(t, id, head, [], '訳しています…')
     const settings = await settingsOf($)
     return Result.given(version).either(async value => {

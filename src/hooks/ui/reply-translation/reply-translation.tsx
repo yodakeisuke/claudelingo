@@ -16,12 +16,12 @@ export const replyBlock = (t: Elements[keyof Elements], key: string, row: Render
   )
 }
 
-// 訳のパネル：どの返事の訳か分かるよう頭に返事の書き出し（薄く）、段落ごとの訳を少し空けて並べ、最後に読み上げ。訳している間などは訳の代わりに一言
+// 訳のパネル：どの返事の訳か分かるよう頭に返事の書き出し（薄く、パネルの幅で 1 行に切る）、段落ごとの訳を少し空けて並べ、最後に読み上げ。訳している間などは訳の代わりに一言
 export const replyPane = (t: Elements[keyof Elements], key: string, head: string, translations: RenderElement[], note?: string, speak?: () => void) => {
   const { Box, Text } = t
   return (
     <Box flexDirection="column" gap={1}>
-      <Text dimColor>{head}</Text>
+      <Text dimColor wrap="truncate-end">{head}</Text>
       {translations}
       {note && <Text dimColor>{note}</Text>}
       {speak && <Box>{speaker(t, `${key}-speak`, speak, true)}</Box>}

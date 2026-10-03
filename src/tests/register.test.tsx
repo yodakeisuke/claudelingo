@@ -313,11 +313,12 @@ describe('register', () => {
     const { asked } = engine(on)
     on('ui.open', () => ({ value: { isPlaced: true } }))
     const text = '原因はここ。\n\n```ts\nconst a = 1\n\nconst b = 2\n```\n\ncarry on して'
+    const side = await $.ui.mount(replyPane)
+    expect(await side.find({ type: 'Text', text: '返事の 🌐 を押すと、ここに訳が出ます' })).toBeDefined()
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', requestId: text, props: { text, isFirstOfReply: true } })
     await ui.press({ key: replyKey(text, 'translate') })
     expect(asked).toEqual(['[1] 原因はここ。\n\n[2] carry on して'])
     expect(await ui.find({ type: 'Text', text })).toBeDefined()
-    const side = await $.ui.mount(replyPane)
     expect(await side.find({ type: 'Text', text: '原因はここ。' })).toBeDefined()
     expect(await side.find({ type: 'Button', key: replyKey(text, 'word-0-0-1') })).toBeDefined()
     expect(await side.find({ type: 'Button', key: replyKey(text, 'word-1-0-0') })).toBeUndefined()

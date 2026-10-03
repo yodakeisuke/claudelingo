@@ -2,7 +2,7 @@ import type { Completion, Translation } from '../../engine-protocol'
 import { Result } from '../result/result'
 import { TranslationRequest } from './translation-request'
 
-// --- 公開する操作
+// --- operations
 export const PromptTranslations = {
   request: (settings: Settings, sent: Sent, commands: readonly string[]) => request(settings, sent, commands),
   isOwn: (from: string) => isOwn(from),
@@ -12,13 +12,13 @@ export const PromptTranslations = {
   line: (version?: Translation) => line(version),
 }
 
-// --- データ構造
+// --- data
 type Line = { restated: string; tips: string[] }
 // 送られた指示：送り元と文面
 type Sent = { from: string; text: string }
 type Settings = { enabled: boolean; native: string; target: string; model: string }
 
-// --- ビジネスルール
+// --- business rules
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの
 const isOwn = (from: string) => ['composer', 'sdk', 'bridge'].includes(from)
 // 外国語版を作るのは、オンのときに自分で打った指示だけ（実在するスラッシュコマンドは除く）

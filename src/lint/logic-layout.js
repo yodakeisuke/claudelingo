@@ -1,10 +1,10 @@
 // logic の構成ルール（README「構造」）。.oxlintrc.json で logic/ の下だけに掛ける。
-const SECTIONS = ['公開する操作', 'データ構造', 'ビジネスルール', 'util']
+const SECTIONS = ['operations', 'data', 'business rules', 'util']
 const [OPERATIONS, DATA, RULES, UTIL] = SECTIONS.keys()
 
 const unwrap = node => ['TSAsExpression', 'TSSatisfiesExpression', 'ParenthesizedExpression'].includes(node?.type) ? unwrap(node.expression) : node
 const isFunction = node => ['ArrowFunctionExpression', 'FunctionExpression'].includes(unwrap(node)?.type)
-// 公開する操作: `export const X = { … }` で、中身は関数式か関数を指す名前だけ。
+// operations: `export const X = { … }` で、中身は関数式か関数を指す名前だけ。
 const operationsOf = statement => {
   const declarators = statement.type === 'ExportNamedDeclaration' && statement.declaration?.type === 'VariableDeclaration'
     ? statement.declaration.declarations : []
@@ -61,7 +61,7 @@ export default {
     placement: rule('一番外側の文が正しいセクションにある', (context, program) => {
       for (const { statement, section } of placed(context, program)) {
         if (!belongs[section]?.(statement)) {
-          context.report({ node: statement, message: '公開する操作には操作のオブジェクト、データ構造には型、ビジネスルールと util には export しない関数だけを置く' })
+          context.report({ node: statement, message: 'operations には操作のオブジェクト、data には型、business rules と util には export しない関数だけを置く' })
         }
       }
     }),

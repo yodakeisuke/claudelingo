@@ -264,12 +264,12 @@ export const translation = (on: On) => {
     const t = $.ui.resolve(e)
     const voice = await voiceOf($)
     const isTranslated = Result.given(version).either(() => true, () => false)
-    if (!isTranslated || !(await settingsOf($)).card) return withTranslation(t, row, line, isTranslated ? voice : undefined)
+    const isTerminal = e.surface === 'terminal'
+    if (!isTranslated || !(await settingsOf($)).card) return withTranslation(t, isTerminal, row, line, isTranslated ? voice : undefined)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
     const shown = (await read($, cards))[key] ?? []
-    const isTerminal = e.surface === 'terminal'
     const words = wordLine(t, isTerminal, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated))
-    return withTranslation(t, row, line, voice, words, cardsOf($, t, isTerminal, key, line.restated, shown, voice))
+    return withTranslation(t, isTerminal, row, line, voice, words, cardsOf($, t, isTerminal, key, line.restated, shown, voice))
   })
 
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
@@ -282,9 +282,11 @@ export const translation = (on: On) => {
     const isTerminal = e.surface === 'terminal'
     // 端末の返事の頭の行は「● 」の 2 マス下げで描かれる。訳とボタンもそこにそろえる
     const indent = isTerminal && e.props.isFirstOfReply ? 2 : 0
+    // 端末の通常の画面では、過去の返事にポインタを乗せても何も起きない
+    const hoverable = !isTerminal || e.viewport?.isFullscreen === true
     const close = { label: '訳を閉じる', press: () => void closeReply($, text) }
-    if (version === undefined) return replyBlock(t, [{ row: await next(e) }], indent, { label: '訳', press: () => void translateReply($, text, request) })
-    if (version === null) return replyBlock(t, [{ row: await next(e) }], indent, undefined, '訳しています…')
+    if (version === undefined) return replyBlock(t, [{ row: await next(e) }], indent, isTerminal, hoverable, { label: '訳す', press: () => void translateReply($, text, request) })
+    if (version === null) return replyBlock(t, [{ row: await next(e) }], indent, isTerminal, hoverable, undefined, '訳しています…')
     // 段落ごとに Claude Code の描き方で描き、その下に訳。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る（訳は行ごと）
     // 読み上げは学ぶ言語の側（学ぶ言語への訳か、学ぶ言語で書かれた本文）を段落ごとに読み、その文の下に発音記号
     return Result.given(version).either(async value => {
@@ -305,7 +307,7 @@ export const translation = (on: On) => {
         const lines = restated.split('\n').map((line, j) => wordLine(t, isTerminal, WordCards.words(line), WordCards.up(shown), word => void pressWord($, key, word, restated), `word-${i}-${j}`))
         return { row, translation: paragraphTranslation(t, restated, symbol, lines, cardsOf($, t, isTerminal, key, restated, shown, voice, `word-${i}-`)) }
       }))
-      return replyBlock(t, rows, indent, close, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)
-    }, async error => replyBlock(t, [{ row: await next(e) }], indent, close, `訳せませんでした：${error}`))
+      return replyBlock(t, rows, indent, isTerminal, hoverable, close, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)
+    }, async error => replyBlock(t, [{ row: await next(e) }], indent, isTerminal, hoverable, close, `訳せませんでした：${error}`))
   })
 }

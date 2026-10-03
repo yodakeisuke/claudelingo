@@ -33,7 +33,7 @@ export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown
   const { word, card, aspects } = shown
   const Svg = !isTerminal && 'Svg' in t ? t.Svg : undefined
   const status = <Text dimColor>{shown.isFailed ? `描けませんでした：${word}` : `コアイメージを描画中… ${word}`}</Text>
-  const voiceButtons = card && speakerAndMicrophone(t, { speak: `${prefix}speak-${word}`, practise: `${prefix}practise-${word}` }, () => voice.say(card.unit), () => voice.practise(card.unit, card.pron))
+  const voiceButtons = card && speakerAndMicrophone(t, isTerminal, { speak: `${prefix}speak-${word}`, practise: `${prefix}practise-${word}` }, () => voice.say(card.unit), () => voice.practise(card.unit, card.pron))
   const head = !card ? status : Svg ? (
     <Box gap={2} alignItems="center">
       <Text bold>{card.unit}</Text>

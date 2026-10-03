@@ -49,10 +49,17 @@ const marks = (draft: string, version: Translation) =>
     .filter(range => range.start >= 0)
     .sort((a, b) => a.start - b.start)
     .slice(0, 1)
-// 置き換える文は、訳せたときの言い直しから ** を外したもの
-const restatedOf = (version: Translation) => Result.given(version).either(() => line(version)?.restated.replaceAll('**', ''), () => undefined)
-// 置き換えるのは、1 行の下書きで、言い直しが下書きと違うときだけ（言い直しは 1 行につなぐため）
+// 置き換える文は、訳せたときの言い直しから ** を外したもの。返事は 言い直し → 💡 の行 → "! " の行 の順なので、末尾から "! " の行、続けて 💡 の行だけを落とす
+// ほかの行は字下げも空行もそのまま（下書きにある "! " や 💡 で始まる行も、末尾の指摘より前なら残る）
+const restatedOf = (version: Translation) =>
+  Result.given(version).either(value => dropTrailing(dropTrailing(value.split('\n'), isMark), l => l.trim().startsWith('💡 ')).join('\n').trim().replaceAll('**', ''), () => '')
+// 末尾から、空行と、条件に合う行を落とす
+const dropTrailing = (lines: string[], isNote: (line: string) => boolean): string[] => {
+  const last = lines.at(-1)
+  return last !== undefined && (last.trim() === '' || isNote(last)) ? dropTrailing(lines.slice(0, -1), isNote) : lines
+}
+// 置き換えるのは、言い直しが下書きと違うときだけ
 const replacement = (draft: string, version: Translation) => {
-  const restated = draft.trim().includes('\n') ? undefined : restatedOf(version)
+  const restated = restatedOf(version)
   return restated && restated !== draft.trim() ? restated : undefined
 }

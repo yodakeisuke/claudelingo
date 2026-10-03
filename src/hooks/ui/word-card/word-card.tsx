@@ -9,17 +9,19 @@ import type { Voice } from '../read-aloud/read-aloud'
 
 type Line = ReturnType<typeof WordLines.all>[number]
 
-// 訳の行を、押せる語の並びで。飾りのないボタンは灰色の文字に見える（リンクは青になる）。直した語と絵が開いている語は濃く
+// 訳の行を、押せる語の並びで（press が無ければ文字で）。飾りのないボタンは灰色の文字に見える（リンクは青になる）。直した語と絵が開いている語は濃く
 // 行の頭の字下げとリストの印は Markdown のとおり、表の行はセルを同じ幅の列に並べる（WordLines）。ボタンの key は id-番号（返事では段落ごと、表ではセルごとに id を変える）
-export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, { indent, mark, words, cells }: Line, up: Set<string>, press: (word: string) => void, id = 'word') => {
+export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, { indent, mark, words, cells }: Line, up: Set<string>, press?: (word: string) => void, id = 'word') => {
   const { Box, Text } = t
   if (cells) return <Box>{cells.map((cell, c) => <Box width={`${Math.floor(100 / cells.length)}%`} paddingRight={1}>{wrapped(t, isTerminal, cell, up, press, `${id}-${c}`)}</Box>)}</Box>
-  return <Box paddingLeft={indent}>{wrapped(t, isTerminal, words, up, press, id, mark ? <Box marginRight={1}><Text dimColor>{mark}</Text></Box> : undefined)}</Box>
+  return <Box paddingLeft={indent}>{wrapped(t, isTerminal, words, up, press, id, mark ? <Box marginRight={1} flexShrink={0}><Text dimColor>{mark}</Text></Box> : undefined)}</Box>
 }
 
 // 押せる語を折り返して並べる。記号だけの語（? や —）は押せない文字のまま。語の後ろに空白を挟む。Desktop はボタンの余白のぶん空きすぎるので、右を 1 マス詰める（左を詰めると、折り返した行の頭の語が欠ける）
-const wrapped = (t: Elements[keyof Elements], isTerminal: boolean, words: Line['words'], up: Set<string>, press: (word: string) => void, id: string, lead?: RenderElement) => {
+// 押せないなら 1 つの文として印の横で折り返す（空白の無い日本語の行も印の横に収まる）
+const wrapped = (t: Elements[keyof Elements], isTerminal: boolean, words: Line['words'], up: Set<string>, press: ((word: string) => void) | undefined, id: string, lead?: RenderElement) => {
   const { Box, Button, Text } = t
+  if (!press) return <Box>{lead}<Text>{words.map((w, i) => <Text bold={w.isFixed}>{i ? ' ' : ''}{w.label}</Text>)}</Text></Box>
   return (
     <Box flexWrap="wrap">
       {lead}

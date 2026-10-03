@@ -79,13 +79,20 @@ const cardsOf = ($: EngineInterface, t: Parameters<typeof wordCard>[0], isTermin
 const replies = atom({ plugin: 'claudelingo', key: 'replies' } as const, {})
 
 // 手順書「返事を訳す」：押したら訳を頼み、届いたら段落ごとに添える
-const translateReply = async ($: EngineInterface, text: string) => {
+const translateReply = async ($: EngineInterface, text: string, request: NonNullable<ReturnType<typeof ReplyTranslations.request>>) => {
   await showReply($, text, null)
-  await showReply($, text, await ReplyTranslations.of($.model.complete(ReplyTranslations.request(await settingsOf($), text))))
+  await showReply($, text, await PromptTranslations.of($.model.complete(request)))
 }
 
-const showReply = async ($: EngineInterface, text: string, version?: Translation | null) => {
-  await update($, replies, all => (version === undefined ? Object.fromEntries(Object.entries(all).filter(([k]) => k !== text)) : { ...all, [text]: version }))
+const showReply = async ($: EngineInterface, text: string, version: Translation | null) => {
+  await update($, replies, all => ({ ...all, [text]: version }))
+  $.ui.invalidate('ui.render')
+}
+
+// 閉じたら、訳と段落の下の絵を消す（開き直したとき前の絵が残らない）
+const closeReply = async ($: EngineInterface, text: string) => {
+  await update($, replies, all => Object.fromEntries(Object.entries(all).filter(([k]) => k !== text)))
+  await update($, cards, all => Object.fromEntries(Object.entries(all).filter(([k]) => !k.startsWith(`${text}#`))))
   $.ui.invalidate('ui.render')
 }
 
@@ -189,26 +196,30 @@ export const translation = (on: On) => {
     const settings = await settingsOf($)
     const text = e.props.text
     const version = (await read($, replies))[text]
-    if (!settings.enabled) return next(e)
+    const request = ReplyTranslations.request(settings, text)
+    if (!settings.enabled || !request) return next(e)
     const t = $.ui.resolve(e)
     const isTerminal = e.surface === 'terminal'
     // 端末の返事の頭の行は「● 」の 2 マス下げで描かれる。訳とボタンもそこにそろえる
     const indent = isTerminal && e.props.isFirstOfReply ? 2 : 0
-    if (version === undefined) return replyBlock(t, [{ row: await next(e) }], indent, { label: '訳', press: () => void translateReply($, text) })
+    const close = { label: '訳を閉じる', press: () => void closeReply($, text) }
+    if (version === undefined) return replyBlock(t, [{ row: await next(e) }], indent, { label: '訳', press: () => void translateReply($, text, request) })
     if (version === null) return replyBlock(t, [{ row: await next(e) }], indent, undefined, '訳しています…')
-    // 段落ごとに Claude Code の描き方で描き、その下に訳。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る
-    const { paragraphs, isIntoTarget, error } = ReplyTranslations.shown(text, version)
-    const shownCards = await read($, cards)
-    const rows = await Promise.all(paragraphs.map(async (p, i) => {
-      const row = await next({ ...e, props: { ...e.props, text: p.text, isFirstOfReply: e.props.isFirstOfReply && i === 0 } })
-      const restated = p.translation
-      if (!restated) return { row }
-      const key = `${text}#${i}`
-      const shown = shownCards[key] ?? []
-      if (!isIntoTarget || !settings.card) return { row, translation: paragraphTranslation(t, restated) }
-      const words = wordLine(t, isTerminal, WordCards.words(restated), WordCards.up(shown), word => void pressWord($, key, word, restated), `word-${i}`)
-      return { row, translation: paragraphTranslation(t, restated, words, cardsOf($, t, isTerminal, key, restated, shown, `word-${i}-`)) }
-    }))
-    return replyBlock(t, rows, indent, { label: '訳を閉じる', press: () => void showReply($, text) }, error && `訳せませんでした：${error}`)
+    // 段落ごとに Claude Code の描き方で描き、その下に訳。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る（訳は行ごと）
+    return Result.given(version).either(async value => {
+      const { paragraphs, isIntoTarget } = ReplyTranslations.shown(text, value)
+      const shownCards = await read($, cards)
+      const rows = await Promise.all(paragraphs.map(async (p, i) => {
+        const row = await next({ ...e, props: { ...e.props, text: p.text, isFirstOfReply: e.props.isFirstOfReply && i === 0 } })
+        const restated = p.translation
+        if (!restated) return { row }
+        const key = `${text}#${i}`
+        const shown = shownCards[key] ?? []
+        if (!isIntoTarget || !settings.card) return { row, translation: paragraphTranslation(t, restated) }
+        const lines = restated.split('\n').map((line, j) => wordLine(t, isTerminal, WordCards.words(line), WordCards.up(shown), word => void pressWord($, key, word, restated), `word-${i}-${j}`))
+        return { row, translation: paragraphTranslation(t, restated, lines, cardsOf($, t, isTerminal, key, restated, shown, `word-${i}-`)) }
+      }))
+      return replyBlock(t, rows, indent, close)
+    }, async error => replyBlock(t, [{ row: await next(e) }], indent, close, `訳せませんでした：${error}`))
   })
 }

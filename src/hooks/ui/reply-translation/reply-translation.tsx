@@ -17,12 +17,12 @@ export const replyBlock = (t: Elements[keyof Elements], paragraphs: { row: Rende
   )
 }
 
-// 段落の訳：押せる語の並び（無ければ薄い文）と、開いている絵
-export const paragraphTranslation = (t: Elements[keyof Elements], restated: string, words?: RenderElement, cards: RenderElement[] = []) => {
+// 段落の訳：行ごとの押せる語の並び（無ければ薄い文）と、開いている絵
+export const paragraphTranslation = (t: Elements[keyof Elements], restated: string, lines?: RenderElement[], cards: RenderElement[] = []) => {
   const { Box, Markdown } = t
   return (
     <Box flexDirection="column">
-      {words ?? <Markdown dimColor text={restated} />}
+      {lines ?? <Markdown dimColor text={restated} />}
       {cards}
     </Box>
   )

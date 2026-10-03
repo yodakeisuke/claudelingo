@@ -54,10 +54,10 @@ const parse = (text: string) => {
 const field = (text: string, name: string) => new RegExp(`^${name}:\\s*(.+)$`, 'm').exec(text)?.[1]?.trim() ?? ''
 // 押した語の絵でなければ、描けなかったとする
 const near = (card: Card, { word, restated }: Pressed) => (isAstray(card.unit, word, restated) ? Result.fail(card.unit) : card)
-// 句がすべて文の別の語なら、押した語の絵ではない（tests を押して carry on）。活用形の違いは通す（swapped → swap over）
+// 句がすべて文の別の語なら、押した語の絵ではない（tests を押して carry on）。押した語がその句の語で始まれば活用形として通す（tests → test、swapped → swap over）
 const isAstray = (unit: string, word: string, restated: string) => {
   const others = new Set(words(restated).map(w => w.word).filter(w => w && w !== word))
-  return parts(unit).every(u => others.has(u))
+  return parts(unit).every(u => others.has(u) && !word.startsWith(u))
 }
 // 絵の幅は 380px、拡大で 560px。大きさは SVG にも書き、左に寄せる（Desktop は両方そろって初めて大きさを変える）
 const picture = (svg: string, isWide?: boolean) => {

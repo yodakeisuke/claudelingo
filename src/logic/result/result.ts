@@ -37,6 +37,6 @@ const succeed = <T>(value: T) => wrap<T, never>({ ok: true, value })
 // 失敗の Result
 const fail = <E>(error: E) => wrap<never, E>({ ok: false, error })
 // 関数の戻りが Result ならそのまま、普通の値なら plain で包む
-const lift = <U, F>(returned: unknown, plain: (value: never) => Fluent<unknown, unknown>): Fluent<U, F> => (isFluent(returned) ? returned : plain(returned as never)) as Fluent<U, F>
+const lift = <U, F>(returned: unknown, plain: (value: unknown) => unknown) => (isFluent(returned) ? returned : plain(returned)) as Fluent<U, F>
 // 鎖でつなげる Result かどうか
 const isFluent = (value: unknown) => typeof value === 'object' && value !== null && 'and' in value && 'either' in value

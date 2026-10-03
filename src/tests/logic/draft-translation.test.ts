@@ -45,6 +45,7 @@ describe('draft-translation', () => {
     expect(marks('please check why this test is failing now', { ok: true, value: 'x\n! is fale' })).toEqual([])
     expect(marks('x', { ok: false, error: 'api-error' })).toEqual([])
     expect(marks('this is fail', { ok: true, value: 'x\n! is' })).toEqual([{ start: 5, end: 7 }])
+    expect(marks('このfunctionのretrun valueをcheckして', { ok: true, value: 'x\n! retrun' })).toEqual([{ start: 11, end: 17 }])
   })
 
   test('帯を出すのは、mod と入力中の校正がオンで、校正が届いているとき', () => {

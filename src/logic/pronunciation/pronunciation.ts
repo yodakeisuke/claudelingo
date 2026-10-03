@@ -21,7 +21,7 @@ type Sounds = Record<string, string[] | null>
 // --- operations
 // 読み上げた文の ** を外して頼む
 const request = (settings: Settings, lines: readonly string[]) => PronunciationRequest.of(settings, spoken(lines))
-// 返事（PromptTranslations.of で受けたもの）が来れば文ごとの記号、来なければ記号なし
+// 返事（Completions.of で受けたもの）が来れば文ごとの記号、来なければ記号なし
 const of = (version: Translation) => Result.given(version).and(symbols).either<string[] | undefined>(s => s, () => undefined)
 
 // --- business rules

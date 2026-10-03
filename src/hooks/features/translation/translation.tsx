@@ -29,7 +29,7 @@ const settingsOf = async ($: EngineInterface) => TranslationSettings.of(await $.
 
 // 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
-// 指示の鍵か返事の段落 → その下に開いている単語の絵
+// 指示のメッセージ（id）か返事の段落 → その下に開いている単語の絵
 const cards = atom({ plugin: 'claudelingo', key: 'cards' } as const, {})
 // 描いた絵（WordCards.saving の形）。ディスクには置かず、セッションの間だけ持つ
 const drawn = atom({ plugin: 'claudelingo', key: 'drawn' } as const, {})
@@ -267,9 +267,9 @@ export const translation = (on: On) => {
     const isTerminal = e.surface === 'terminal'
     const id = ElementKeys.of('line', e.requestId)
     if (!isTranslated || !(await settingsOf($)).card) return withTranslation(t, isTerminal, id, row, line, isTranslated ? voice : undefined)
-    // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
+    // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る。絵はメッセージごと（同じ文の指示でも分ける）
     const words = await wordsOf($, t, isTerminal, voice)
-    return withTranslation(t, isTerminal, id, row, line, voice, words.line(key, line.restated, WordLines.of(line.restated), `${id}-word`), words.cards(key, line.restated, `${id}-`))
+    return withTranslation(t, isTerminal, id, row, line, voice, words.line(e.requestId, line.restated, WordLines.of(line.restated), `${id}-word`), words.cards(e.requestId, line.restated, `${id}-`))
   })
 
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
@@ -295,7 +295,7 @@ export const translation = (on: On) => {
     const settings = await settingsOf($)
     const words = await wordsOf($, t, isTerminal, await voiceOf($))
     const said = await read($, sounds)
-    return Result.given(version).either(async value => {
+    return Result.given(version).either(value => {
       const { translated, spoken, withCards } = ReplyTranslations.shown(settings, text, value)
       const translations = translated.map(({ restated, at }, n) => {
         const symbol = symbolLine(t, Pronunciations.symbol(said, spoken, n))
@@ -305,6 +305,6 @@ export const translation = (on: On) => {
         return paragraphTranslation(t, restated, symbol, lines, words.cards(key, restated, `${id}-word-${at}-`))
       })
       return replyPane(t, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)
-    }, async error => replyPane(t, id, head, [], `訳せませんでした：${error}`))
+    }, error => replyPane(t, id, head, [], `訳せませんでした：${error}`))
   })
 }

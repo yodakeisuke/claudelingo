@@ -259,6 +259,15 @@ describe('register', () => {
     expect((await ui.findAll({ type: 'Svg' })).map(s => s.props.width)).toEqual([380, 380])
   })
 
+  test('同じ文の指示が並んでも、絵は押した指示の下にだけ出る', async ($, on) => {
+    const { clock } = engine(on)
+    const ui = await sent($, clock)
+    const again = await $.ui.mount({ ...row('fix the tests and carry on'), requestId: 'again', surface: 'desktop' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-5') })
+    expect(await ui.find({ type: 'Svg' })).toBeDefined()
+    expect(await again.find({ type: 'Svg' })).toBeUndefined()
+  })
+
   test('押した語と関わらない句が返ったら、描けなかったと出す', async ($, on) => {
     const { clock } = engine(on)
     const ui = await sent($, clock)

@@ -51,8 +51,11 @@ const markLines = (value: string) => value.split('\n').filter(isMark).map(l => l
 const withoutMarks = (value: string) => value.split('\n').filter(l => !isMark(l)).join('\n')
 // 指摘（💡）は一度に 1 つ
 const oneTip = (shown: ReturnType<typeof PromptTranslations.line>) => shown && { ...shown, tips: shown.tips.slice(0, 1) }
-// 下書きの中で、その文字列が単語として現れる最初の位置（"this" の中の "is" は拾わない）
-const wordAt = (draft: string, mark: string) => new RegExp(`(?<![\\p{L}\\p{N}])${mark.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').exec(draft)?.index ?? -1
+// 下書きの中で、その文字列が単語として現れる最初の位置（"this" の中の "is" は拾わない）。語を空白で区切らない漢字・かなは、続けて書いてあっても切れ目とみなす
+const wordAt = (draft: string, mark: string) => {
+  const inWord = '(?![\\p{scx=Han}\\p{scx=Hiragana}\\p{scx=Katakana}])[\\p{L}\\p{N}]'
+  return new RegExp(`(?<!${inWord})${mark.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?!${inWord})`, 'u').exec(draft)?.index ?? -1
+}
 // 置き換える文は、訳せたときの言い直しから直した所の ** を外したもの。返事は 言い直し → 💡 の行 → "! " の行 の順なので、末尾から "! " の行、続けて 💡 の行だけを落とす
 // ほかの行は字下げも空行もそのまま（下書きにある "! " や 💡 で始まる行も、末尾の指摘より前なら残る）
 const restatedOf = (version: Translation) =>

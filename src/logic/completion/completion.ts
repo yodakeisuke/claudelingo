@@ -13,5 +13,5 @@ const of = async (reply: Promise<Completion>): Promise<Translation> => (await Re
 // --- business rules
 // 返事が来れば、その文面。来なければ、その理由で失敗
 const answered = (c: Completion) => (c.isAnswered ? c.text : Result.fail(c.reason))
-// モデルの下書き（<think> などで囲んだ考え）は捨て、残ったタグも外す。文面だけを残す
-const withoutScratch = (text: string) => text.replace(/<(think|thinking|reasoning|scratchpad)>[\s\S]*?<\/\1>/g, '').replace(/<\/?(message|think|thinking|reasoning|scratchpad)>/g, '').trim()
+// 頭にあるモデルの下書き（<think> などで囲んだ考え）は捨て、写した <message> の囲みも外す。文面の中で語られるタグは残す
+const withoutScratch = (text: string) => text.trim().replace(/^<(think|thinking|reasoning|scratchpad)>[\s\S]*?<\/\1>/, '').replace(/^<message>|<\/message>$/gm, '').trim()

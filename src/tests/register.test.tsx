@@ -300,7 +300,7 @@ describe('register', () => {
     expect(await ui.find({ type: 'Button', key: 'aspect-carry-origin' })).toBeDefined()
   })
 
-  test('返事の「訳」を押すと、段落ごとにその下へ訳が出て（コードは訳さない）、訳の語から絵が出る。閉じると元に戻る', async ($, on) => {
+  test('返事の 🌐 を押すと、段落ごとにその下へ訳が出て（コードは訳さない）、訳の語から絵が出る。閉じると元に戻る', async ($, on) => {
     const { asked } = engine(on)
     const text = '原因はここ。\n\n```ts\nconst a = 1\n\nconst b = 2\n```\n\ncarry on して'
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text, isFirstOfReply: true } })

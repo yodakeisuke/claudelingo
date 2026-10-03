@@ -28,8 +28,9 @@ const spoken = (lines: readonly string[]) => lines.map(plain)
 const plain = (text: string) => text.replace(/\*\*/g, '')
 // 返事が来れば、その文面。来なければ、その理由で失敗
 const answered = (c: Completion) => (c.isAnswered ? c.text : Result.fail(c.reason))
-// [n] の後の記号を順に。1 つも無ければ形が違うとする
+// [n] の記号を n 番目の文に（欠けた番号は空）。1 つも無ければ形が違うとする
 const symbols = (text: string) => {
-  const list = text.split(/^\[\d+\]\s*/m).slice(1).map(s => s.trim())
-  return list.length > 0 ? list : Result.fail('format')
+  const parts = text.split(/^\[(\d+)\][ \t]*/m)
+  const byNumber = new Map(parts.flatMap((s, i) => (i % 2 === 1 ? [[Number(s), parts[i + 1]?.trim() ?? ''] as const] : [])))
+  return byNumber.size > 0 ? Array.from({ length: Math.max(...byNumber.keys()) }, (_, k) => byNumber.get(k + 1) ?? '') : Result.fail('format')
 }

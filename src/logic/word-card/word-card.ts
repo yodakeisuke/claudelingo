@@ -11,6 +11,7 @@ export const WordCards = {
   saving: (all: unknown, card: Card, pressed: Pressed) => saving(all, card, pressed),
   up: (shown: readonly Shown[]) => up(shown),
   picture: (svg: string, isWide?: boolean) => picture(svg, isWide),
+  waiting: () => waiting(),
 }
 
 // --- I/O
@@ -22,8 +23,7 @@ type Pressed = { word: string; restated: string }
 // 絵を頼むときは、文の ** を外して渡す
 const request = (settings: Settings, word: string, restated: string) => CardRequest.of(settings, word, plain(restated))
 // 返事が UNIT / CAPTION / SVG の形で、句が押した語と関わるときだけ絵にする。それ以外は描けなかったとする
-const of = async (reply: Promise<Completion>, pressed: Pressed) =>
-  (await Result.given(reply)).and(answered).and(parse).and(card => near(card, pressed)).either<Card | undefined>(card => card, () => undefined)
+const of = async (reply: Promise<Completion>, pressed: Pressed) => (await Result.given(reply)).and(answered).and(parse).and(card => near(card, pressed)).either<Card | undefined>(card => card, () => undefined)
 
 // --- business rules
 // 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す（記号だけの語は空）
@@ -66,3 +66,5 @@ const picture = (svg: string, isWide?: boolean) => {
   const source = svg.replace(/<svg\b[^>]*>/, root => `${root.replace(/\s(?:width|height|preserveAspectRatio)="[^"]*"/g, '').slice(0, -1)} width="${width}" height="${height}" preserveAspectRatio="xMinYMid meet">`)
   return { source, width, height }
 }
+// 描いている間は、同じ大きさの無地の地で場所を取る（届いても、下のボタンと欄が動かない）
+const waiting = () => picture('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 288"><rect width="480" height="288" rx="14" fill="#151a2e"/></svg>')

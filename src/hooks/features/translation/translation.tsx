@@ -1,11 +1,12 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, On, Timer } from 'claude-code'
 
-import type { Shown, Translation } from '../../../engine-protocol'
+import type { Aspect, Opened, Shown, Translation } from '../../../engine-protocol'
 import { DraftTranslations } from '../../../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
 import { Result } from '../../../logic/result/result'
 import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
+import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
 import { draftBand } from '../../ui/draft-band/draft-band'
 import { withTranslation } from '../../ui/translation-line/translation-line'
@@ -48,6 +49,19 @@ const drawCard = async ($: EngineInterface, row: string, word: string, restated:
   if (card && !isUp) await update($, drawn, all => WordCards.saving(all, card, { word, restated }))
   await showCards($, row, list => list.flatMap(s => (s.word !== word ? [s] : isUp ? [] : [{ ...s, card, isFailed: !card }])))
 }
+
+// 手順書「語を深める」：開いている欄なら閉じ、なければ開いて書かせる。絵とは別に頼むので、描いている間も押せる
+const pressAspect = async ($: EngineInterface, row: string, word: string, restated: string, aspect: Aspect) => {
+  const isOpen = ((await read($, cards))[row] ?? []).some(s => s.word === word && s.aspects?.[aspect])
+  await changeAspect($, row, word, aspect, () => (isOpen ? undefined : {}))
+  if (isOpen) return
+  const items = await WordAspects.of($.model.complete(WordAspects.request(await settingsOf($), aspect, { word, restated })), aspect)
+  // 書いている間に閉じられていたら、開き直さない
+  await changeAspect($, row, word, aspect, opened => opened && { items, isFailed: !items })
+}
+
+const changeAspect = ($: EngineInterface, row: string, word: string, aspect: Aspect, change: (opened?: Opened) => Opened | undefined) =>
+  showCards($, row, list => list.map(s => (s.word === word ? { ...s, aspects: { ...s.aspects, [aspect]: change(s.aspects?.[aspect]) } } : s)))
 
 // 開いている絵は置き換えで変える（中を書き換えると Desktop が描き直さない）
 const showCards = async ($: EngineInterface, row: string, change: (list: Shown[]) => Shown[]) => {
@@ -148,6 +162,6 @@ export const translation = (on: On) => {
     const shown = (await read($, cards))[key] ?? []
     const isTerminal = e.surface === 'terminal'
     const words = wordLine(t, isTerminal, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated))
-    return withTranslation(t, row, line, words, shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, key, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))))))
+    return withTranslation(t, row, line, words, shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, key, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))), aspect => void pressAspect($, key, s.word, line.restated, aspect))))
   })
 }

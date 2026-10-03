@@ -21,7 +21,8 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
   on('model.complete', (_$, e) => {
     const prompt = e.prompt.replace(/<\/?message>/g, '')
     asked.push(prompt)
-    if (prompt.startsWith('{"pressed"')) return { value: card(JSON.parse(prompt).pressed) }
+    if (prompt.startsWith('{"pressed"') && e.system?.includes('EX: <sentence>')) return { value: { isAnswered: true, text: 'EX: Please carry on.\nTR: どうぞ続けて。', usage } }
+    if (prompt.startsWith('{"pressed"')) return gate.then(() => ({ value: card(JSON.parse(prompt).pressed) }))
     models.push(e.model)
     if (fail === 'reject') throw new Error('model blocked')
     const value: ModelCompleteResult = fail === 'api-error'
@@ -37,6 +38,9 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
   })
   return { clock, asked, models, store }
 }
+
+// 絵の返事を待たせる関所。ふだんは開いている
+let gate = Promise.resolve()
 
 // 単語の絵の返事：carry と on は carry on、tests は文の別の句（迷子）、ほかはその語
 const UNITS: Record<string, string> = { carry: 'carry on', on: 'carry on', tests: 'carry on' }
@@ -255,5 +259,33 @@ describe('register', () => {
     const ui = await sent($, clock)
     expect(await ui.find({ type: 'Markdown', text: 'EN: fix the tests and carry on' })).toBeDefined()
     expect(await ui.find({ type: 'Button', key: 'word-0' })).toBeUndefined()
+  })
+
+  test('絵を描いている間も例文を押せ、開いた欄は絵が届いても残り、押し直すと閉じる', async ($, on) => {
+    const { clock } = engine(on)
+    const ui = await sent($, clock)
+    let release = () => {}
+    gate = new Promise(resolve => (release = resolve))
+    await ui.press({ key: 'word-5' })
+    expect((await ui.find({ type: 'Svg' }))?.props.width).toBe(380)
+    await ui.press({ key: 'aspect-carry-examples' })
+    expect(await ui.find({ type: 'Text', text: 'どうぞ続けて。' })).toBeDefined()
+    expect((await ui.find({ type: 'Button', key: 'aspect-carry-examples' }))?.props.dimColor).toBe(false)
+    release()
+    gate = Promise.resolve()
+    await clock.advance(0)
+    expect(await ui.find({ type: 'Text', text: 'carry の絵' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Please carry on.' })).toBeDefined()
+    await ui.press({ key: 'aspect-carry-examples' })
+    expect(await ui.find({ type: 'Text', text: 'Please carry on.' })).toBeUndefined()
+  })
+
+  test('端末でも例文などのボタンが出て、欄は文字で開く', async ($, on) => {
+    const { clock } = engine(on)
+    const ui = await sent($, clock, 'terminal')
+    await ui.press({ key: 'word-5' })
+    await ui.press({ key: 'aspect-carry-examples' })
+    expect(await ui.find({ type: 'Text', text: 'どうぞ続けて。' })).toBeDefined()
+    expect(await ui.find({ type: 'Button', key: 'aspect-carry-origin' })).toBeDefined()
   })
 })

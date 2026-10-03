@@ -38,6 +38,15 @@ describe('word-card', () => {
     expect(WordCards.of({ ok: false, error: 'timeout' }, carry)).toBeUndefined()
   })
 
+  test('SVG が外を参照しうるなら、描けなかったとする（大文字や文字参照・エスケープで隠しても）', async () => {
+    const drawn = (svg: string) => answered(`UNIT: carry on\nPRON: /x/\nCAPTION: 運び続ける\nSVG:\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 288">${svg}</svg>`)
+    const carry = { word: 'carry', restated }
+    for (const svg of ['<image href="https://x.test/?q=carry"/>', '<a xlink:href="https://x.test"><rect/></a>', '<rect fill="URL(https://x.test/a)"/>', '<rect fill="&#117;rl(https://x.test/a)"/>', '<rect fill="\\75 rl(https://x.test/a)"/>', '<style>@import "https://x.test/a.css"</style>', '<rect style="fill:red"/>', '<use href="#a"/>', '<foreignObject/>']) {
+      expect(WordCards.of(await drawn(svg), carry)).toBeUndefined()
+    }
+    expect(WordCards.of(await drawn('<circle r="20" fill="#f6c64f"><animate attributeName="r" values="20;40" dur="7s" repeatCount="indefinite"/></circle>'), carry)?.unit).toBe('carry on')
+  })
+
   test('描いた絵は句のどの語からも引け、幅は 380px（拡大で 560px）で左に寄せる', async () => {
     const card = (WordCards.of(await reply('carry on'), { word: 'carry', restated }))!
     const all = WordCards.saving(undefined, card, { word: 'carry', restated })

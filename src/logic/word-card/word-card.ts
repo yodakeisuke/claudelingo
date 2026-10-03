@@ -44,10 +44,10 @@ const saved = (all: unknown, { word, restated }: Pressed) => (all as Record<stri
 const up = (shown: readonly Shown[]) => new Set(shown.flatMap(s => [s.word, ...(s.card ? parts(s.card.unit) : [])]))
 // 絵を描ける面（端末のほか）が 1 つでもあれば、SVG も頼む
 const isPictured = (surfaces: readonly string[]) => surfaces.some(s => s !== 'terminal')
-// 返事から句・発音記号・一文・SVG を取り出す。句か一文が欠ければ失敗
+// 返事から句・発音記号・一文・SVG を取り出す。句か一文が欠けるか、SVG が外を参照しうれば失敗（href・url()・image・use・foreignObject・style と、それを隠す &# や \。訳した文に混じった指示で、絵から外へ送らせない）
 const parse = (text: string) => {
   const card = { unit: field(text, 'UNIT'), pron: field(text, 'PRON'), caption: field(text, 'CAPTION'), svg: /<svg[\s\S]*<\/svg>/.exec(text)?.[0] ?? '' }
-  return [card.unit, card.caption].every(Boolean) ? card : Result.fail('format')
+  return [card.unit, card.caption].every(Boolean) && !/href|url\(|<(image|use|foreignObject|style)\b|style\s*=|&#|\\/i.test(card.svg) ? card : Result.fail('format')
 }
 // "名前: 値" の行の値
 const field = (text: string, name: string) => new RegExp(`^${name}:[ \\t]*(.+)$`, 'm').exec(text)?.[1]?.trim() ?? ''

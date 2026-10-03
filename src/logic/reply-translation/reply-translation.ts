@@ -4,6 +4,7 @@ import { ReplyRequest } from './reply-request'
 export const ReplyTranslations = {
   request: (settings: Settings, text: string) => request(settings, text),
   shown: (text: string, value: string) => shown(text, value),
+  key: (text: string) => key(text),
 }
 
 // --- I/O
@@ -14,6 +15,9 @@ type Settings = Parameters<typeof ReplyRequest.of>[0]
 const request = (settings: Settings, text: string) => asked(settings, paragraphs(text).filter(p => !isCode(p)))
 // 段落ごとの訳と、学ぶ言語へ訳したか
 const shown = (text: string, value: string) => ({ paragraphs: paired(paragraphs(text), value), isIntoTarget: isIntoTarget(value) })
+
+// ブロックごとのボタンの名前。デスクトップは返事のブロックを一つの画面に並べ、同じ名前が並ぶと最後のブロックしか描かない
+const key = (text: string) => `reply-${[...text].reduce((h, c) => Math.imul(h ^ c.codePointAt(0)!, 16777619) >>> 0, 2166136261).toString(36)}`
 
 // --- business rules
 // 訳す段落が無ければ頼まない

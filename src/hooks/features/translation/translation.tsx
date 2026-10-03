@@ -249,7 +249,8 @@ export const translation = (on: On) => {
     const band = await draftBandOf($, t)
     const opened = await read($, practice)
     if (!opened) return band ?? next(e)
-    const hands = { hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, now => now && { sample: now.sample, pron: now.pron, heard: '' }) }
+    // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
+    const hands = { keep: (text: string) => void update($, practice, now => now && { ...now, heard: text }), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, now => now && { sample: now.sample, pron: now.pron, heard: '' }) }
     const { Box } = t
     return <Box flexDirection="column" gap={1}>{practiceBand(t, e.surface === 'terminal', opened, coachedOf(opened.coach), hands)}{band}</Box>
   })

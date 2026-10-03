@@ -8,10 +8,10 @@ const answered = (text: string) => Promise.resolve({ isAnswered: true as const, 
 const reply = (unit: string) => answered(`UNIT: ${unit}\nCAPTION: 運び続ける\nSVG:\n<svg viewBox="0 0 480 288" width="480" height="288"><rect/></svg>`)
 
 describe('word-card', () => {
-  test('訳の行の語は、** を外して見せ、小文字の英字だけで渡す', () => {
+  test('訳の行の語は、** を外して見せ（中の語には印）、小文字の英字だけで渡す', () => {
     expect(WordCards.words(restated)).toEqual([
-      { label: "I'll", word: "i'll" }, { label: 'carry', word: 'carry' }, { label: 'on', word: 'on' },
-      { label: 'with', word: 'with' }, { label: 'the', word: 'the' }, { label: 'tests.', word: 'tests' },
+      { label: "I'll", word: "i'll", isFixed: false }, { label: 'carry', word: 'carry', isFixed: true }, { label: 'on', word: 'on', isFixed: true },
+      { label: 'with', word: 'with', isFixed: false }, { label: 'the', word: 'the', isFixed: false }, { label: 'tests.', word: 'tests', isFixed: false },
     ])
     expect(WordCards.words('Déjà vu, ça va ?').map(w => w.word)).toEqual(['déjà', 'vu', 'ça', 'va', ''])
     expect(WordCards.words('テストを直して').map(w => w.word)).toEqual(['テストを直して'])

@@ -26,8 +26,9 @@ const request = (settings: Settings, word: string, restated: string) => CardRequ
 const of = async (reply: Promise<Completion>, pressed: Pressed) => (await Result.given(reply)).and(answered).and(parse).and(card => near(card, pressed)).either<Card | undefined>(card => card, () => undefined)
 
 // --- business rules
-// 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す（記号だけの語は空）
-const words = (restated: string) => restated.split(/\s+/).filter(Boolean).map(w => ({ label: plain(w), word: bare(w) }))
+// 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す（記号だけの語は空）。** の中の語（前の ** が奇数個）は直した所
+const words = (restated: string) =>
+  restated.split(/\s+/).filter(Boolean).map((w, i, all) => ({ label: plain(w), word: bare(w), isFixed: w.includes('**') || all.slice(0, i).join(' ').split('**').length % 2 === 0 }))
 // 直した所の ** は外す
 const plain = (text: string) => text.replace(/\*\*/g, '')
 // 語は小文字にし、文字・数字と ' と - 以外（句読点など）を落とす

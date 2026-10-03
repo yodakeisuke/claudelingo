@@ -2,14 +2,16 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "jsPlugins": [
     "./lint/logic-layout.js",
-    "./lint/ui-layout.js"
+    "./lint/ui-layout.js",
+    "./lint/persistence.js"
   ],
   "rules": {
     "func-style": [
       "error",
       "expression"
     ],
-    "logic-layout/comment-run": "error"
+    "logic-layout/comment-run": "error",
+    "persistence/settings-only": "error"
   },
   "overrides": [
     {

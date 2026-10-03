@@ -44,10 +44,10 @@ const saved = (all: unknown, { word, restated }: Pressed) => (all as Record<stri
 const up = (shown: readonly Shown[]) => new Set(shown.flatMap(s => [s.word, ...(s.card ? parts(s.card.unit) : [])]))
 // 絵を描ける面（端末のほか）が 1 つでもあれば、SVG も頼む
 const isPictured = (surfaces: readonly string[]) => surfaces.some(s => s !== 'terminal')
-// 返事から句・発音記号・一文・SVG を取り出す。句か一文が欠けるか、SVG が外を参照しうれば失敗（図形とアニメーション以外の要素（<img> などは SVG を抜けて HTML になる）、href、文書の外への url()、image-set、それを隠す & と \。訳した文に混じった指示で、絵から外へ送らせない）
+// 返事から句・発音記号・一文・SVG を取り出す。句か一文が欠けるか、SVG が外を参照しうれば失敗（図形とアニメーション以外の要素（<img> などは SVG を抜けて HTML になる）、href、style 属性、文書の外への url()、image-set、それを隠す & と \。訳した文に混じった指示で、絵から外へ送らせない）
 const parse = (text: string) => {
   const card = { unit: field(text, 'UNIT'), pron: field(text, 'PRON'), caption: field(text, 'CAPTION'), svg: /<svg[\s\S]*<\/svg>/.exec(text)?.[0] ?? '' }
-  return [card.unit, card.caption].every(Boolean) && !/<(?!\/?(?:svg|g|defs|marker|clipPath|mask|pattern|linearGradient|radialGradient|stop|rect|circle|ellipse|line|polyline|polygon|path|text|tspan|title|desc|animate|animateTransform|animateMotion|set)[\s/>])|href|url\((?!\s*['"]?#)|image-set|&|\\/i.test(card.svg) ? card : Result.fail('format')
+  return [card.unit, card.caption].every(Boolean) && !/<(?!\/?(?:svg|g|defs|marker|clipPath|mask|pattern|linearGradient|radialGradient|stop|rect|circle|ellipse|line|polyline|polygon|path|text|tspan|title|desc|animate|animateTransform|animateMotion|set)[\s/>])|href|(?<![\w-])style\s*=|url\((?!\s*['"]?#)|image-set|&|\\/i.test(card.svg) ? card : Result.fail('format')
 }
 // "名前: 値" の行の値
 const field = (text: string, name: string) => new RegExp(`^${name}:[ \\t]*(.+)$`, 'm').exec(text)?.[1]?.trim() ?? ''

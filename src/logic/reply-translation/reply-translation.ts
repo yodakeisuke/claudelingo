@@ -1,5 +1,5 @@
-import type { Translation } from '../../engine-protocol'
-import { PromptTranslations } from '../prompt-translation/prompt-translation'
+import type { Answer } from '../../engine-protocol'
+import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { ReplyRequest } from './reply-request'
 
@@ -9,8 +9,8 @@ export const ReplyTranslations = {
   shown: (settings: Settings, text: string, value: string) => shown(settings, text, value),
   head: (text: string) => head(text),
   key: (settings: Settings, text: string) => key(settings, text),
-  isDue: (version?: Translation | null) => isDue(version),
-  checked: (text: string, version: Translation) => checked(text, version),
+  isDue: (version?: Answer | null) => isDue(version),
+  checked: (text: string, version: Answer) => checked(text, version),
 }
 
 // --- I/O
@@ -22,17 +22,17 @@ const request = (settings: Settings, text: string) => asked(settings, paragraphs
 // 訳のある段落ごとの訳と、読み上げる文の並び、訳の語から絵を出すか
 const shown = (settings: Settings, text: string, value: string) => shaped(settings, paired(paragraphs(text), value).flatMap(withTranslation), value)
 // 届いた訳を、読み取れる形のものだけ訳とする
-const checked = (text: string, version: Translation) => Result.given(version).and(value => readable(text, value)).either<Translation>(value => ({ ok: true, value }), error => ({ ok: false, error }))
+const checked = (text: string, version: Answer) => Result.given(version).and(value => readable(text, value)).either<Answer>(value => ({ ok: true, value }), error => ({ ok: false, error }))
 
 // --- business rules
 // 訳は言語の組み合わせごとに覚える（設定で言語を変えたら、押し直すと訳し直す）
 const key = ({ native, target }: Settings, text: string) => `${native}>${target}\n${text}`
 // 訳のパネルの見出しは返事の書き出しの 1 行（Markdown の印と表の両端の | は外す）
-const head = (text: string) => PromptTranslations.plain(text.trim().split('\n')[0] ?? '').replace(/^([-*+]|\d+[.)]|#{1,6}|>)\s+|^\s*\||\|\s*$/g, '').trim()
+const head = (text: string) => Restatements.plain(text.trim().split('\n')[0] ?? '').replace(/^([-*+]|\d+[.)]|#{1,6}|>)\s+|^\s*\||\|\s*$/g, '').trim()
 // どの段落の訳も読み取れなければ、形が違うとして失敗にする（理由を出し、押し直せば頼み直す）
 const readable = (text: string, value: string) => (paired(paragraphs(text), value).some(p => p.translation) ? value : Result.fail('format'))
 // 訳を頼むのは、まだ頼んでいないか、訳せなかったとき（訳している間と、訳せた後は頼まない）
-const isDue = (version?: Translation | null) => version === undefined || (version !== null && Result.given(version).either(() => false, () => true))
+const isDue = (version?: Answer | null) => version === undefined || (version !== null && Result.given(version).either(() => false, () => true))
 // mod がオフか、訳す段落が無ければ頼まない
 const asked = (settings: Settings, prose: string[]) => (settings.enabled && prose.length > 0 ? ReplyRequest.of(settings, prose) : undefined)
 // 訳のある段落だけを、その訳と段落の番号（at）で

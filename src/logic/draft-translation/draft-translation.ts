@@ -1,19 +1,20 @@
-import type { Translation } from '../../engine-protocol'
+import type { Answer } from '../../engine-protocol'
 import { PromptTranslations } from '../prompt-translation/prompt-translation'
+import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { DraftRequest } from './draft-request'
 
 // --- public interface
 export const DraftTranslations = {
   request: (settings: Settings, draft: string, commands: readonly string[]) => request(settings, draft, commands),
-  band: (settings: Settings, shown: Shown | null) => band(settings, shown),
-  underlines: (draft: string, shown: Shown | null) => underlines(draft, shown),
+  band: (settings: Settings, proofread: Proofread | null) => band(settings, proofread),
+  underlines: (draft: string, proofread: Proofread | null) => underlines(draft, proofread),
 }
 
 // --- I/O
 type Settings = Parameters<typeof DraftRequest.of>[0] & { enabled: boolean; live: boolean }
 // 校正した打ちかけと、その校正
-type Shown = { text: string; version: Translation }
+type Proofread = { text: string; version: Answer }
 
 // --- operations
 // 打ちかけを校正するときだけ頼む
@@ -22,15 +23,15 @@ const request = (settings: Settings, draft: string, commands: readonly string[])
 
 // --- business rules
 // 帯を出すのは、mod と入力中の校正がオンで、校正が届いているとき
-const band = (settings: Settings, shown: Shown | null) => (settings.enabled && settings.live && shown ? banded(shown) : undefined)
+const band = (settings: Settings, proofread: Proofread | null) => (settings.enabled && settings.live && proofread ? banded(proofread) : undefined)
 // 帯には "! " の行を除いて送信後の訳と同じ形で出し、言い直しが下書きと違えば置き換えも
-const banded = ({ text, version }: Shown) => {
+const banded = ({ text, version }: Proofread) => {
   const line = oneTip(PromptTranslations.line(version, withoutMarks))
   return line && { line, replacement: differing(restatedOf(version), text) }
 }
 // 赤線（文字は変えない赤い下線）は一度に 1 つ。"! " の行の文字列が今の下書きに残っている所のうち、一番前。直せば次が出る
-const underlines = (draft: string, shown: Shown | null) =>
-  (shown ? Result.given(shown.version).either(markLines, () => []) : [])
+const underlines = (draft: string, proofread: Proofread | null) =>
+  (proofread ? Result.given(proofread.version).either(markLines, () => []) : [])
     .map(mark => ({ start: wordAt(draft, mark), end: wordAt(draft, mark) + mark.length, color: 'error', underline: true }))
     .filter(range => range.start >= 0)
     .sort((a, b) => a.start - b.start)
@@ -50,7 +51,7 @@ const markLines = (value: string) => value.split('\n').filter(isMark).map(l => l
 // 帯に出すのは、"! " の行を除いた残り
 const withoutMarks = (value: string) => value.split('\n').filter(l => !isMark(l)).join('\n')
 // 指摘（💡）は一度に 1 つ
-const oneTip = (shown: ReturnType<typeof PromptTranslations.line>) => shown && { ...shown, tips: shown.tips.slice(0, 1) }
+const oneTip = (line: ReturnType<typeof PromptTranslations.line>) => line && { ...line, tips: line.tips.slice(0, 1) }
 // 下書きの中で、その文字列が単語として現れる最初の位置（"this" の中の "is" は拾わない）。語を空白で区切らない漢字・かなは、続けて書いてあっても切れ目とみなす
 const wordAt = (draft: string, mark: string) => {
   const inWord = '(?![\\p{scx=Han}\\p{scx=Hiragana}\\p{scx=Katakana}])[\\p{L}\\p{N}]'
@@ -58,8 +59,8 @@ const wordAt = (draft: string, mark: string) => {
 }
 // 置き換える文は、訳せたときの言い直しから直した所の ** を外したもの。返事は 言い直し → 💡 の行 → "! " の行 の順なので、末尾から "! " の行、続けて 💡 の行だけを落とす
 // ほかの行は字下げも空行もそのまま（下書きにある "! " や 💡 で始まる行も、末尾の指摘より前なら残る）
-const restatedOf = (version: Translation) =>
-  Result.given(version).either(value => PromptTranslations.plain(dropTrailing(dropTrailing(value.split('\n'), isMark), l => l.trim().startsWith('💡 ')).join('\n').trim()), () => '')
+const restatedOf = (version: Answer) =>
+  Result.given(version).either(value => Restatements.plain(dropTrailing(dropTrailing(value.split('\n'), isMark), l => l.trim().startsWith('💡 ')).join('\n').trim()), () => '')
 // 末尾から、空行と、条件に合う行を落とす
 const dropTrailing = (lines: string[], isNote: (line: string) => boolean): string[] => {
   const last = lines.at(-1)

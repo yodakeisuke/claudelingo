@@ -1,8 +1,8 @@
 import type { Elements, RenderElement } from 'claude-code'
 
-import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
+import { LingoSettings } from '../../../logic/lingo-settings/lingo-settings'
 
-type Settings = ReturnType<typeof TranslationSettings.of>
+type Settings = ReturnType<typeof LingoSettings.of>
 type Switch = 'enabled' | 'afterSend' | 'live' | 'card'
 type Save = (field: keyof Settings, value: string | boolean) => void
 
@@ -36,15 +36,15 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
   )
   const model = (key: 'model' | 'liveModel' | 'cardModel') => field('モデル', (
     <Box gap={1} flexWrap="wrap">
-      {TranslationSettings.models().map(value => <Box flexShrink={0}><Button key={`${key}-${value}`} label={value} variant={value === settings[key] ? 'primary' : 'secondary'} onPress={() => save(key, value)} /></Box>)}
+      {LingoSettings.models().map(value => <Box flexShrink={0}><Button key={`${key}-${value}`} label={value} variant={value === settings[key] ? 'primary' : 'secondary'} onPress={() => save(key, value)} /></Box>)}
     </Box>
   ))
-  const nudge = (by: 1 | -1, label: string) => <Button key={`livePause-${label}`} label={label} variant="secondary" onPress={() => save('livePause', TranslationSettings.step(settings.livePause, by))} />
+  const nudge = (by: 1 | -1, label: string) => <Button key={`livePause-${label}`} label={label} variant="secondary" onPress={() => save('livePause', LingoSettings.step(settings.livePause, by))} />
   // 入力中は欄の横に「⏎ submit」が出るので、その分も幅を取る。狭い面では折り返す
   const pause = (
     <Box alignItems="center" gap={1} flexWrap="wrap">
       <Box flexShrink={0}><Text dimColor>速い</Text></Box>{nudge(-1, '-')}
-      <Box width={16} flexShrink={0} flexDirection="column"><Input key="livePause" value={settings.livePause} onSubmit={v => save('livePause', TranslationSettings.pause(v, settings.livePause))} /></Box>
+      <Box width={16} flexShrink={0} flexDirection="column"><Input key="livePause" value={settings.livePause} onSubmit={v => save('livePause', LingoSettings.pause(v, settings.livePause))} /></Box>
       <Text>秒</Text>{nudge(1, '+')}<Box flexShrink={0}><Text dimColor>遅い</Text></Box>
     </Box>
   )

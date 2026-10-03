@@ -1,23 +1,22 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, On, Timer } from 'claude-code'
 
-import type { Aspect, Practice, Shown, Translation } from '../../../engine-protocol'
-import { Completions } from '../../../logic/completion/completion'
+import type { Answer, Aspect, OpenCard, Practice } from '../../../engine-protocol'
+import { Answers } from '../../../logic/answer/answer'
 import { DraftTranslations } from '../../../logic/draft-translation/draft-translation'
 import { ElementKeys } from '../../../logic/element-key/element-key'
+import { LingoSettings } from '../../../logic/lingo-settings/lingo-settings'
 import { OpenCards } from '../../../logic/open-cards/open-cards'
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
 import { Pronunciations } from '../../../logic/pronunciation/pronunciation'
 import { ReplyTranslations } from '../../../logic/reply-translation/reply-translation'
 import { Result } from '../../../logic/result/result'
-import { CoachRequest } from '../../../logic/speaking-practice/coach-request'
 import { SpeakingPractice } from '../../../logic/speaking-practice/speaking-practice'
-import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
 import { WordLines } from '../../../logic/word-line/word-line'
 import { draftBand } from '../../ui/draft-band/draft-band'
-import { practiceBand, VOICE_HELP } from '../../ui/practice-band/practice-band'
+import { practiceBand } from '../../ui/practice-band/practice-band'
 import { symbolLine } from '../../ui/read-aloud/read-aloud'
 import type { Voice } from '../../ui/read-aloud/read-aloud'
 import { REPLY_PANE, paragraphTranslation, replyBlock, replyPane } from '../../ui/reply-translation/reply-translation'
@@ -25,7 +24,7 @@ import { withTranslation } from '../../ui/translation-line/translation-line'
 import { wordCard, wordLine } from '../../ui/word-card/word-card'
 
 // 設定パネル（settings.tsx）が $.store に置いた設定。$ は import をまたいで渡せないので、ここでも読む
-const settingsOf = async ($: EngineInterface) => TranslationSettings.of(await $.store.get('settings'))
+const settingsOf = async ($: EngineInterface) => LingoSettings.of(await $.store.get('settings'))
 
 // 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
@@ -38,7 +37,7 @@ const drawn = atom({ plugin: 'claudelingo', key: 'drawn' } as const, {})
 const showTranslation = async ($: EngineInterface, from: string, text: string) => {
   const request = PromptTranslations.request(await settingsOf($), { from, text }, (await $.command.list()).map(c => c.name))
   if (!request || !PromptTranslations.isNeeded(await $.session.surfaces())) return
-  const translation = await Completions.of($.model.complete(request))
+  const translation = await Answers.of($.model.complete(request))
   await update($, translations, all => ({ ...all, [PromptTranslations.key(text)]: translation }))
   // 訳が届いたらすぐ描き直させる（状態の変化だけでは、面によっては次の描画まで行が出ない）
   $.ui.invalidate('ui.render')
@@ -47,7 +46,7 @@ const showTranslation = async ($: EngineInterface, from: string, text: string) =
 const rowOf = async ($: EngineInterface, row: string) => (await read($, cards))[row] ?? []
 
 // 開いている絵は置き換えで変える（中を書き換えると Desktop が描き直さない）
-const showCards = async ($: EngineInterface, row: string, change: (list: Shown[]) => Shown[]) => {
+const showCards = async ($: EngineInterface, row: string, change: (list: OpenCard[]) => OpenCard[]) => {
   await update($, cards, all => ({ ...all, [row]: change(all[row] ?? []) }))
   $.ui.invalidate('ui.render')
 }
@@ -61,7 +60,7 @@ const pressWord = async ($: EngineInterface, row: string, word: string, restated
 
 // 押した語の絵を頼む（絵を描ける面が無ければ、絵なしで）
 const drawCard = async ($: EngineInterface, row: string, word: string, restated: string) => {
-  const card = WordCards.of(await Completions.of($.model.complete(WordCards.request(await settingsOf($), { word, restated }, await $.session.surfaces()))), { word, restated })
+  const card = WordCards.of(await Answers.of($.model.complete(WordCards.request(await settingsOf($), { word, restated }, await $.session.surfaces()))), { word, restated })
   const kept = OpenCards.kept(await rowOf($, row), word, card)
   if (kept) await update($, drawn, all => WordCards.saving(all, kept, { word, restated }))
   await showCards($, row, list => OpenCards.drawn(list, word, card))
@@ -71,8 +70,8 @@ const drawCard = async ($: EngineInterface, row: string, word: string, restated:
 const pressAspect = async ($: EngineInterface, row: string, restated: string, at: { word: string; aspect: Aspect }) => {
   await showCards($, row, list => OpenCards.aspectPressed(list, at))
   if (!OpenCards.isWriting(await rowOf($, row), at)) return
-  const version = await Completions.of($.model.complete(WordAspects.request(await settingsOf($), at.aspect, { word: at.word, restated })))
-  await showCards($, row, list => OpenCards.written(list, at, WordAspects.of(version, at.aspect)))
+  const answer = await Answers.of($.model.complete(WordAspects.request(await settingsOf($), at.aspect, { word: at.word, restated })))
+  await showCards($, row, list => OpenCards.written(list, at, WordAspects.of(answer, at.aspect)))
 }
 
 // 描くときに渡す単語の絵の手。row は絵を並べる鍵（指示か返事の段落）、restated は語がある訳の行、id と prefix はボタンの名前の頭
@@ -81,7 +80,7 @@ const wordsOf = async ($: EngineInterface, t: Parameters<typeof wordCard>[0], is
   return {
     // 訳の 1 行を押せる語の並びで。押すとその語の絵が下に出る
     line: (row: string, restated: string, line: Parameters<typeof wordLine>[2], id: string) =>
-      wordLine(t, isTerminal, line, WordCards.up(all[row] ?? []), word => void pressWord($, row, word, restated), id),
+      wordLine(t, isTerminal, line, WordCards.openedWords(all[row] ?? []), word => void pressWord($, row, word, restated), id),
     // 開いている絵。拡大・縮小と欄はその絵だけ
     cards: (row: string, restated: string, prefix: string) =>
       (all[row] ?? []).map(s => wordCard(t, isTerminal, s, isWide => void showCards($, row, list => OpenCards.resized(list, s.word, isWide)), aspect => void pressAspect($, row, restated, { word: s.word, aspect }), voice, prefix)),
@@ -103,7 +102,7 @@ const sayWithSymbols = async ($: EngineInterface, lines: string[]) => {
   void say($, lines)
   if (Pronunciations.isAsked(await read($, sounds), lines)) return
   await showSymbols($, lines, null)
-  await showSymbols($, lines, Pronunciations.of(await Completions.of($.model.complete(Pronunciations.request(await settingsOf($), lines)))))
+  await showSymbols($, lines, Pronunciations.of(await Answers.of($.model.complete(Pronunciations.request(await settingsOf($), lines)))))
 }
 
 const showSymbols = async ($: EngineInterface, lines: string[], symbols?: string[] | null) => {
@@ -134,10 +133,10 @@ const openReply = async ($: EngineInterface, text: string) => {
   await opened
   if (!ReplyTranslations.isDue((await read($, replies))[key])) return
   await showReply($, key, null)
-  await showReply($, key, ReplyTranslations.checked(text, await Completions.of($.model.complete(request))))
+  await showReply($, key, ReplyTranslations.checked(text, await Answers.of($.model.complete(request))))
 }
 
-const showReply = async ($: EngineInterface, key: string, version: Translation | null) => {
+const showReply = async ($: EngineInterface, key: string, version: Answer | null) => {
   await update($, replies, all => ({ ...all, [key]: version }))
   $.ui.invalidate('ui.render')
 }
@@ -153,7 +152,7 @@ const hear = async ($: EngineInterface, heard: string) => {
   const asked = SpeakingPractice.asking(await read($, practice), heard)
   if (!asked) return
   await showPractice($, () => asked)
-  const coach = await Completions.of($.model.complete(CoachRequest.of(await settingsOf($), asked)))
+  const coach = await Answers.of($.model.complete(SpeakingPractice.request(await settingsOf($), asked)))
   await showPractice($, now => SpeakingPractice.coached(now, asked, coach))
 }
 
@@ -171,7 +170,7 @@ let stop = new AbortController()
 // 手順書「打ちかけを外国語で示す」：打つ手が止まったら 1 回だけ頼み、その間に打たれたら捨てる
 const showDraftTranslation = async ($: EngineInterface, text: string, signal: AbortSignal) => {
   const request = DraftTranslations.request(await settingsOf($), text, (await $.command.list()).map(c => c.name))
-  const version = request && (await Completions.of($.model.complete(request, { signal })))
+  const version = request && (await Answers.of($.model.complete(request, { signal })))
   const shown = version ? { text, version } : null
   if (signal.aborted) return
   await showDraft($, shown)
@@ -180,14 +179,14 @@ const showDraftTranslation = async ($: EngineInterface, text: string, signal: Ab
 
 // 赤線は打鍵の応答か fill でしか付かない。校正が届いたら、同じ文面を fill し直して赤線だけ付ける
 // 文字もカーソルも変わらないよう、入力欄が校正した下書きのままで、カーソルが末尾のときだけ
-const underlineNow = async ($: EngineInterface, shown: { text: string; version: Translation }, signal: AbortSignal) => {
+const underlineNow = async ($: EngineInterface, shown: { text: string; version: Answer }, signal: AbortSignal) => {
   const box = await $.prompt.read()
   if (signal.aborted) return
   const decorations = DraftTranslations.underlines(box.text, shown)
   if (box.text === shown.text && box.cursor === box.text.length && decorations.length > 0) await $.prompt.fill({ text: box.text, mode: 'replace', decorations })
 }
 
-const showDraft = async ($: EngineInterface, shown: { text: string; version: Translation } | null) => {
+const showDraft = async ($: EngineInterface, shown: { text: string; version: Answer } | null) => {
   await update($, draft, () => shown)
   $.ui.invalidate('ui.render')
 }
@@ -226,7 +225,7 @@ const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0
   return draftBand(t, isTerminal, line, () => void hideDraftTranslation($), replacement ? () => void replace(replacement) : undefined)
 }
 
-export const translation = (on: On) => {
+export const learning = (on: On) => {
   on('prompt.submit', ($, e, next) => {
     // 送信は待たせない。訳は自分の dispatch で走らせる
     $.clock.after(0, () => void showTranslation($, e.origin.kind, e.text.trim()))
@@ -251,7 +250,7 @@ export const translation = (on: On) => {
     const opened = await read($, practice)
     if (!opened || !(await settingsOf($)).enabled) return band ?? next(e)
     // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
-    const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: () => $.ui.toast(VOICE_HELP, { timeoutMs: 15000 }), close: () => void showPractice($, () => null) }
+    const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: (text: string) => $.ui.toast(text, { timeoutMs: 15000 }), close: () => void showPractice($, () => null) }
     const { Box } = t
     return <Box flexDirection="column" gap={1}>{practiceBand(t, e.surface === 'terminal', opened, SpeakingPractice.shown(opened.coach), hands)}{band}</Box>
   })

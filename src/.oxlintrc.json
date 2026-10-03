@@ -92,7 +92,20 @@
       "rules": {
         "logic-layout/result-only": "error",
         "mainstream/no-context": "error",
-        "mainstream/no-delay": "error"
+        "mainstream/no-delay": "error",
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/logic/*/*-request"
+                ],
+                "message": "hooks は機能のモジュール（logic/X/X.ts）だけを使う。*-request は同じ機能の中で組み立てる"
+              }
+            ]
+          }
+        ]
       }
     },
     {

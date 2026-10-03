@@ -11,22 +11,24 @@ RuleTester.describe = describe
 RuleTester.it = it
 const tester = new RuleTester({ languageOptions: { parserOptions: { lang: 'ts' } } })
 const file = (...sections) => sections.join('\n')
-const operations = '// 公開する操作\nexport const A = { f: (): T => b() + c(), g: () => c() }'
-const data = '// データ構造\ntype T = number'
-const rules = '// ビジネスルール\n// b は 1\nconst b = () => 1'
-const util = '// util\nconst c = () => 2'
-const valid = file(operations, data, rules, util)
+const api = '// --- public interface\nexport const A = { f: (x: T) => f(x), g: (x: T) => b(x) }'
+const io = '// --- I/O\ntype T = number'
+const ops = '// --- operations\nconst f = (x: number) => b(x) + 1'
+const rules = '// --- business rules\n// b は 1\nconst b = (x: number) => x > 0 ? 1 : 0'
+const valid = file(api, io, ops, rules)
 
 // 独立入力: 規則ごとの落ちる例 / 出力: 違反 1 つ。通る例はどれも valid
 const cases = {
   exports: ['export function f() { return 1 }', 'export type T = number', 'export const x = 1', 'export const A = { v: 1 }',
     'export default {}', "export * from './x'", 'export const A = { f: () => 1 }\nexport const B = { g: () => 1 }'],
-  sections: [file(operations, rules, data), file(operations, data), file(operations, data, rules, '// ビジネスルール')],
-  placement: [file(operations, data, rules, '// util\ntype U = number'), file(operations, '// データ構造\nconst x = 1', rules),
-    file(operations, data, '// ビジネスルール\n// x は 1\nconst x = 1')],
-  'rule-comment': [file(operations, data, '// ビジネスルール\nconst b = () => 1', util)],
-  'shared-util': [file('// 公開する操作\nexport const A = { f: () => c() }', data, '// ビジネスルール', util),
-    file('// 公開する操作\nexport const A = { f: () => b(), g: () => b() }', data, '// ビジネスルール\n// b は c\nconst b = () => c()', util)],
+  sections: [file(api, ops, io, rules), file(api, io, ops), file(io, api, rules), file(api, io, ops, rules, '// --- business rules')],
+  placement: [file(api, io, ops, '// --- business rules\ntype U = number'), file(api, '// --- I/O\nconst x = 1', rules),
+    file(api, io, '// --- operations\nconst x = 1', rules)],
+  'interface-forward': ['export const A = { f: (x: number) => x + 1 }', 'export const A = { f: (x: number) => f(x + 1) }', 'export const A = { f: (x: number) => B.f(x) }'],
+  'io-only': [file(api, io, '// --- I/O\ntype U = number', ops, rules)],
+  'one-expression': [file(api, io, '// --- operations\nconst f = (x: number) => x > 0 ? b(x) : 0', rules),
+    file(api, io, '// --- operations\nconst f = (x: number) => { return b(x) }', rules), file(api, io, '// --- operations\nconst f = (x: number) => b(x) || 0', rules)],
+  'rule-comment': [file(api, io, ops, '// --- business rules\nconst b = () => 1')],
   'comment-run': ['// a\n// b\n// c\nconst x = 1'],
   'result-only': ["throw new Error('x')", 'try { f() } catch { g() }', 'p.catch(() => 1)', "Promise.reject('x')", 'p.then(f, g)', 'r.ok ? 1 : 2'],
 }
@@ -52,7 +54,7 @@ describe('組み込みルール', () => {
     try { execFileSync('npm', ['run', '--silent', 'lint:disable', '--', directory], { cwd: root, stdio: 'ignore' }); return [] }
     catch { return ['lint:disable'] }
   })
-  const withUtil = body => file(operations, data, rules, `// util\n${body}`)
+  const withRule = body => file(api, io, '// --- operations\nconst f = (x: number) => c(x)', rules, `// c\n${body}`)
   const branches = n => `const c = (x: number) => ${Array.from({ length: n }, (_, i) => `x === ${i}`).join(' || ')} ? 2 : 2`
   const lines = n => `const c = () => [\n${Array.from({ length: n }, (_, i) => `  ${i},`).join('\n')}\n]`
   const depth = n => `const c = (x: number) => {\n${'  if (x) {\n'.repeat(n)}  return 2\n${'  }\n'.repeat(n)}  return 2\n}`
@@ -64,10 +66,10 @@ describe('組み込みルール', () => {
   const padded = n => [valid, ...Array.from({ length: n - valid.split('\n').length }, (_, i) => ((n - i) % 3 === 2 ? '' : '//'))].join('\n')
   const examples = [
     ['max-lines は 1 ファイル 70 行まで', lint, padded(70), padded(71), 'eslint(max-lines)'],
-    ['complexity は 5 まで', lint, withUtil(branches(4)), withUtil(branches(5)), 'eslint(complexity)'],
-    ['max-lines-per-function は 15 行まで', lint, withUtil(lines(13)), withUtil(lines(14)), 'eslint(max-lines-per-function)'],
-    ['max-depth は 2 まで', lint, withUtil(depth(2)), withUtil(depth(3)), 'eslint(max-depth)'],
-    ['max-params は 3 まで', lint, withUtil(params(3)), withUtil(params(4)), 'eslint(max-params)'],
+    ['complexity は 5 まで', lint, withRule(branches(4)), withRule(branches(5)), 'eslint(complexity)'],
+    ['max-lines-per-function は 15 行まで', lint, withRule(lines(13)), withRule(lines(14)), 'eslint(max-lines-per-function)'],
+    ['max-depth は 2 まで', lint, withRule(depth(2)), withRule(depth(3)), 'eslint(max-depth)'],
+    ['max-params は 3 まで', lint, withRule(params(3)), withRule(params(4)), 'eslint(max-params)'],
     ['logic から hooks を読まない', lint, valid, "import { x } from '../hooks/register'\n" + valid, 'eslint(no-restricted-imports)'],
     ['logic から engine（claude-code）を読まない', lint, valid, "import type { On } from 'claude-code'\n" + valid, 'eslint(no-restricted-imports)'],
     ['logic から node: を読まない', lint, valid, "import { readFileSync } from 'node:fs'\n" + valid, 'eslint(no-restricted-imports)'],

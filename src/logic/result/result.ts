@@ -7,23 +7,21 @@ export const Result = {
 }
 
 // --- I/O
-// 鎖でつなげる Result。and は成功を、or は失敗を受けて進む。either で分けて、data でデータの Result に戻して鎖を抜ける
+// 鎖でつなげる Result。and は成功を、or は失敗を受けて進む。either で分けて鎖を抜ける
 type Fluent<T, E> = {
   and: <U, F = never>(fn: (value: T) => U | Fluent<U, F>) => Fluent<U, E | F>
   or: <F, U = never>(fn: (error: E) => F | Fluent<U, F>) => Fluent<T | U, F>
   either: <R>(onOk: (value: T) => R, onError: (error: E) => R) => R
-  data: () => Data<T, E>
 }
 // Promise を渡したら、決着した Result の Promise。データの Result を渡したら、そのまま鎖に
 type Given<T> = T extends Promise<infer U> ? Promise<Fluent<U, string>> : [T] extends [Data<unknown, unknown>] ? Fluent<Extract<T, { ok: true }>['value'], Extract<T, { ok: false }>['error']> : Fluent<T, never>
 
 // --- business rules
-// and は成功のときだけ、or は失敗のときだけ通す。戻りが Result ならそのままつなぎ、普通の値なら and は成功に、or は失敗に包む。either と data で鎖を抜ける
+// and は成功のときだけ、or は失敗のときだけ通す。戻りが Result ならそのままつなぎ、普通の値なら and は成功に、or は失敗に包む。either で鎖を抜ける
 const wrap = <T, E>(data: Data<T, E>): Fluent<T, E> => ({
   and: <U, F>(fn: (value: T) => U | Fluent<U, F>) => (data.ok ? lift<U, E | F>(fn(data.value), succeed) : wrap<U, E | F>(data)),
   or: <F, U>(fn: (error: E) => F | Fluent<U, F>) => (data.ok ? wrap<T | U, F>(data) : lift<T | U, F>(fn(data.error), fail)),
   either: (onOk, onError) => (data.ok ? onOk(data.value) : onError(data.error)),
-  data: () => data,
 })
 // 値は成功に包む。データの Result はそのまま鎖に。Promise は決着を待って包み、拒まれたらその message で失敗
 const given = <T>(value: T) =>

@@ -10,14 +10,12 @@ type Hands = { hear: (heard: string) => void; say: () => void; again: () => void
 
 // 入力欄の上に、話す練習。お手本（と発音記号）、声で入れる欄、コーチの返事。違う語は赤い下線
 // 右端の 4 マスは、帯の折りたたみ印 [-] に重ならないよう空ける
-export const practiceBand = (t: Elements[keyof Elements], practice: Practice, coached: Coached, hands: Hands) => {
-  const { Box, Button, Markdown, Text } = t
-  // 入力欄を描けない面（モバイル）では、お手本とコーチの返事だけ
-  const Input = 'Input' in t ? t.Input : undefined
+export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], practice: Practice, coached: Coached, hands: Hands) => {
+  const { Box, Button, Input, Markdown, Text } = t
   return (
     <Box flexDirection="column" paddingRight={4}>
       <Box gap={1}><Text dimColor bold>お手本</Text><Text>{practice.sample}</Text>{practice.pron && <Text dimColor>{practice.pron}</Text>}</Box>
-      {Input && <Input key="practice" label="練習" placeholder="声で入れて Enter（Claude には送られません）" value={practice.heard ?? ''} autoFocus onSubmit={hands.hear} />}
+      <Input key="practice" label="練習" placeholder="声で入れて Enter（Claude には送られません）" value={practice.heard ?? ''} autoFocus onSubmit={hands.hear} />
       {typeof coached === 'string' && <Text dimColor>{coached}</Text>}
       {typeof coached === 'object' && (
         <Box flexDirection="column">

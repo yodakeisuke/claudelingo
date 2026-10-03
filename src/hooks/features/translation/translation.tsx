@@ -244,7 +244,8 @@ export const translation = (on: On) => {
   // 入力欄の上は、開いている話す練習と打ちかけの校正を上下に
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
-    const t = $.ui.resolve(e)
+    // 入力欄の上の帯は端末と Desktop にしかない
+    const t = $.ui.resolve(e) as Parameters<typeof practiceBand>[0]
     const band = await draftBandOf($, t)
     const opened = await read($, practice)
     if (!opened) return band ?? next(e)

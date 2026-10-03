@@ -29,7 +29,7 @@ const settingsOf = async ($: EngineInterface) => TranslationSettings.of(await $.
 
 // 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
-// 指示の鍵か返事の段落 → その下に開いている単語の絵
+// 指示のメッセージ（id）か返事の段落 → その下に開いている単語の絵
 const cards = atom({ plugin: 'claudelingo', key: 'cards' } as const, {})
 // 描いた絵（WordCards.saving の形）。ディスクには置かず、セッションの間だけ持つ
 const drawn = atom({ plugin: 'claudelingo', key: 'drawn' } as const, {})
@@ -59,9 +59,9 @@ const pressWord = async ($: EngineInterface, row: string, word: string, restated
   if (OpenCards.isDrawing(await rowOf($, row), word)) await drawCard($, row, word, restated)
 }
 
-// 押した語の絵を頼む
+// 押した語の絵を頼む（絵を描ける面が無ければ、絵なしで）
 const drawCard = async ($: EngineInterface, row: string, word: string, restated: string) => {
-  const card = WordCards.of(await Completions.of($.model.complete(WordCards.request(await settingsOf($), word, restated))), { word, restated })
+  const card = WordCards.of(await Completions.of($.model.complete(WordCards.request(await settingsOf($), { word, restated }, await $.session.surfaces()))), { word, restated })
   const kept = OpenCards.kept(await rowOf($, row), word, card)
   if (kept) await update($, drawn, all => WordCards.saving(all, kept, { word, restated }))
   await showCards($, row, list => OpenCards.drawn(list, word, card))
@@ -122,18 +122,19 @@ const replies = atom({ plugin: 'claudelingo', key: 'replies' } as const, {})
 // 横のパネルに出している返事の文面と、その訳の鍵（開いたときの設定のもの）
 const paneReply = atom({ plugin: 'claudelingo', key: 'paneReply' } as const, { text: '', key: '' })
 
-// 手順書「返事の訳を横に出す」：押した返事をパネルに出し、頼む時なら訳を頼む
+// 手順書「返事の訳を横に出す」：押した返事をパネルに出し、頼む時なら訳を頼む。頼めない（mod がオフ）なら、パネルの中身は変えない
 // パネルは最初の await より前に開く（後だと押したことへの応答とみなされず、144 桁未満の端末では置かれない）
 const openReply = async ($: EngineInterface, text: string) => {
   const opened = $.ui.open({ id: REPLY_PANE, title: '訳' })
   const settings = await settingsOf($)
+  const request = ReplyTranslations.request(settings, text)
+  if (!request) return
   const key = ReplyTranslations.key(settings, text)
   await update($, paneReply, () => ({ text, key }))
   await opened
-  const request = ReplyTranslations.request(settings, text)
-  if (!request || !ReplyTranslations.isDue((await read($, replies))[key])) return
+  if (!ReplyTranslations.isDue((await read($, replies))[key])) return
   await showReply($, key, null)
-  await showReply($, key, await Completions.of($.model.complete(request)))
+  await showReply($, key, ReplyTranslations.checked(text, await Completions.of($.model.complete(request))))
 }
 
 const showReply = async ($: EngineInterface, key: string, version: Translation | null) => {
@@ -248,7 +249,7 @@ export const translation = (on: On) => {
     const t = $.ui.resolve(e) as Parameters<typeof practiceBand>[0]
     const band = await draftBandOf($, t)
     const opened = await read($, practice)
-    if (!opened) return band ?? next(e)
+    if (!opened || !(await settingsOf($)).enabled) return band ?? next(e)
     // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
     const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: () => $.ui.toast(VOICE_HELP, { timeoutMs: 15000 }), close: () => void showPractice($, () => null) }
     const { Box } = t
@@ -258,18 +259,22 @@ export const translation = (on: On) => {
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const row = await next(e)
     const key = PromptTranslations.key(e.props.text)
-    const version = (await read($, translations))[key]
+    const all = await read($, translations)
+    // 文面が constructor などでも、引き継いだ値は拾わない
+    const version = Object.hasOwn(all, key) ? all[key] : undefined
     const line = PromptTranslations.line(version)
     if (!line) return row
     const t = $.ui.resolve(e)
     const voice = await voiceOf($)
-    const isTranslated = Result.given(version).either(() => true, () => false)
+    const settings = await settingsOf($)
+    // 訳せていて mod がオンのときだけ押せる（オフなら訳の文だけ。押してもモデルを呼ばない）
+    const isPressable = settings.enabled && Result.given(version).either(() => true, () => false)
     const isTerminal = e.surface === 'terminal'
     const id = ElementKeys.of('line', e.requestId)
-    if (!isTranslated || !(await settingsOf($)).card) return withTranslation(t, isTerminal, id, row, line, isTranslated ? voice : undefined)
-    // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
+    if (!isPressable || !settings.card) return withTranslation(t, isTerminal, id, row, line, isPressable ? voice : undefined)
+    // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る。絵はメッセージごと（同じ文の指示でも分ける）
     const words = await wordsOf($, t, isTerminal, voice)
-    return withTranslation(t, isTerminal, id, row, line, voice, words.line(key, line.restated, WordLines.of(line.restated), `${id}-word`), words.cards(key, line.restated, `${id}-`))
+    return withTranslation(t, isTerminal, id, row, line, voice, words.line(e.requestId, line.restated, WordLines.of(line.restated), `${id}-word`), words.cards(e.requestId, line.restated, `${id}-`))
   })
 
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
@@ -295,7 +300,7 @@ export const translation = (on: On) => {
     const settings = await settingsOf($)
     const words = await wordsOf($, t, isTerminal, await voiceOf($))
     const said = await read($, sounds)
-    return Result.given(version).either(async value => {
+    return Result.given(version).either(value => {
       const { translated, spoken, withCards } = ReplyTranslations.shown(settings, text, value)
       const translations = translated.map(({ restated, at }, n) => {
         const symbol = symbolLine(t, Pronunciations.symbol(said, spoken, n))
@@ -305,6 +310,6 @@ export const translation = (on: On) => {
         return paragraphTranslation(t, restated, symbol, lines, words.cards(key, restated, `${id}-word-${at}-`))
       })
       return replyPane(t, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)
-    }, async error => replyPane(t, id, head, [], `訳せませんでした：${error}`))
+    }, error => replyPane(t, id, head, [], `訳せませんでした：${error}`))
   })
 }

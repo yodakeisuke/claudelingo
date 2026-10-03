@@ -40,7 +40,8 @@ const labels: Record<Aspect, string> = { examples: '例文', similar: '類似表
 export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown: Shown, resize: (isWide: boolean) => void, open: (aspect: Aspect) => void, voice: Voice, prefix = '') => {
   const { Box, Text, Button } = t
   const { word, card, aspects } = shown
-  const Svg = !isTerminal && 'Svg' in t ? t.Svg : undefined
+  // 絵なしで届いた絵（端末だけのときに頼んだ）は、端末と同じ 1 行で
+  const Svg = !isTerminal && 'Svg' in t && card?.svg !== '' ? t.Svg : undefined
   const status = <Text dimColor>{shown.isFailed ? `描けませんでした：${word}` : `コアイメージを描画中… ${word}`}</Text>
   const voiceButtons = card && speakerAndMicrophone(t, isTerminal, { speak: `${prefix}speak-${word}`, practise: `${prefix}practise-${word}` }, () => voice.say(card.unit), () => voice.practise(card.unit, card.pron))
   const head = !card ? status : Svg ? (

@@ -6,7 +6,7 @@ import { CardRequest } from './card-request'
 // --- public interface
 export const WordCards = {
   words: (restated: string) => words(restated),
-  request: (settings: Settings, word: string, restated: string) => request(settings, word, restated),
+  request: (settings: Settings, pressed: Pressed, surfaces: readonly string[]) => request(settings, pressed, surfaces),
   of: (version: Translation, pressed: Pressed) => of(version, pressed),
   saved: (all: unknown, pressed: Pressed) => saved(all, pressed),
   saving: (all: unknown, card: Card, pressed: Pressed) => saving(all, card, pressed),
@@ -21,16 +21,16 @@ type Settings = Parameters<typeof CardRequest.of>[0]
 type Pressed = { word: string; restated: string }
 
 // --- operations
-// 絵を頼むときは、文の ** を外して渡す
-const request = (settings: Settings, word: string, restated: string) => CardRequest.of(settings, word, PromptTranslations.plain(restated))
-// 返事（Completions.of で受けたもの）に UNIT / CAPTION / SVG がそろい（PRON は無くてもよい）、句が押した語と関わるときだけ絵にする。それ以外は描けなかったとする
+// 絵を頼むときは、文の ** を外して渡す。SVG は、絵を描ける面があるときだけ頼む
+const request = (settings: Settings, { word, restated }: Pressed, surfaces: readonly string[]) => CardRequest.of(settings, { word, sentence: PromptTranslations.plain(restated) }, isPictured(surfaces))
+// 返事（Completions.of で受けたもの）に UNIT / CAPTION がそろい（PRON と SVG は無くてもよい）、句が押した語と関わるときだけ絵にする。それ以外は描けなかったとする
 const of = (version: Translation, pressed: Pressed) => Result.given(version).and(parse).and(card => near(card, pressed)).either<Card | undefined>(card => card, () => undefined)
 
 // --- business rules
 // 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す（記号だけの語は空）。直した所（** の対）は印 \u0001 で囲んでから区切り、前の印が奇数個の語を直した所とする
 const words = (restated: string) => PromptTranslations.parts(restated).join('\u0001').split(/\s+/).filter(Boolean).map((w, i, all) => ({ label: w.replaceAll('\u0001', ''), word: bare(w), isFixed: w.includes('\u0001') || all.slice(0, i).join(' ').split('\u0001').length % 2 === 0 }))
-// 語は小文字にし、文字・数字と ' と - 以外（句読点など）を落とす。' と - だけが残る語（- や ---）は空
-const bare = (word: string) => word.toLowerCase().replace(/[^\p{L}\p{N}'-]/gu, '').replace(/^['-]+$/, '')
+// 語は小文字にし、文字（母音記号などの結合文字も）・数字と ' と - 以外（句読点など）を落とす。’ は ' にそろえ、語の両端の ' は引用符として落とす。' と - だけが残る語（- や ---）は空
+const bare = (word: string) => word.toLowerCase().replaceAll('’', "'").replace(/[^\p{L}\p{M}\p{N}'-]/gu, '').replace(/^'+|'+$/g, '').replace(/^['-]+$/, '')
 // 句の語（carry on なら carry と on）
 const parts = (unit: string) => unit.split(/\s+/).map(bare).filter(Boolean)
 // 同じ文の同じ語なら、同じ絵
@@ -42,10 +42,12 @@ const saving = (all: unknown, card: Card, { word, restated }: Pressed) =>
 const saved = (all: unknown, { word, restated }: Pressed) => (all as Record<string, Card> | undefined)?.[key(word, restated)]
 // 絵が出ている語は、押した語と、その絵の句のどの語も
 const up = (shown: readonly Shown[]) => new Set(shown.flatMap(s => [s.word, ...(s.card ? parts(s.card.unit) : [])]))
-// 返事から句・発音記号・一文・SVG を取り出す。発音記号のほかが欠ければ失敗
+// 絵を描ける面（端末のほか）が 1 つでもあれば、SVG も頼む
+const isPictured = (surfaces: readonly string[]) => surfaces.some(s => s !== 'terminal')
+// 返事から句・発音記号・一文・SVG を取り出す。句か一文が欠ければ失敗
 const parse = (text: string) => {
   const card = { unit: field(text, 'UNIT'), pron: field(text, 'PRON'), caption: field(text, 'CAPTION'), svg: /<svg[\s\S]*<\/svg>/.exec(text)?.[0] ?? '' }
-  return [card.unit, card.caption, card.svg].every(Boolean) ? card : Result.fail('format')
+  return [card.unit, card.caption].every(Boolean) ? card : Result.fail('format')
 }
 // "名前: 値" の行の値
 const field = (text: string, name: string) => new RegExp(`^${name}:[ \\t]*(.+)$`, 'm').exec(text)?.[1]?.trim() ?? ''

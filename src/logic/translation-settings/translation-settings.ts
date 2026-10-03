@@ -14,9 +14,9 @@ type Settings = { enabled: boolean; native: string; target: string; model: strin
 const of = (saved: unknown): Settings => ({ enabled: true, native: 'Japanese', target: 'English', model: 'sonnet', afterSend: true, live: true, liveModel: 'sonnet', livePause: '0.5', card: true, cardModel: 'sonnet', ...(saved as Partial<Settings> | undefined) })
 // 翻訳モデルは別名で選ぶ。別名は常にその系統の最新を指す
 const models = () => ['haiku', 'sonnet', 'opus']
-// 入力中の校正は、打つ手がこの秒数止まったら頼む。0.1 秒刻みで 0.3〜2 秒に収め、数でなければ今のまま
+// 入力中の校正は、打つ手がこの秒数止まったら頼む。全角も読み、0.1 秒刻みで 0.3〜2 秒に収め、数で始まらなければ今のまま
 const pause = (text: string, now: string) => {
-  const seconds = Math.round(Number(text) * 10) / 10
+  const seconds = Math.round(parseFloat(text.normalize('NFKC')) * 10) / 10
   return Number.isNaN(seconds) ? now : String(Math.min(2, Math.max(0.3, seconds)))
 }
 // -/+ は 0.1 秒ずつ動かす

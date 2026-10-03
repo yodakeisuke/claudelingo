@@ -2,8 +2,6 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { ModelCompleteResult, On, PromptOrigin, RenderSurface } from 'claude-code'
 
-import { ReplyTranslations } from '../logic/reply-translation/reply-translation'
-
 const composer: PromptOrigin = { kind: 'composer' }
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 
@@ -307,7 +305,7 @@ describe('register', () => {
     const text = '原因はここ。\n\n```ts\nconst a = 1\n\nconst b = 2\n```\n\ncarry on して'
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text, isFirstOfReply: true } })
     expect(await ui.find({ type: 'Text', text })).toBeDefined()
-    await ui.press({ key: `${ReplyTranslations.key(text)}-translate` })
+    await ui.press({ key: 'reply-translate' })
     expect(asked).toEqual(['[1] 原因はここ。\n\n[2] carry on して'])
     for (const paragraph of ['原因はここ。', '```ts\nconst a = 1\n\nconst b = 2\n```', 'carry on して']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${paragraph}$`) })).toBeDefined()
     expect(await ui.find({ type: 'Button', key: 'word-0-0-1' })).toBeDefined()
@@ -316,10 +314,10 @@ describe('register', () => {
     expect(await ui.find({ type: 'Text', text: /^carry on$/ })).toBeDefined()
     expect(asked.at(-1)).toBe('{"pressed":"carry","sentence":"EN carry on して"}')
     expect(await ui.find({ type: 'Button', key: 'word-2-resize-carry' })).toBeDefined()
-    await ui.press({ key: `${ReplyTranslations.key(text)}-translate` })
+    await ui.press({ key: 'reply-translate' })
     expect(await ui.find({ type: 'Text', text })).toBeDefined()
     expect(await ui.find({ type: 'Button', key: 'word-2-0-1' })).toBeUndefined()
-    await ui.press({ key: `${ReplyTranslations.key(text)}-translate` })
+    await ui.press({ key: 'reply-translate' })
     expect(await ui.find({ type: 'Button', key: 'word-2-resize-carry' })).toBeUndefined()
   })
 
@@ -334,8 +332,8 @@ describe('register', () => {
     expect(spoken).toEqual(['Samantha: EN: fix tests'])
     expect(await ui.find({ type: 'Text', text: 'EN EN: fix tests' })).toBeDefined()
     const reply = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text: '原因はここ。\n\n直した', isFirstOfReply: true } })
-    await reply.press({ key: `${ReplyTranslations.key('原因はここ。\n\n直した')}-translate` })
-    await reply.press({ key: `${ReplyTranslations.key('原因はここ。\n\n直した')}-speak` })
+    await reply.press({ key: 'reply-translate' })
+    await reply.press({ key: 'reply-speak' })
     expect(spoken.slice(1)).toEqual(['Samantha: EN 原因はここ。', 'Samantha: EN 直した'])
     expect(await reply.find({ type: 'Text', text: 'EN EN 直した' })).toBeDefined()
   })

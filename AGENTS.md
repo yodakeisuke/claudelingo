@@ -11,3 +11,5 @@
 ミニマリストでいましょう。「余計なお世話仕様」「不要分岐」「勝手にフォールバック」こんなものを入れてないか常に自己監査せよ。
 
 mods の仕様は https://code.claude.com/docs/en/plugins/mods/reference と、engine が生成する型定義（src/.claude-plugin/types/）を正とする。記憶で書かない。
+
+ユーザーのディスクに残してよいのは設定だけ。キャッシュなどそれ以外はセッションの間だけ atom に持つ（lint: persistence/settings-only）。

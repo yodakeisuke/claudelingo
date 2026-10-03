@@ -6,13 +6,12 @@ const composer: PromptOrigin = { kind: 'composer' }
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 
 // エンジン役：返事は "EN: <入力>"、行はそのまま。fail で失敗の仕方を変える
-const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[] = ['terminal'], saved?: object, isWritable = true, isFull = false) => {
+const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[] = ['terminal'], saved?: object, isWritable = true) => {
   const clock = mock.clock(on)
   const store = new Map<string, unknown>(saved ? [['settings', saved]] : [])
   on('store.get', (_$, e) => ({ value: store.get(e.key) }))
   on('store.set', (_$, e) => {
     if (!isWritable) throw new Error('disk full')
-    if (isFull && e.key === 'cards' && Object.keys(e.value as object).length > 2) throw new Error('over 4 MiB')
     store.set(e.key, e.value)
     return { value: undefined }
   })
@@ -232,14 +231,6 @@ describe('register', () => {
     expect((await ui.find({ type: 'Button', key: 'resize-carry' }))?.props.label).toBe('縮小')
     await ui.press({ key: 'resize-carry' })
     expect((await ui.findAll({ type: 'Svg' })).map(s => s.props.width)).toEqual([380, 380])
-  })
-
-  test('保存領域があふれたら、それまでの絵を捨てて今の絵だけ残す', async ($, on) => {
-    const { clock, store } = engine(on, undefined, undefined, undefined, true, true)
-    const ui = await sent($, clock)
-    await ui.press({ key: 'word-1' })
-    await ui.press({ key: 'word-5' })
-    expect(Object.keys(store.get('cards') as object)).toEqual(['carry|EN: fix the tests and carry on', 'on|EN: fix the tests and carry on'])
   })
 
   test('押した語と関わらない句が返ったら、描けなかったと出す', async ($, on) => {

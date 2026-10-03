@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, On, Timer } from 'claude-code'
 
-import type { Card, Shown, Translation } from '../../../engine-protocol'
+import type { Shown, Translation } from '../../../engine-protocol'
 import { DraftTranslations } from '../../../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
 import { Result } from '../../../logic/result/result'
@@ -18,6 +18,8 @@ const settingsOf = async ($: EngineInterface) => TranslationSettings.of(await $.
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
 // 指示の鍵 → その下に開いている単語の絵
 const cards = atom({ plugin: 'claudelingo', key: 'cards' } as const, {})
+// 描いた絵（WordCards.saving の形）。ディスクには置かず、セッションの間だけ持つ
+const drawn = atom({ plugin: 'claudelingo', key: 'drawn' } as const, {})
 
 // 手順書「指示を外国語で示す」：訳す指示なら言い直しを頼み、行が引けるように残す
 const showTranslation = async ($: EngineInterface, from: string, text: string) => {
@@ -29,9 +31,9 @@ const showTranslation = async ($: EngineInterface, from: string, text: string) =
   $.ui.invalidate('ui.render')
 }
 
-// 手順書「単語の絵を出す」：同じ絵が開いていれば閉じ、なければ下に並べる。描いた絵は残し、二度目からはすぐ出す
+// 手順書「単語の絵を出す」：同じ絵が開いていれば閉じ、なければ下に並べる。描いた絵はセッションの間残し、二度目からはすぐ出す
 const pressWord = async ($: EngineInterface, row: string, word: string, restated: string) => {
-  const saved = WordCards.saved(await $.store.get('cards'), { word, restated })
+  const saved = WordCards.saved(await read($, drawn), { word, restated })
   const isSame = (s: Shown) => s.word === word || (saved !== undefined && s.card?.unit === saved.unit)
   if (((await read($, cards))[row] ?? []).some(isSame)) return showCards($, row, list => list.filter(s => !isSame(s)))
   await showCards($, row, list => [...list, { word, card: saved }])
@@ -43,15 +45,8 @@ const drawCard = async ($: EngineInterface, row: string, word: string, restated:
   const request = WordCards.request(await settingsOf($), word, restated)
   const card = await WordCards.of($.model.complete(request), { word, restated })
   const isUp = card !== undefined && ((await read($, cards))[row] ?? []).some(s => s.word !== word && s.card?.unit === card.unit)
-  if (card && !isUp) await saveCard($, card, word, restated)
+  if (card && !isUp) await update($, drawn, all => WordCards.saving(all, card, { word, restated }))
   await showCards($, row, list => list.flatMap(s => (s.word !== word ? [s] : isUp ? [] : [{ ...s, card, isFailed: !card }])))
-}
-
-// 保存領域（設定と共有）があふれたら、それまでの絵を捨てて今の絵だけ残す。それでも失敗したら、出ている絵はそのまま
-const saveCard = async ($: EngineInterface, card: Card, word: string, restated: string) => {
-  const save = (all: unknown) => $.store.set('cards', WordCards.saving(all, card, { word, restated }))
-  const isSaved = (await Result.given(save(await $.store.get('cards')))).either(() => true, () => false)
-  if (!isSaved) await Result.given(save(undefined))
 }
 
 // 開いている絵は置き換えで変える（中を書き換えると Desktop が描き直さない）

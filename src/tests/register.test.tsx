@@ -33,7 +33,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     asked.push(prompt)
     if (prompt.startsWith('{"pressed"') && e.system?.includes('EX: <sentence>')) return { value: { isAnswered: true, text: 'EX: Please carry on.\nTR: どうぞ続けて。', usage } }
     if (prompt.startsWith('{"pressed"')) return gate.then(() => ({ value: card(JSON.parse(prompt).pressed) }))
-    if (prompt.startsWith('[1] ')) return { value: { isAnswered: true, text: `INTO: TARGET\n${prompt.replace(/\] /g, '] EN ')}`, usage } }
+    if (prompt.startsWith('[1] ')) return { value: { isAnswered: true, text: `FROM: Japanese\n${prompt.replace(/\] /g, '] EN ')}`, usage } }
     models.push(e.model)
     if (fail === 'reject') throw new Error('model blocked')
     const value: ModelCompleteResult = fail === 'api-error'

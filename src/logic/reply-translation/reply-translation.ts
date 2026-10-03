@@ -4,7 +4,7 @@ import { ReplyRequest } from './reply-request'
 // --- public interface
 export const ReplyTranslations = {
   request: (settings: Settings, text: string) => request(settings, text),
-  shown: (text: string, value: string) => shown(text, value),
+  shown: (settings: Settings, text: string, value: string) => shown(settings, text, value),
   head: (text: string) => head(text),
 }
 
@@ -15,7 +15,7 @@ type Settings = Parameters<typeof ReplyRequest.of>[0]
 // 訳すのはコードでない段落だけ
 const request = (settings: Settings, text: string) => asked(settings, paragraphs(text).filter(p => !isCode(p)))
 // 段落ごとの訳と、学ぶ言語へ訳したか
-const shown = (text: string, value: string) => ({ paragraphs: paired(paragraphs(text), value), isIntoTarget: isIntoTarget(value) })
+const shown = (settings: Settings, text: string, value: string) => ({ paragraphs: paired(paragraphs(text), value), isIntoTarget: isIntoTarget(settings, value) })
 
 // --- business rules
 // 訳のパネルの見出しは返事の書き出しの 1 行（Markdown の印と表の両端の | は外す）
@@ -38,5 +38,5 @@ const numbered = (value: string, n: number) => {
   const at = parts.findIndex((s, i) => i % 2 === 1 && s === String(n))
   return at > 0 ? parts[at + 1]?.trim() : undefined
 }
-// 学ぶ言語へ訳したか
-const isIntoTarget = (value: string) => /^INTO:\s*TARGET/m.test(value)
+// 学ぶ言語へ訳したか（主な言語から訳したか）
+const isIntoTarget = ({ native }: Settings, value: string) => /^FROM:(.*)$/m.exec(value)?.[1]?.trim().toLowerCase() === native.trim().toLowerCase()

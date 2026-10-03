@@ -22,8 +22,8 @@ export const grassGraph = (t: Elements[Exclude<keyof Elements, 'mobile'>], isTer
   )
 }
 
-// 月の名の行：その週の列から書く（「月」は 1 字で 2 マス）
-const months = (weeks: Year['weeks']) => weeks.reduce((row, { month }, w) => (month ? `${row.padEnd(w * 2 - (row.match(/月/g)?.length ?? 0))}${month}月` : row), '')
+// 月の名の行：その週の列から書く（「月」は 1 字で 2 マス）。最後の週の名は草の幅に収まらないので書かない
+const months = (weeks: Year['weeks']) => weeks.slice(0, -1).reduce((row, { month }, w) => (month ? `${row.padEnd(w * 2 - (row.match(/月/g)?.length ?? 0))}${month}月` : row), '')
 
 // Desktop の絵：緑の濃さは不透明度で出す（地がライトでもダークでも読める）。月の名は上に
 const picture = (weeks: Year['weeks']) => {

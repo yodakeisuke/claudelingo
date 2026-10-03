@@ -3,17 +3,19 @@ import type { Elements } from 'claude-code'
 import type { Aspect, Opened, Shown } from '../../../engine-protocol'
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
+import { WordLines } from '../../../logic/word-line/word-line'
 import { speaker, speakerAndMicrophone, symbolLine } from '../read-aloud/read-aloud'
 import type { Voice } from '../read-aloud/read-aloud'
 
-type Word = ReturnType<typeof WordCards.words>[number]
+type Line = ReturnType<typeof WordLines.of>
 
 // 訳の行を、押せる語の並びで。飾りのないボタンは灰色の文字に見える（リンクは青になる）。直した語と絵が開いている語は濃く
-// 記号だけの語（? や —）は押せない文字のまま。ボタンの key は id-番号（返事では段落ごとに id を変える）。語の後ろに空白を挟む。Desktop はボタンの余白のぶん空きすぎるので、右を 1 マス詰める（左を詰めると、折り返した行の頭の語が欠ける）
-export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, words: Word[], up: Set<string>, press: (word: string) => void, id = 'word') => {
+// 記号だけの語（? や —）は押せない文字のまま。行の頭の字下げとリストの印は Markdown のとおり（WordLines.of）。ボタンの key は id-番号（返事では段落ごとに id を変える）。語の後ろに空白を挟む。Desktop はボタンの余白のぶん空きすぎるので、右を 1 マス詰める（左を詰めると、折り返した行の頭の語が欠ける）
+export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, { indent, mark, words }: Line, up: Set<string>, press: (word: string) => void, id = 'word') => {
   const { Box, Button, Text } = t
   return (
-    <Box flexWrap="wrap">
+    <Box flexWrap="wrap" paddingLeft={indent}>
+      {mark && <Box marginRight={1}><Text dimColor>{mark}</Text></Box>}
       {words.map((w, i) => (
         <Box marginRight={isTerminal ? 0 : -1}>
           {w.word ? <Button key={`${id}-${i}`} label={w.label} plain dimColor={!w.isFixed && !up.has(w.word)} onPress={() => press(w.word)} /> : <Text dimColor>{w.label}</Text>}

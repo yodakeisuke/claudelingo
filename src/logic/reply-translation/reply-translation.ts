@@ -1,3 +1,4 @@
+import { PromptTranslations } from '../prompt-translation/prompt-translation'
 import { ReplyRequest } from './reply-request'
 
 // --- public interface
@@ -17,9 +18,9 @@ const request = (settings: Settings, text: string) => asked(settings, paragraphs
 const shown = (text: string, value: string) => ({ paragraphs: paired(paragraphs(text), value), isIntoTarget: isIntoTarget(value) })
 
 // --- business rules
-// 訳のパネルの見出しは返事の書き出しの 1 行。長ければ 40 字で切る
+// 訳のパネルの見出しは返事の書き出しの 1 行（Markdown の印は外す）。長ければ 40 字で切る
 const head = (text: string) => {
-  const line = text.trim().split('\n')[0] ?? ''
+  const line = PromptTranslations.plain(text.trim().split('\n')[0] ?? '').replace(/^([-*+]|\d+[.)]|#{1,6}|>)\s+/, '')
   return line.length > 40 ? `${line.slice(0, 40)}…` : line
 }
 // 訳す段落が無ければ頼まない

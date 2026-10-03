@@ -12,6 +12,7 @@ import { CoachRequest } from '../../../logic/speaking-coach/coach-request'
 import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
+import { WordLines } from '../../../logic/word-line/word-line'
 import { draftBand } from '../../ui/draft-band/draft-band'
 import { practiceBand } from '../../ui/practice-band/practice-band'
 import type { Coached } from '../../ui/practice-band/practice-band'
@@ -274,7 +275,7 @@ export const translation = (on: On) => {
     if (!isTranslated || !(await settingsOf($)).card) return withTranslation(t, isTerminal, id, row, line, isTranslated ? voice : undefined)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
     const shown = (await read($, cards))[key] ?? []
-    const words = wordLine(t, isTerminal, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated), `${id}-word`)
+    const words = wordLine(t, isTerminal, WordLines.of(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated), `${id}-word`)
     return withTranslation(t, isTerminal, id, row, line, voice, words, cardsOf($, t, isTerminal, key, line.restated, shown, voice, `${id}-`))
   })
 
@@ -312,7 +313,7 @@ export const translation = (on: On) => {
         const key = `${text}#${i}`
         const shown = shownCards[key] ?? []
         if (!isIntoTarget || !settings.card) return [paragraphTranslation(t, restated, symbol)]
-        const lines = restated.split('\n').map((line, j) => wordLine(t, isTerminal, WordCards.words(line), WordCards.up(shown), word => void pressWord($, key, word, restated), `${id}-word-${i}-${j}`))
+        const lines = restated.split('\n').map((line, j) => wordLine(t, isTerminal, WordLines.of(line), WordCards.up(shown), word => void pressWord($, key, word, restated), `${id}-word-${i}-${j}`))
         return [paragraphTranslation(t, restated, symbol, lines, cardsOf($, t, isTerminal, key, restated, shown, voice, `${id}-word-${i}-`))]
       })
       return replyPane(t, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)

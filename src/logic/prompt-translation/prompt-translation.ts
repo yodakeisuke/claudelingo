@@ -16,14 +16,14 @@ export const PromptTranslations = {
 type Line = { restated: string; tips: string[] }
 // 送られた指示：送り元と文面
 type Sent = { from: string; text: string }
-type Settings = { enabled: boolean; native: string; target: string; model: string }
+type Settings = { enabled: boolean; afterSend: boolean; native: string; target: string; model: string }
 
 // ビジネスルール
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの
 const isOwn = (from: string) => ['composer', 'sdk', 'bridge'].includes(from)
-// 外国語版を作るのは、オンのときに自分で打った指示だけ（実在するスラッシュコマンドは除く）
+// 外国語版を作るのは、全体と送った後の訳がオンのときに自分で打った指示だけ（実在するスラッシュコマンドは除く）
 const isWanted = (settings: Settings, sent: Sent, commands: readonly string[]) =>
-  settings.enabled && isOwn(sent.from) && !isCommand(sent.text, commands)
+  settings.enabled && settings.afterSend && isOwn(sent.from) && !isCommand(sent.text, commands)
 // スラッシュコマンドとみなすのは、先頭の /名前 が今使えるコマンドのとき（/tmp を見て、は指示）
 const isCommand = (text: string, commands: readonly string[]) => commands.includes(/^\/(\S+)/.exec(text)?.[1] ?? '')
 // 訳を引く鍵は、貼り付けの印と空白を除いた文面（送信時は印つき、行では印なしで届く）

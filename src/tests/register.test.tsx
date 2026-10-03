@@ -124,7 +124,7 @@ describe('register', () => {
       await ui.press({ key: `enabled-${enabled ? 'on' : 'off'}` })
       await ui.input({ key: 'target', text: target })
       await ui.press({ key: `model-${model}` })
-      expect(store.get('settings')).toEqual({ enabled, native: 'Japanese', target, model, live: true, liveModel: 'sonnet', livePause: '0.5', card: true, cardModel: 'sonnet' })
+      expect(store.get('settings')).toEqual({ enabled, native: 'Japanese', target, model, afterSend: true, live: true, liveModel: 'sonnet', livePause: '0.5', card: true, cardModel: 'sonnet' })
       expect((await ui.find({ type: 'Button', key: `model-${model}` }))?.props.variant).toBe('primary')
       expect((await ui.find({ type: 'Button', key: `enabled-${enabled ? 'on' : 'off'}` }))?.props.variant).toBe('primary')
     }

@@ -18,7 +18,7 @@ describe('word-card', () => {
     expect(WordCards.request({ native: 'Japanese', target: 'English', level: '', cardModel: 'sonnet' }, 'carry', restated).prompt).toBe(`{"pressed":"carry","sentence":"I'll carry on with the tests."}`)
   })
 
-  test('UNIT / PRON / CAPTION / SVG がそろい、句が押した語と関わるときだけ絵にする', async () => {
+  test('UNIT / CAPTION / SVG がそろい、句が押した語と関わるときだけ絵にする', async () => {
     const carry = { word: 'carry', restated }
     expect((await WordCards.of(reply('carry on'), carry))?.unit).toBe('carry on')
     expect((await WordCards.of(reply('test'), { word: 'tests', restated }))?.unit).toBe('test')

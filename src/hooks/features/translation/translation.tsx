@@ -211,7 +211,8 @@ export const translation = (on: On) => {
     if (!line) return row
     const t = $.ui.resolve(e)
     const voice = await voiceOf($)
-    if (!Result.given(version).either(() => true, () => false) || !(await settingsOf($)).card) return withTranslation(t, row, line, voice)
+    const isTranslated = Result.given(version).either(() => true, () => false)
+    if (!isTranslated || !(await settingsOf($)).card) return withTranslation(t, row, line, isTranslated ? voice : undefined)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
     const shown = (await read($, cards))[key] ?? []
     const isTerminal = e.surface === 'terminal'

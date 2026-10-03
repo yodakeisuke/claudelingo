@@ -305,7 +305,7 @@ export const translation = (on: On) => {
     if (!version) return replyPane(t, id, head, [], '訳しています…')
     const settings = await settingsOf($)
     return Result.given(version).either(async value => {
-      const { paragraphs, isIntoTarget } = ReplyTranslations.shown(text, value)
+      const { paragraphs, isIntoTarget } = ReplyTranslations.shown(settings, text, value)
       const shownCards = await read($, cards)
       const voice = await voiceOf($)
       const spoken = paragraphs.flatMap(p => (p.translation ? [isIntoTarget ? p.translation : p.text] : []))

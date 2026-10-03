@@ -48,6 +48,10 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     const { Text } = $.ui.resolve(e)
     return <Text>{e.props.text}</Text>
   })
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => {
+    const { Box } = $.ui.resolve(e)
+    return <Box />
+  })
   return { clock, asked, models, store, hold }
 }
 
@@ -332,5 +336,22 @@ describe('register', () => {
     await reply.press({ key: 'reply-speak' })
     expect(spoken.slice(1)).toEqual(['Samantha: EN 原因はここ。', 'Samantha: EN 直した'])
     expect(await reply.find({ type: 'Text', text: 'EN EN 直した' })).toBeDefined()
+  })
+
+  test('🎤 を押すと入力欄の上に練習が開き、声で入れた文をお手本と比べてコーチする。もう一度で入れ直し、押し直すと閉じる', async ($, on) => {
+    const { clock, asked } = engine(on, undefined, undefined, { card: false })
+    await $.prompt.submit({ text: 'fix **tests**', wait: false, origin: composer })
+    await clock.advance(0)
+    const ui = await $.ui.mount({ ...row('fix **tests**'), surface: 'desktop' })
+    await ui.press({ key: 'line-practise' })
+    const band = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 20, bodyColumns: 80, scroll: { offset: 0, bodyRows: 20 }, view: {} } })
+    expect(await band.find({ type: 'Text', text: 'EN: fix tests' })).toBeDefined()
+    await band.input({ key: 'practice', text: 'fix tess' })
+    expect(asked.at(-1)).toBe('<sample>EN: fix tests</sample>\n<heard>fix tess</heard>')
+    expect(await band.find({ type: 'Text', text: '聞き取り' })).toBeDefined()
+    await band.press({ key: 'practice-again' })
+    expect(await band.find({ type: 'Text', text: '聞き取り' })).toBeUndefined()
+    await ui.press({ key: 'line-practise' })
+    expect(await band.find({ type: 'Text', text: 'お手本' })).toBeUndefined()
   })
 })

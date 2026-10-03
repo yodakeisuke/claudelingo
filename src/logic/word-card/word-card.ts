@@ -2,7 +2,7 @@ import type { Card, Completion, Shown } from '../../engine-protocol'
 import { Result } from '../result/result'
 import { CardRequest } from './card-request'
 
-// 公開する操作
+// --- operations
 export const WordCards = {
   words: (restated: string) => words(restated),
   request: (settings: Settings, word: string, restated: string) => CardRequest.of(settings, word, plain(restated)),
@@ -13,14 +13,14 @@ export const WordCards = {
   picture: (svg: string, isWide?: boolean) => picture(svg, isWide),
 }
 
-// データ構造
+// --- data
 type Settings = Parameters<typeof CardRequest.of>[0]
 // 押した語と、それがある訳の行
 type Pressed = { word: string; restated: string }
 // 描いた絵の保存：押した語と文 → 絵
 type Saved = Record<string, Card>
 
-// ビジネスルール
+// --- business rules
 // 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す（記号だけの語は空）
 const words = (restated: string) => restated.split(/\s+/).filter(Boolean).map(w => ({ label: plain(w), word: bare(w) }))
 // 直した所の ** は外す

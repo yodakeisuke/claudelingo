@@ -1,10 +1,10 @@
 // logic の構成ルール（README「構造」）。.oxlintrc.json で logic/ の下だけに掛ける。
-const SECTIONS = ['公開する操作', 'データ構造', 'ビジネスルール', 'util']
+const SECTIONS = ['operations', 'data', 'business rules', 'util']
 const [OPERATIONS, DATA, RULES, UTIL] = SECTIONS.keys()
 
 const unwrap = node => ['TSAsExpression', 'TSSatisfiesExpression', 'ParenthesizedExpression'].includes(node?.type) ? unwrap(node.expression) : node
 const isFunction = node => ['ArrowFunctionExpression', 'FunctionExpression'].includes(unwrap(node)?.type)
-// 公開する操作: `export const X = { … }` で、中身は関数式か関数を指す名前だけ。
+// operations: `export const X = { … }` で、中身は関数式か関数を指す名前だけ。
 const operationsOf = statement => {
   const declarators = statement.type === 'ExportNamedDeclaration' && statement.declaration?.type === 'VariableDeclaration'
     ? statement.declaration.declarations : []
@@ -16,7 +16,7 @@ const isFunctionStatement = s => s.type === 'FunctionDeclaration' || (s.type ===
 const isType = s => ['TSTypeAliasDeclaration', 'TSInterfaceDeclaration'].includes(s.type)
 const belongs = [s => !!operationsOf(s), isType, isFunctionStatement, isFunctionStatement]
 
-const sectionOf = comment => comment.type === 'Line' ? SECTIONS.indexOf(comment.value.trim()) : -1
+const sectionOf = comment => comment.type === 'Line' ? SECTIONS.indexOf(/^ --- (.+)$/.exec(comment.value)?.[1]) : -1
 const sectionComments = context => context.sourceCode.getAllComments().filter(c => sectionOf(c) >= 0)
 // 一番外側の文は、その前にある最後のセクションコメントの節に属する。
 const placed = (context, program) => {
@@ -55,13 +55,13 @@ export default {
     sections: rule('セクションコメントが決まった順に 1 回ずつある', (context, program) => {
       const order = sectionComments(context).map(sectionOf).join()
       if (order !== [OPERATIONS, DATA, RULES].join() && order !== [OPERATIONS, DATA, RULES, UTIL].join()) {
-        context.report({ node: program, message: `セクションコメントは // ${SECTIONS.slice(0, 3).join(' → // ')}（→ // util）の順に 1 回ずつ` })
+        context.report({ node: program, message: `セクションコメントは // --- ${SECTIONS.slice(0, 3).join(' → // --- ')}（→ // --- util）の順に 1 回ずつ` })
       }
     }),
     placement: rule('一番外側の文が正しいセクションにある', (context, program) => {
       for (const { statement, section } of placed(context, program)) {
         if (!belongs[section]?.(statement)) {
-          context.report({ node: statement, message: '公開する操作には操作のオブジェクト、データ構造には型、ビジネスルールと util には export しない関数だけを置く' })
+          context.report({ node: statement, message: 'operations には操作のオブジェクト、data には型、business rules と util には export しない関数だけを置く' })
         }
       }
     }),

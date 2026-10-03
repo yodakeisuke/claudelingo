@@ -6,17 +6,17 @@ import { WordCards } from '../../../logic/word-card/word-card'
 type Word = ReturnType<typeof WordCards.words>[number]
 
 // 訳の行を、押せる語の並びで。飾りのないボタンは灰色の文字に見える（リンクは青になる）。絵が開いている語は濃く
-// 記号だけの語（? や —）は押せない文字のまま。端末はボタンの間に空白が無いので、空白を挟む。Desktop はボタンの余白で間が空きすぎるので、1 マス詰める
+// 記号だけの語（? や —）は押せない文字のまま。語の後ろに空白を挟む。Desktop はボタンの余白のぶん空きすぎるので、右を 1 マス詰める（左を詰めると、折り返した行の頭の語が欠ける）
 export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, words: Word[], up: Set<string>, press: (word: string) => void) => {
   const { Box, Button, Text } = t
   return (
     <Box flexWrap="wrap">
-      {words.map((w, i) => [
-        isTerminal && i > 0 && <Text> </Text>,
-        <Box marginLeft={!isTerminal && i > 0 ? -1 : 0}>
+      {words.map((w, i) => (
+        <Box marginRight={isTerminal ? 0 : -1}>
           {w.word ? <Button key={`word-${i}`} label={w.label} plain dimColor={!up.has(w.word)} onPress={() => press(w.word)} /> : <Text dimColor>{w.label}</Text>}
-        </Box>,
-      ])}
+          {i < words.length - 1 && <Text> </Text>}
+        </Box>
+      ))}
     </Box>
   )
 }

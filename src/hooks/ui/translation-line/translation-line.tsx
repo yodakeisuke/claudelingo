@@ -15,7 +15,7 @@ export const translationLine = (t: Elements[keyof Elements], line: Line) => {
   )
 }
 
-// 指示の行のすぐ下に、その外国語版（押せる語の並びがあればそれで）。アドバイスは見出し「💡 ヒント」の下にまとめ、単語の絵は 1 行空けて続ける
+// 指示の行のすぐ下に、その外国語版（押せる語の並びがあればそれで）。アドバイスは見出し「💡 ヒント」の下に「•」で、少し空けて並べ、単語の絵は 1 行空けて続ける
 export const withTranslation = (t: Elements[keyof Elements], row: RenderElement, line: Line, words?: RenderElement, cards: RenderElement[] = []) => {
   const { Box, Markdown, Text } = t
   return (
@@ -23,9 +23,16 @@ export const withTranslation = (t: Elements[keyof Elements], row: RenderElement,
       {row}
       {words ?? <Markdown dimColor text={line.restated} />}
       {line.tips.length > 0 && (
-        <Box flexDirection="column" marginTop={1}>
+        <Box flexDirection="column" marginTop={1} gap={0.5}>
           <Text dimColor bold>💡 ヒント</Text>
-          {line.tips.map(tip => <Markdown dimColor text={tip} />)}
+          <Box flexDirection="column" gap={0.5}>
+            {line.tips.map(tip => (
+              <Box gap={1} alignItems="flex-start">
+                <Text dimColor>•</Text>
+                <Box flexShrink={1}><Markdown dimColor text={tip} /></Box>
+              </Box>
+            ))}
+          </Box>
         </Box>
       )}
       {cards}

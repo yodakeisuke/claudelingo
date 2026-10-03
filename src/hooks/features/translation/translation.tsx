@@ -313,7 +313,7 @@ export const translation = (on: On) => {
         const key = `${text}#${i}`
         const shown = shownCards[key] ?? []
         if (!isIntoTarget || !settings.card) return [paragraphTranslation(t, restated, symbol)]
-        const lines = restated.split('\n').map((line, j) => wordLine(t, isTerminal, WordLines.of(line), WordCards.up(shown), word => void pressWord($, key, word, restated), `${id}-word-${i}-${j}`))
+        const lines = WordLines.all(restated).map((line, j) => wordLine(t, isTerminal, line, WordCards.up(shown), word => void pressWord($, key, word, restated), `${id}-word-${i}-${j}`))
         return [paragraphTranslation(t, restated, symbol, lines, cardsOf($, t, isTerminal, key, restated, shown, voice, `${id}-word-${i}-`))]
       })
       return replyPane(t, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)

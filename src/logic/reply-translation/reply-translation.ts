@@ -18,9 +18,9 @@ const request = (settings: Settings, text: string) => asked(settings, paragraphs
 const shown = (text: string, value: string) => ({ paragraphs: paired(paragraphs(text), value), isIntoTarget: isIntoTarget(value) })
 
 // --- business rules
-// 訳のパネルの見出しは返事の書き出しの 1 行（Markdown の印は外す）。長ければ 40 字で切る
+// 訳のパネルの見出しは返事の書き出しの 1 行（Markdown の印と表の両端の | は外す）。長ければ 40 字で切る
 const head = (text: string) => {
-  const line = PromptTranslations.plain(text.trim().split('\n')[0] ?? '').replace(/^([-*+]|\d+[.)]|#{1,6}|>)\s+/, '')
+  const line = PromptTranslations.plain(text.trim().split('\n')[0] ?? '').replace(/^([-*+]|\d+[.)]|#{1,6}|>)\s+|^\s*\||\|\s*$/g, '').trim()
   return line.length > 40 ? `${line.slice(0, 40)}…` : line
 }
 // 訳す段落が無ければ頼まない

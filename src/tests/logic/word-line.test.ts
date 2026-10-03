@@ -18,4 +18,9 @@ describe('word-line', () => {
     expect(shape('see `d703c9e` and [PR #47](https://x)')).toEqual([0, '', 'see d703c9e and PR #47'])
     expect(shape('-1 is not a list')).toEqual([0, '', '-1 is not a list'])
   })
+
+  test('表：区切りの行を落とし、行はセルごとの語に。区切りの前の行（見出し）は語をすべて濃く', () => {
+    const cells = (text: string) => WordLines.all(text).map(line => line.cells?.map(cell => cell.map(w => (w.isFixed ? `*${w.label}` : w.label)).join(' ')))
+    expect(cells('| Line | Shown |\n|---|:---:|\n| `- ` | • kept |\nafter')).toEqual([['*Line', '*Shown'], ['-', '• kept'], undefined])
+  })
 })

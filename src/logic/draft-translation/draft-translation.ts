@@ -49,10 +49,11 @@ const marks = (draft: string, version: Translation) =>
     .filter(range => range.start >= 0)
     .sort((a, b) => a.start - b.start)
     .slice(0, 1)
-// 置き換える文は、訳せたときの言い直しから ** を外したもの
-const restatedOf = (version: Translation) => Result.given(version).either(() => line(version)?.restated.replaceAll('**', ''), () => undefined)
-// 置き換えるのは、1 行の下書きで、言い直しが下書きと違うときだけ（言い直しは 1 行につなぐため）
+// 置き換える文は、訳せたときの言い直しから ** を外したもの。下書きの改行を保つため、行はつながない
+const restatedOf = (version: Translation) =>
+  Result.given(version).and(withoutMarks).either(value => value.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('💡 ')).join('\n').replaceAll('**', ''), () => '')
+// 置き換えるのは、言い直しが下書きと違うときだけ
 const replacement = (draft: string, version: Translation) => {
-  const restated = draft.trim().includes('\n') ? undefined : restatedOf(version)
+  const restated = restatedOf(version)
   return restated && restated !== draft.trim() ? restated : undefined
 }

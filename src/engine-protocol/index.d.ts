@@ -18,6 +18,6 @@ export type Shown = { word: string; card?: Card; isFailed?: boolean; isWide?: bo
 
 declare module 'claude-code' {
   interface PluginState {
-    claudelingo: { translations: Record<string, Translation>; denied: string; draft: { text: string; version: Translation } | null; cards: Record<string, Shown[]>; drawn: Record<string, Card> }
+    claudelingo: { translations: Record<string, Translation>; denied: string; draft: { text: string; version: Translation } | null; cards: Record<string, Shown[]>; drawn: Record<string, Card>; replies: Record<string, Translation | null> }
   }
 }

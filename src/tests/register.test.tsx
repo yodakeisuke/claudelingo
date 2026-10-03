@@ -30,6 +30,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     asked.push(prompt)
     if (prompt.startsWith('{"pressed"') && e.system?.includes('EX: <sentence>')) return { value: { isAnswered: true, text: 'EX: Please carry on.\nTR: どうぞ続けて。', usage } }
     if (prompt.startsWith('{"pressed"')) return gate.then(() => ({ value: card(JSON.parse(prompt).pressed) }))
+    if (prompt.startsWith('[1] ')) return { value: { isAnswered: true, text: `INTO: TARGET\n${prompt.replace(/\] /g, '] EN ')}`, usage } }
     models.push(e.model)
     if (fail === 'reject') throw new Error('model blocked')
     const value: ModelCompleteResult = fail === 'api-error'
@@ -40,6 +41,10 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
   on('command.list', () => ({ value: [{ name: 'clear', description: '', source: 'builtin' }] }))
   on('prompt.submit', (_$, e) => ({ text: e.text }))
   on('ui.render', { component: 'UserMessage' }, ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>{e.props.text}</Text>
+  })
+  on('ui.render', { component: 'AssistantMessage' }, ($, e) => {
     const { Text } = $.ui.resolve(e)
     return <Text>{e.props.text}</Text>
   })
@@ -289,5 +294,26 @@ describe('register', () => {
     await ui.press({ key: 'aspect-carry-examples' })
     expect(await ui.find({ type: 'Text', text: 'どうぞ続けて。' })).toBeDefined()
     expect(await ui.find({ type: 'Button', key: 'aspect-carry-origin' })).toBeDefined()
+  })
+
+  test('返事の「訳」を押すと、段落ごとにその下へ訳が出て（コードは訳さない）、訳の語から絵が出る。閉じると元に戻る', async ($, on) => {
+    const { asked } = engine(on)
+    const text = '原因はここ。\n\n```ts\nconst a = 1\n\nconst b = 2\n```\n\ncarry on して'
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text, isFirstOfReply: true } })
+    expect(await ui.find({ type: 'Text', text })).toBeDefined()
+    await ui.press({ key: 'reply-translate' })
+    expect(asked).toEqual(['[1] 原因はここ。\n\n[2] carry on して'])
+    for (const paragraph of ['原因はここ。', '```ts\nconst a = 1\n\nconst b = 2\n```', 'carry on して']) expect(await ui.find({ type: 'Text', text: paragraph })).toBeDefined()
+    expect(await ui.find({ type: 'Button', key: 'word-0-0-1' })).toBeDefined()
+    expect(await ui.find({ type: 'Button', key: 'word-1-0-0' })).toBeUndefined()
+    await ui.press({ key: 'word-2-0-1' })
+    expect(await ui.find({ type: 'Text', text: 'carry on' })).toBeDefined()
+    expect(asked.at(-1)).toBe('{"pressed":"carry","sentence":"EN carry on して"}')
+    expect(await ui.find({ type: 'Button', key: 'word-2-resize-carry' })).toBeDefined()
+    await ui.press({ key: 'reply-translate' })
+    expect(await ui.find({ type: 'Text', text })).toBeDefined()
+    expect(await ui.find({ type: 'Button', key: 'word-2-0-1' })).toBeUndefined()
+    await ui.press({ key: 'reply-translate' })
+    expect(await ui.find({ type: 'Button', key: 'word-2-resize-carry' })).toBeUndefined()
   })
 })

@@ -4,12 +4,18 @@ import { PromptTranslations } from '../../../logic/prompt-translation/prompt-tra
 
 type Line = NonNullable<ReturnType<typeof PromptTranslations.line>>
 
-// 外国語版を薄く。Markdown で描く（直した所の ** が太字になる）。アドバイスがあれば1点ずつ続けて
+// 外国語版を薄く、直した所（** で囲んだ所）は薄くせず太字で。薄い Markdown は端末で太字が消えるので、分けて描く
+const restated = (t: Elements[keyof Elements], text: string) => {
+  const { Text } = t
+  return <Text>{text.split('**').map((part, i) => (i % 2 ? <Text bold>{part}</Text> : <Text dimColor>{part}</Text>))}</Text>
+}
+
+// 外国語版と、アドバイスがあれば1点ずつ続けて
 export const translationLine = (t: Elements[keyof Elements], line: Line) => {
   const { Box, Markdown } = t
   return (
     <Box flexDirection="column">
-      <Markdown dimColor text={line.restated} />
+      {restated(t, line.restated)}
       {line.tips.map(tip => <Markdown dimColor text={`💡 ${tip}`} />)}
     </Box>
   )
@@ -21,7 +27,7 @@ export const withTranslation = (t: Elements[keyof Elements], row: RenderElement,
   return (
     <Box flexDirection="column" marginBottom={cards.length > 0 || line.tips.length > 0 ? 1 : 0}>
       {row}
-      {words ?? <Markdown dimColor text={line.restated} />}
+      {words ?? restated(t, line.restated)}
       {line.tips.length > 0 && (
         <Box flexDirection="column" marginTop={1} gap={0.5}>
           <Text dimColor bold>💡 ヒント</Text>

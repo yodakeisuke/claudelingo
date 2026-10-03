@@ -29,12 +29,12 @@ export const replyPane = (t: Elements[keyof Elements], key: string, head: string
   )
 }
 
-// 段落の訳：行ごとの押せる語の並び（無ければ薄い文）、読み上げた後はその発音記号、開いている絵
+// 段落の訳：行ごとの押せる語の並び（無ければ文）、読み上げた後はその発音記号、開いている絵
 export const paragraphTranslation = (t: Elements[keyof Elements], restated: string, symbol?: RenderElement, lines?: RenderElement[], cards: RenderElement[] = []) => {
   const { Box, Markdown } = t
   return (
     <Box flexDirection="column">
-      {lines ?? <Markdown dimColor text={restated} />}
+      {lines ?? <Markdown text={restated} />}
       {symbol}
       {cards}
     </Box>

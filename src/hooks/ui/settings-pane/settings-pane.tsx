@@ -10,7 +10,7 @@ export const SETTINGS_PANE = 'claudelingo'
 
 // /lingo の設定パネル：オン・オフは状態の文字と切り替えボタン。オフのまとまりは見出しだけ、mod ごとオフなら他のまとまりも出さない
 // 押す・確定するとその場で保存し、失敗したら理由を赤で1行。端末は行を詰め、それ以外の面は余白と行間を取る
-export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isTerminal: boolean, settings: Settings, denied: string, save: Save) => {
+export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isTerminal: boolean, settings: Settings, denied: string, save: Save, grass: RenderElement) => {
   const { Box, Text, Button, Input } = t
   const room = isTerminal ? 0 : 1
   const field = (label: string, control: RenderElement) => (
@@ -60,6 +60,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
         group('入力中の校正', 'live', model('liveModel'), field('反応の速さ', pause)),
         group('単語の絵', 'card', model('cardModel')),
         group('読み上げ', null, field('声', text('voice', 'Mac の声の名前（システム設定 › アクセシビリティ › リーダーと読み上げ）'))),
+        grass,
       ]}
       {denied && <Text color="error">保存できませんでした：{denied}</Text>}
     </Box>

@@ -1,8 +1,10 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, On } from 'claude-code'
 
+import { Grass } from '../../../logic/grass/grass'
 import { Result } from '../../../logic/result/result'
 import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
+import { grassGraph } from '../../ui/grass/grass'
 import { SETTINGS_PANE, settingsPane } from '../../ui/settings-pane/settings-pane'
 
 // 設定の保存に失敗したときの理由
@@ -36,6 +38,10 @@ export const settings = (on: On) => {
       const { Text } = $.ui.resolve(e)
       return <Text dimColor>設定は Desktop か CLI で開いてください</Text>
     }
-    return settingsPane($.ui.resolve(e), e.surface === 'terminal', await settingsOf($), await read($, denied), (field, value) => void changeSetting($, field, value))
+    const t = $.ui.resolve(e)
+    const isTerminal = e.surface === 'terminal'
+    // 設定の下に、書いた語の草
+    const grass = grassGraph(t, isTerminal, Grass.of(await $.store.get('words'), Grass.day(await $.clock.now())), e.props.bodyColumns)
+    return settingsPane(t, isTerminal, await settingsOf($), await read($, denied), (field, value) => void changeSetting($, field, value), grass)
   })
 }

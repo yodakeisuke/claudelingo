@@ -4,6 +4,7 @@ import { ReplyRequest } from './reply-request'
 export const ReplyTranslations = {
   request: (settings: Settings, text: string) => request(settings, text),
   shown: (text: string, value: string) => shown(text, value),
+  head: (text: string) => head(text),
 }
 
 // --- I/O
@@ -16,6 +17,11 @@ const request = (settings: Settings, text: string) => asked(settings, paragraphs
 const shown = (text: string, value: string) => ({ paragraphs: paired(paragraphs(text), value), isIntoTarget: isIntoTarget(value) })
 
 // --- business rules
+// 訳のパネルの見出しは返事の書き出しの 1 行。長ければ 40 字で切る
+const head = (text: string) => {
+  const line = text.trim().split('\n')[0] ?? ''
+  return line.length > 40 ? `${line.slice(0, 40)}…` : line
+}
 // 訳す段落が無ければ頼まない
 const asked = (settings: Settings, prose: string[]) => (prose.length > 0 ? ReplyRequest.of(settings, prose) : undefined)
 // 段落ごとに、コードでない段落の通し番号の訳を添える（コードの段落と、訳が欠けた段落には無い）

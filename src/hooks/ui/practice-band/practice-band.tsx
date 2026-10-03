@@ -19,7 +19,10 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
   const head = (text: string) => <Box width={8} flexShrink={0}><Text dimColor bold>{text}</Text></Box>
   return (
     <Box flexDirection="column" gap={isTerminal ? 0 : 1} paddingRight={4}>
-      <Box gap={1}>{head('お手本')}<Text>{practice.sample}</Text>{practice.pron && <Text dimColor italic>{practice.pron}</Text>}</Box>
+      <Box justifyContent="space-between">
+        <Box gap={1}>{head('お手本')}<Text>{practice.sample}</Text>{practice.pron && <Text dimColor italic>{practice.pron}</Text>}</Box>
+        <Button key="practice-close" label="✕" plain dimColor role="dismiss" onPress={hands.close} />
+      </Box>
       <Box gap={1}>
         {head('練習')}
         <Input key="practice" placeholder={`${isTerminal ? 'ctrl+x tab で欄へ移り、' : ''}声で入れて Enter`} value={practice.heard ?? ''} autoFocus onInput={hands.keep} onSubmit={hands.hear} />
@@ -38,7 +41,6 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
       <Box gap={1}>
         <Button key="practice-speak" label="🔊 お手本" onPress={hands.say} />
         <Button key="practice-again" label="もう一度" onPress={hands.again} />
-        <Button key="practice-close" label="閉じる" role="dismiss" onPress={hands.close} />
       </Box>
     </Box>
   )

@@ -1,7 +1,7 @@
 import type { Elements, RenderElement } from 'claude-code'
 
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
-import { microphone, speaker, symbolLine } from '../read-aloud/read-aloud'
+import { speakerAndMicrophone, symbolLine } from '../read-aloud/read-aloud'
 import type { Voice } from '../read-aloud/read-aloud'
 
 type Line = NonNullable<ReturnType<typeof PromptTranslations.line>>
@@ -31,8 +31,7 @@ export const withTranslation = (t: Elements[keyof Elements], row: RenderElement,
       {row}
       <Box alignItems="flex-start" gap={1}>
         <Box flexShrink={1}>{words ?? restated(t, line.restated)}</Box>
-        {voice && speaker(t, 'line-speak', () => voice.sayWithSymbols(line.restated))}
-        {voice && microphone(t, 'line-practise', () => voice.practise(line.restated))}
+        {voice && speakerAndMicrophone(t, { speak: 'line-speak', practise: 'line-practise' }, () => voice.sayWithSymbols(line.restated), () => voice.practise(line.restated))}
       </Box>
       {voice && symbolLine(t, voice.symbols(line.restated))}
       {line.tips.length > 0 && (

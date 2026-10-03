@@ -29,8 +29,8 @@ const of = (version: Translation, pressed: Pressed) => Result.given(version).and
 // --- business rules
 // 訳の行は空白で区切った語を、そのまま押せる語にする。押した語は句読点を落とした小文字で渡す（記号だけの語は空）。直した所（** の対）は印 \u0001 で囲んでから区切り、前の印が奇数個の語を直した所とする
 const words = (restated: string) => PromptTranslations.parts(restated).join('\u0001').split(/\s+/).filter(Boolean).map((w, i, all) => ({ label: w.replaceAll('\u0001', ''), word: bare(w), isFixed: w.includes('\u0001') || all.slice(0, i).join(' ').split('\u0001').length % 2 === 0 }))
-// 語は小文字にし、文字（母音記号などの結合文字も）・数字と ' と - 以外（句読点など）を落とす。’ は ' にそろえる。' と - だけが残る語（- や ---）は空
-const bare = (word: string) => word.toLowerCase().replaceAll('’', "'").replace(/[^\p{L}\p{M}\p{N}'-]/gu, '').replace(/^['-]+$/, '')
+// 語は小文字にし、文字（母音記号などの結合文字も）・数字と ' と - 以外（句読点など）を落とす。’ は ' にそろえ、語の両端の ' は引用符として落とす。' と - だけが残る語（- や ---）は空
+const bare = (word: string) => word.toLowerCase().replaceAll('’', "'").replace(/[^\p{L}\p{M}\p{N}'-]/gu, '').replace(/^'+|'+$/g, '').replace(/^['-]+$/, '')
 // 句の語（carry on なら carry と on）
 const parts = (unit: string) => unit.split(/\s+/).map(bare).filter(Boolean)
 // 同じ文の同じ語なら、同じ絵

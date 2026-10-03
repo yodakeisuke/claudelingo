@@ -299,10 +299,9 @@ export const translation = (on: On) => {
       const { translated, spoken, withCards } = ReplyTranslations.shown(settings, text, value)
       const translations = translated.map(({ restated, at }, n) => {
         const symbol = symbolLine(t, Pronunciations.symbol(said, spoken, n))
-        if (!withCards) return paragraphTranslation(t, restated, symbol)
         const key = `${reply}#${at}`
-        const lines = WordLines.all(restated).map((line, j) => words.line(key, restated, line, `${id}-word-${at}-${j}`))
-        return paragraphTranslation(t, restated, symbol, lines, words.cards(key, restated, `${id}-word-${at}-`))
+        const lines = WordLines.all(restated).map((line, j) => (withCards ? words.line(key, restated, line, `${id}-word-${at}-${j}`) : wordLine(t, isTerminal, line, new Set())))
+        return paragraphTranslation(t, symbol, lines, withCards ? words.cards(key, restated, `${id}-word-${at}-`) : [])
       })
       return replyPane(t, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)
     }, async error => replyPane(t, id, head, [], `訳せませんでした：${error}`))

@@ -3,11 +3,12 @@ import type { Elements, RenderElement } from 'claude-code'
 import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
 
 type Settings = ReturnType<typeof TranslationSettings.of>
+type Switch = 'enabled' | 'afterSend' | 'live' | 'card'
 type Save = (field: keyof Settings, value: string | boolean) => void
 
 export const SETTINGS_PANE = 'claudelingo'
 
-// /lingo の設定パネル：一番上が mod の有効・無効、その下を言語・送った後の訳・入力中の校正・単語の絵のまとまりに分ける
+// /lingo の設定パネル：オン・オフは状態の文字と切り替えボタン。オフのまとまりは見出しだけ、mod ごとオフなら他のまとまりも出さない
 // 押す・確定するとその場で保存し、失敗したら理由を赤で1行。端末は行を詰め、それ以外の面は余白と行間を取る
 export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isTerminal: boolean, settings: Settings, denied: string, save: Save) => {
   const { Box, Text, Button, Input } = t
@@ -18,27 +19,38 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
       {control}
     </Box>
   )
-  const group = (title: string, onOff: RenderElement | null, ...fields: RenderElement[]) => (
-    <Box flexDirection="column" gap={room}>
-      <Box alignItems="center" gap={1}><Box width={14} flexShrink={0}><Text bold>{title}</Text></Box>{onOff}</Box>
-      {fields}
+  const group = (title: string, key: Switch | null, ...fields: RenderElement[]) => {
+    const on = key === null || settings[key]
+    return (
+      <Box flexDirection="column" gap={room}>
+        <Box alignItems="center" gap={1}><Box width={14} flexShrink={0}><Text bold dimColor={!on}>{title}</Text></Box>{key && onOff(key)}</Box>
+        {on && fields}
+      </Box>
+    )
+  }
+  const onOff = (key: Switch) => (
+    <Box alignItems="center" gap={2}>
+      {settings[key] ? <Text color="success">● オン</Text> : <Text dimColor>○ オフ</Text>}
+      <Button key={key} label={settings[key] ? 'オフにする' : 'オンにする'} variant="secondary" onPress={() => save(key, !settings[key])} />
     </Box>
   )
-  const choice = (field: keyof Settings, now: string, options: { value: string; label?: string }[]) => (
+  const model = (key: 'model' | 'liveModel' | 'cardModel') => field('モデル', (
     <Box gap={1} flexWrap="wrap">
-      {options.map(o => <Box flexShrink={0}><Button key={`${field}-${o.value}`} label={o.label ?? o.value} variant={o.value === now ? 'primary' : 'secondary'} onPress={() => save(field, typeof settings[field] === 'boolean' ? o.value === 'on' : o.value)} /></Box>)}
+      {TranslationSettings.models().map(value => <Box flexShrink={0}><Button key={`${key}-${value}`} label={value} variant={value === settings[key] ? 'primary' : 'secondary'} onPress={() => save(key, value)} /></Box>)}
     </Box>
-  )
-  const onOff = (field: 'enabled' | 'afterSend' | 'live' | 'card', now: boolean) => choice(field, now ? 'on' : 'off', [{ value: 'on', label: '有効' }, { value: 'off', label: '無効' }])
-  const model = (key: 'model' | 'liveModel' | 'cardModel') => field('モデル', choice(key, settings[key], TranslationSettings.models().map(value => ({ value }))))
+  ))
+  const nudge = (by: 1 | -1, label: string) => <Button key={`livePause-${label}`} label={label} variant="secondary" onPress={() => save('livePause', TranslationSettings.step(settings.livePause, by))} />
+  const pause = <Box alignItems="center" gap={1}><Text dimColor>速い</Text>{nudge(-1, '-')}<Box width={8} flexDirection="column"><Input key="livePause" value={settings.livePause} onSubmit={v => save('livePause', TranslationSettings.pause(v, settings.livePause))} /></Box><Text>秒</Text>{nudge(1, '+')}<Text dimColor>遅い</Text></Box>
   const text = (field: 'native' | 'target') => <Box width={28} flexDirection="column"><Input key={field} value={settings[field]} onSubmit={v => save(field, v)} /></Box>
   return (
     <Box flexDirection="column" gap={room * 2} paddingX={room * 2} paddingY={room}>
-      {group('claudelingo', onOff('enabled', settings.enabled))}
-      {group('言語', null, field('母語', text('native')), field('学ぶ言語', text('target')))}
-      {group('送った後の訳', onOff('afterSend', settings.afterSend), model('model'))}
-      {group('入力中の校正', onOff('live', settings.live), model('liveModel'), field('反応の速さ', choice('livePause', settings.livePause, TranslationSettings.pauses().map(value => ({ value, label: `${value}秒` })))))}
-      {group('単語の絵', onOff('card', settings.card), model('cardModel'))}
+      {group('claudelingo', 'enabled')}
+      {settings.enabled && [
+        group('言語', null, field('母語', text('native')), field('学ぶ言語', text('target'))),
+        group('送った後の訳', 'afterSend', model('model')),
+        group('入力中の校正', 'live', model('liveModel'), field('反応の速さ', pause)),
+        group('単語の絵', 'card', model('cardModel')),
+      ]}
       {denied && <Text color="error">保存できませんでした：{denied}</Text>}
     </Box>
   )

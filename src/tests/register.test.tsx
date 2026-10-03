@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { ModelCompleteResult, On, PromptOrigin, RenderSurface } from 'claude-code'
 
-import { ReplyTranslations } from '../logic/reply-translation/reply-translation'
+import { ElementKeys } from '../logic/element-key/element-key'
 
 const composer: PromptOrigin = { kind: 'composer' }
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
@@ -60,6 +60,10 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
 // 単語の絵の返事：carry と on は carry on、tests は文の別の句（迷子）、ほかはその語
 const UNITS: Record<string, string> = { carry: 'carry on', on: 'carry on', tests: 'carry on' }
 const card = (pressed: string): ModelCompleteResult => ({ isAnswered: true, text: `UNIT: ${UNITS[pressed] ?? pressed}\nPRON: /x/\nCAPTION: ${pressed} の絵\nSVG:\n<svg viewBox="0 0 480 288" width="480"><rect/></svg>`, usage })
+
+// 指示の行・返事のブロックのボタンの名前
+const lineKey = (text: string, key: string) => `${ElementKeys.of('line', text)}-${key}`
+const replyKey = (text: string, key: string) => `${ElementKeys.of('reply', text)}-${key}`
 
 const row = (text: string, origin: PromptOrigin = composer) =>
   ({ plugin: 'claudelingo', component: 'UserMessage', props: { text, origin, isExpanded: true } }) as const
@@ -228,13 +232,13 @@ describe('register', () => {
   test('訳の行の語を押すとその句の絵が出て、句のどの語を押しても閉じ、二度目は描き直さない', async ($, on) => {
     const { clock, asked } = engine(on)
     const ui = await sent($, clock)
-    await ui.press({ key: 'word-5' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-5') })
     expect(await ui.find({ type: 'Text', text: /^carry on$/ })).toBeDefined()
     expect((await ui.find({ type: 'Svg' }))?.props.width).toBe(380)
     expect(await ui.find({ type: 'Text', text: 'carry の絵' })).toBeDefined()
-    await ui.press({ key: 'word-6' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-6') })
     expect(await ui.find({ type: 'Svg' })).toBeUndefined()
-    await ui.press({ key: 'word-6' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-6') })
     expect(await ui.find({ type: 'Svg' })).toBeDefined()
     expect(asked).toEqual(['fix the tests and carry on', '{"pressed":"carry","sentence":"EN: fix the tests and carry on"}'])
   })
@@ -242,20 +246,20 @@ describe('register', () => {
   test('別の語の絵は並んで出て、拡大・縮小はその絵だけ', async ($, on) => {
     const { clock } = engine(on)
     const ui = await sent($, clock)
-    await ui.press({ key: 'word-1' })
-    await ui.press({ key: 'word-5' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-1') })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-5') })
     expect(await ui.findAll({ type: 'Svg' })).toHaveLength(2)
-    await ui.press({ key: 'resize-carry' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'resize-carry') })
     expect((await ui.findAll({ type: 'Svg' })).map(s => s.props.width)).toEqual([380, 560])
-    expect((await ui.find({ type: 'Button', key: 'resize-carry' }))?.props.label).toBe('縮小')
-    await ui.press({ key: 'resize-carry' })
+    expect((await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'resize-carry') }))?.props.label).toBe('縮小')
+    await ui.press({ key: lineKey('fix the tests and carry on', 'resize-carry') })
     expect((await ui.findAll({ type: 'Svg' })).map(s => s.props.width)).toEqual([380, 380])
   })
 
   test('押した語と関わらない句が返ったら、描けなかったと出す', async ($, on) => {
     const { clock } = engine(on)
     const ui = await sent($, clock)
-    await ui.press({ key: 'word-3' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-3') })
     expect(await ui.find({ type: 'Text', text: '描けませんでした：tests' })).toBeDefined()
   })
 
@@ -263,43 +267,43 @@ describe('register', () => {
     const { clock } = engine(on)
     const ui = await sent($, clock, 'terminal')
     expect(await ui.findAll({ type: 'Text', text: /^ $/ })).toHaveLength(6)
-    await ui.press({ key: 'word-5' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-5') })
     expect(await ui.find({ type: 'Text', text: 'carry の絵' })).toBeDefined()
     expect(await ui.find({ type: 'Svg' })).toBeUndefined()
-    expect(await ui.find({ type: 'Button', key: 'resize-carry' })).toBeUndefined()
+    expect(await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'resize-carry') })).toBeUndefined()
   })
 
   test('単語の絵を無効にすると、訳の行は今までどおり文で出る', async ($, on) => {
     const { clock } = engine(on, undefined, undefined, { card: false })
     const ui = await sent($, clock)
     expect(await ui.find({ type: 'Text', text: 'EN: fix the tests and carry on' })).toBeDefined()
-    expect(await ui.find({ type: 'Button', key: 'word-0' })).toBeUndefined()
+    expect(await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'word-0') })).toBeUndefined()
   })
 
   test('絵を描いている間も例文を押せ、開いた欄は絵が届いても残り、押し直すと閉じる', async ($, on) => {
     const { clock, hold } = engine(on)
     const ui = await sent($, clock)
     const release = hold()
-    await ui.press({ key: 'word-5' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-5') })
     expect((await ui.find({ type: 'Svg' }))?.props.width).toBe(380)
-    await ui.press({ key: 'aspect-carry-examples' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'aspect-carry-examples') })
     expect(await ui.find({ type: 'Text', text: 'どうぞ続けて。' })).toBeDefined()
-    expect((await ui.find({ type: 'Button', key: 'aspect-carry-examples' }))?.props.dimColor).toBe(false)
+    expect((await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'aspect-carry-examples') }))?.props.dimColor).toBe(false)
     release()
     await clock.advance(0)
     expect(await ui.find({ type: 'Text', text: 'carry の絵' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'Please carry on.' })).toBeDefined()
-    await ui.press({ key: 'aspect-carry-examples' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'aspect-carry-examples') })
     expect(await ui.find({ type: 'Text', text: 'Please carry on.' })).toBeUndefined()
   })
 
   test('端末でも例文などのボタンが出て、欄は文字で開く', async ($, on) => {
     const { clock } = engine(on)
     const ui = await sent($, clock, 'terminal')
-    await ui.press({ key: 'word-5' })
-    await ui.press({ key: 'aspect-carry-examples' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-5') })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'aspect-carry-examples') })
     expect(await ui.find({ type: 'Text', text: 'どうぞ続けて。' })).toBeDefined()
-    expect(await ui.find({ type: 'Button', key: 'aspect-carry-origin' })).toBeDefined()
+    expect(await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'aspect-carry-origin') })).toBeDefined()
   })
 
   test('返事の 🌐 を押すと、段落ごとにその下へ訳が出て（コードは訳さない）、訳の語から絵が出る。閉じると元に戻る', async ($, on) => {
@@ -307,20 +311,20 @@ describe('register', () => {
     const text = '原因はここ。\n\n```ts\nconst a = 1\n\nconst b = 2\n```\n\ncarry on して'
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text, isFirstOfReply: true } })
     expect(await ui.find({ type: 'Text', text })).toBeDefined()
-    await ui.press({ key: `${ReplyTranslations.key(text)}-translate` })
+    await ui.press({ key: replyKey(text, 'translate') })
     expect(asked).toEqual(['[1] 原因はここ。\n\n[2] carry on して'])
     for (const paragraph of ['原因はここ。', '```ts\nconst a = 1\n\nconst b = 2\n```', 'carry on して']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${paragraph}$`) })).toBeDefined()
-    expect(await ui.find({ type: 'Button', key: 'word-0-0-1' })).toBeDefined()
-    expect(await ui.find({ type: 'Button', key: 'word-1-0-0' })).toBeUndefined()
-    await ui.press({ key: 'word-2-0-1' })
+    expect(await ui.find({ type: 'Button', key: replyKey(text, 'word-0-0-1') })).toBeDefined()
+    expect(await ui.find({ type: 'Button', key: replyKey(text, 'word-1-0-0') })).toBeUndefined()
+    await ui.press({ key: replyKey(text, 'word-2-0-1') })
     expect(await ui.find({ type: 'Text', text: /^carry on$/ })).toBeDefined()
     expect(asked.at(-1)).toBe('{"pressed":"carry","sentence":"EN carry on して"}')
-    expect(await ui.find({ type: 'Button', key: 'word-2-resize-carry' })).toBeDefined()
-    await ui.press({ key: `${ReplyTranslations.key(text)}-translate` })
+    expect(await ui.find({ type: 'Button', key: replyKey(text, 'word-2-resize-carry') })).toBeDefined()
+    await ui.press({ key: replyKey(text, 'translate') })
     expect(await ui.find({ type: 'Text', text })).toBeDefined()
-    expect(await ui.find({ type: 'Button', key: 'word-2-0-1' })).toBeUndefined()
-    await ui.press({ key: `${ReplyTranslations.key(text)}-translate` })
-    expect(await ui.find({ type: 'Button', key: 'word-2-resize-carry' })).toBeUndefined()
+    expect(await ui.find({ type: 'Button', key: replyKey(text, 'word-2-0-1') })).toBeUndefined()
+    await ui.press({ key: replyKey(text, 'translate') })
+    expect(await ui.find({ type: 'Button', key: replyKey(text, 'word-2-resize-carry') })).toBeUndefined()
   })
 
   test('🔊 を押すと設定の声で読み、文はその下に発音記号が出る。返事は学ぶ言語の段落を順に読む', async ($, on) => {
@@ -330,12 +334,12 @@ describe('register', () => {
     await $.prompt.submit({ text: 'fix **tests**', wait: false, origin: composer })
     await clock.advance(0)
     const ui = await $.ui.mount({ ...row('fix **tests**'), surface: 'desktop' })
-    await ui.press({ key: 'line-speak' })
+    await ui.press({ key: lineKey('fix **tests**', 'speak') })
     expect(spoken).toEqual(['Samantha: EN: fix tests'])
     expect(await ui.find({ type: 'Text', text: 'EN EN: fix tests' })).toBeDefined()
     const reply = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text: '原因はここ。\n\n直した', isFirstOfReply: true } })
-    await reply.press({ key: `${ReplyTranslations.key('原因はここ。\n\n直した')}-translate` })
-    await reply.press({ key: `${ReplyTranslations.key('原因はここ。\n\n直した')}-speak` })
+    await reply.press({ key: replyKey('原因はここ。\n\n直した', 'translate') })
+    await reply.press({ key: replyKey('原因はここ。\n\n直した', 'speak') })
     expect(spoken.slice(1)).toEqual(['Samantha: EN 原因はここ。', 'Samantha: EN 直した'])
     expect(await reply.find({ type: 'Text', text: 'EN EN 直した' })).toBeDefined()
   })
@@ -345,7 +349,7 @@ describe('register', () => {
     await $.prompt.submit({ text: 'fix **tests**', wait: false, origin: composer })
     await clock.advance(0)
     const ui = await $.ui.mount({ ...row('fix **tests**'), surface: 'desktop' })
-    await ui.press({ key: 'line-practise' })
+    await ui.press({ key: lineKey('fix **tests**', 'practise') })
     const band = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 20, bodyColumns: 80, scroll: { offset: 0, bodyRows: 20 }, view: {} } })
     expect(await band.find({ type: 'Text', text: 'EN: fix tests' })).toBeDefined()
     await band.input({ key: 'practice', text: 'fix tess' })
@@ -353,7 +357,7 @@ describe('register', () => {
     expect(await band.find({ type: 'Text', text: '聞き取り' })).toBeDefined()
     await band.press({ key: 'practice-again' })
     expect(await band.find({ type: 'Text', text: '聞き取り' })).toBeUndefined()
-    await ui.press({ key: 'line-practise' })
+    await ui.press({ key: lineKey('fix **tests**', 'practise') })
     expect(await band.find({ type: 'Text', text: 'お手本' })).toBeUndefined()
   })
 })

@@ -2,9 +2,9 @@ import type { Elements } from 'claude-code'
 
 import type { Practice } from '../../../engine-protocol'
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
+import type { SpeakingPractice } from '../../../logic/speaking-practice/speaking-practice'
 
-// コーチの返事：書き起こし（違う語は ** で囲む）とアドバイス、頼んでいる間の一言、失敗の理由
-export type Coached = NonNullable<ReturnType<typeof PromptTranslations.line>> | string | undefined
+type Coached = ReturnType<typeof SpeakingPractice.shown>
 // 帯の手：欄の文を残す、声で入れた文を聞かせる、お手本を読む、入れ直す
 type Hands = { keep: (text: string) => void; hear: (heard: string) => void; say: () => void; again: () => void }
 

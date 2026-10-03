@@ -3,7 +3,8 @@
   "jsPlugins": [
     "./lint/logic-layout.js",
     "./lint/ui-layout.js",
-    "./lint/persistence.js"
+    "./lint/persistence.js",
+    "./lint/mainstream.js"
   ],
   "rules": {
     "func-style": [
@@ -89,7 +90,9 @@
         "**/hooks/**"
       ],
       "rules": {
-        "logic-layout/result-only": "error"
+        "logic-layout/result-only": "error",
+        "mainstream/no-context": "error",
+        "mainstream/no-delay": "error"
       }
     },
     {

@@ -26,9 +26,9 @@ const isSame = (s: Shown, word: string, saved?: Card) => s.word === word || (sav
 const isDrawing = (list: readonly Shown[], word: string) => list.some(s => s.word === word && !s.card && !s.isFailed)
 // 届いた絵を残すのは、同じ句の絵がまだ出ていないとき
 const kept = (list: readonly Shown[], word: string, card?: Card) => (card && !isUp(list, word, card) ? card : undefined)
-// 届いた絵を語に入れ、描けなければ失敗とする。同じ句の絵が先に出ていれば（swap を押し、続けて over）、後から来た方を閉じる
+// 届いた絵を語に入れ、描けなければ失敗とする。もう絵が出ていればそのまま（閉じて開き直すと、先の依頼も後から届く）。同じ句の絵が先に出ていれば（swap を押し、続けて over）、後から来た方を閉じる
 const drawn = (list: readonly Shown[], word: string, card?: Card) =>
-  list.flatMap(s => (s.word !== word ? [s] : card && isUp(list, word, card) ? [] : [{ ...s, card, isFailed: !card }]))
+  list.flatMap(s => (s.word !== word || s.card ? [s] : card && isUp(list, word, card) ? [] : [{ ...s, card, isFailed: !card }]))
 // 同じ句の絵が、別の語で出ている
 const isUp = (list: readonly Shown[], word: string, card: Card) => list.some(s => s.word !== word && s.card?.unit === card.unit)
 // 拡大・縮小はその絵だけ
@@ -40,8 +40,8 @@ const isWriting = (list: readonly Shown[], { word, aspect }: At) => {
   const opened = list.find(s => s.word === word)?.aspects?.[aspect]
   return opened !== undefined && !opened.items && !opened.isFailed
 }
-// 書けた欄は項目で、書けなければ失敗で埋める。書いている間に閉じられていたら、開き直さない
-const written = (list: readonly Shown[], at: At, items?: Item[]) => changeAspect(list, at, opened => opened && { items, isFailed: !items })
+// 書けた欄は項目で、書けなければ失敗で埋める。もう項目が出ていればそのまま。書いている間に閉じられていたら、開き直さない
+const written = (list: readonly Shown[], at: At, items?: Item[]) => changeAspect(list, at, opened => opened && (opened.items ? opened : { items, isFailed: !items }))
 // 押した語の欄だけを変える
 const changeAspect = (list: readonly Shown[], { word, aspect }: At, change: (opened?: Opened) => Opened | undefined) =>
   list.map(s => (s.word === word ? { ...s, aspects: { ...s.aspects, [aspect]: change(s.aspects?.[aspect]) } } : s))

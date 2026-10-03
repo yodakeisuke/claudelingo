@@ -26,12 +26,16 @@ export const settings = (on: On) => {
   })
 
   on('command.run', { command: 'lingo' }, async $ => {
-    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 20 })
+    await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 20, columns: 100 })
     return {}
   })
 
   on('ui.render', { component: 'Pane', requestId: SETTINGS_PANE }, async ($, e) => {
-    // スマホには入力欄がないので描けず、engine が自前で描く
-    return settingsPane($.ui.resolve(e) as Parameters<typeof settingsPane>[0], e.surface === 'terminal', await settingsOf($), await read($, denied), (field, value) => void changeSetting($, field, value))
+    // スマホには入力欄がないので、開く場所を案内する
+    if (e.surface === 'mobile') {
+      const { Text } = $.ui.resolve(e)
+      return <Text dimColor>設定は Desktop か CLI で開いてください</Text>
+    }
+    return settingsPane($.ui.resolve(e), e.surface === 'terminal', await settingsOf($), await read($, denied), (field, value) => void changeSetting($, field, value))
   })
 }

@@ -14,7 +14,7 @@ describe('learner', () => {
     ] as const
     for (const [level, told] of rows) {
       expect(TranslationRequest.of({ ...learner, level, model: 'haiku' }, 'ログ見て').system.startsWith(told)).toBe(true)
-      expect(WordCards.request({ ...learner, level, cardModel: 'sonnet' }, 'carry', 'carry on').system.startsWith(told)).toBe(true)
+      expect(WordCards.request({ ...learner, level, cardModel: 'sonnet' }, { word: 'carry', restated: 'carry on' }, ['desktop']).system.startsWith(told)).toBe(true)
     }
   })
 })

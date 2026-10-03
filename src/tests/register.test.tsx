@@ -181,7 +181,7 @@ describe('register', () => {
     expect(await ui.find({ type: 'Button', key: 'live' })).toBeUndefined()
   })
 
-  test('無効にしても、モデルを変えても、出ている訳は消えない', async ($, on) => {
+  test('無効にしても、モデルを変えても、出ている訳は消えない（無効の間は読み上げなどのボタンを出さない）', async ($, on) => {
     const { clock } = engine(on, undefined, undefined, { card: false })
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
     await clock.advance(0)
@@ -190,6 +190,7 @@ describe('register', () => {
     await ui.press({ key: 'enabled' })
     const message = await $.ui.mount({ ...row('ログ見て'), surface: 'desktop' })
     expect(await message.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
+    expect(await message.find({ type: 'Button', key: lineKey('ログ見て', 'speak') })).toBeUndefined()
   })
 
   test('同じ指示も、送るたびに今の設定で訳す', async ($, on) => {
@@ -257,6 +258,15 @@ describe('register', () => {
     expect((await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'resize-carry') }))?.props.label).toBe('縮小')
     await ui.press({ key: lineKey('fix the tests and carry on', 'resize-carry') })
     expect((await ui.findAll({ type: 'Svg' })).map(s => s.props.width)).toEqual([380, 380])
+  })
+
+  test('同じ文の指示が並んでも、絵は押した指示の下にだけ出る', async ($, on) => {
+    const { clock } = engine(on)
+    const ui = await sent($, clock)
+    const again = await $.ui.mount({ ...row('fix the tests and carry on'), requestId: 'again', surface: 'desktop' })
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-5') })
+    expect(await ui.find({ type: 'Svg' })).toBeDefined()
+    expect(await again.find({ type: 'Svg' })).toBeUndefined()
   })
 
   test('押した語と関わらない句が返ったら、描けなかったと出す', async ($, on) => {

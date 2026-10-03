@@ -12,4 +12,9 @@ describe('pronunciation', () => {
     expect(answered('/tʃɛk/\n\n[1] /ˈtʃɛk/')).toEqual(['/ˈtʃɛk/'])
     expect(answered('sorry')).toBeUndefined()
   })
+
+  test('読む文は ** とリンクの URL を外す。constructor のような文も、まだ頼んでいなければ頼む', () => {
+    expect(Pronunciations.spoken(['Read **the** [guide](https://x.dev).'])).toEqual(['Read the guide.'])
+    expect(Pronunciations.isAsked({}, ['constructor'])).toBe(false)
+  })
 })

@@ -16,12 +16,20 @@ describe('word-card', () => {
     ])
     expect(WordCards.words('Déjà vu, ça va ?').map(w => w.word)).toEqual(['déjà', 'vu', 'ça', 'va', ''])
     expect(WordCards.words('テストを直して').map(w => w.word)).toEqual(['テストを直して'])
+    expect(WordCards.words('We’ll देखना ‘Hello’. \'bye\'').map(w => w.word)).toEqual(["we'll", 'देखना', 'hello', 'bye'])
     expect(WordCards.words('- fix `src/**/*.ts` and **use** it').map(w => [w.label, w.word, w.isFixed])).toEqual([['-', '', false], ['fix', 'fix', false], ['`src/**/*.ts`', 'srcts', false], ['and', 'and', false], ['use', 'use', true], ['it', 'it', false]])
-    expect(WordCards.request({ native: 'Japanese', target: 'English', level: '', cardModel: 'sonnet' }, 'carry', restated).prompt).toBe(`{"pressed":"carry","sentence":"I'll carry on with the tests."}`)
+    expect(WordCards.request({ native: 'Japanese', target: 'English', level: '', cardModel: 'sonnet' }, { word: 'carry', restated }, ['desktop']).prompt).toBe(`{"pressed":"carry","sentence":"I'll carry on with the tests."}`)
   })
 
-  test('UNIT / CAPTION / SVG がそろい、句が押した語と関わるときだけ絵にする', async () => {
+  test('SVG は、絵を描ける面（端末のほか）があるときだけ頼む', () => {
+    const settings = { native: 'Japanese', target: 'English', level: '', cardModel: 'sonnet' }
+    expect(WordCards.request(settings, { word: 'carry', restated }, ['terminal']).system).not.toContain('SVG:')
+    expect(WordCards.request(settings, { word: 'carry', restated }, ['terminal', 'desktop']).system).toContain('SVG:')
+  })
+
+  test('UNIT / CAPTION がそろい（SVG は無くてもよい）、句が押した語と関わるときだけ絵にする', async () => {
     const carry = { word: 'carry', restated }
+    expect((WordCards.of(await answered('UNIT: carry on\nPRON: /x/\nCAPTION: 運び続ける'), carry))?.svg).toBe('')
     expect((WordCards.of(await reply('carry on'), carry))?.unit).toBe('carry on')
     expect((WordCards.of(await reply('test'), { word: 'tests', restated }))?.unit).toBe('test')
     expect((WordCards.of(await reply('test'), { word: 'tests', restated: 'Add tests and test it.' }))?.unit).toBe('test')

@@ -20,6 +20,6 @@ export type Practice = { sample: string; pron?: string; heard?: string; coach?: 
 
 declare module 'claude-code' {
   interface PluginState {
-    claudelingo: { translations: Record<string, Translation>; denied: string; draft: { text: string; version: Translation } | null; cards: Record<string, Shown[]>; drawn: Record<string, Card>; replies: Record<string, Translation | null>; paneReply: string; sounds: Record<string, string[] | null>; practice: Practice | null }
+    claudelingo: { translations: Record<string, Translation>; denied: string; draft: { text: string; version: Translation } | null; cards: Record<string, Shown[]>; drawn: Record<string, Card>; replies: Record<string, Translation | null>; paneReply: { text: string; key: string }; sounds: Record<string, string[] | null>; practice: Practice | null }
   }
 }

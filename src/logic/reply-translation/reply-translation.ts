@@ -6,6 +6,7 @@ export const ReplyTranslations = {
   request: (settings: Settings, text: string) => request(settings, text),
   shown: (settings: Settings, text: string, value: string) => shown(settings, text, value),
   head: (text: string) => head(text),
+  key: (settings: Settings, text: string) => key(settings, text),
 }
 
 // --- I/O
@@ -18,6 +19,8 @@ const request = (settings: Settings, text: string) => asked(settings, paragraphs
 const shown = (settings: Settings, text: string, value: string) => ({ paragraphs: paired(paragraphs(text), value), isIntoTarget: isIntoTarget(settings, value) })
 
 // --- business rules
+// 訳は言語の組み合わせごとに覚える（設定で言語を変えたら、押し直すと訳し直す）
+const key = ({ native, target }: Settings, text: string) => `${native}>${target}\n${text}`
 // 訳のパネルの見出しは返事の書き出しの 1 行（Markdown の印と表の両端の | は外す）
 const head = (text: string) => PromptTranslations.plain(text.trim().split('\n')[0] ?? '').replace(/^([-*+]|\d+[.)]|#{1,6}|>)\s+|^\s*\||\|\s*$/g, '').trim()
 // 訳す段落が無ければ頼まない

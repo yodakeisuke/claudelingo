@@ -21,7 +21,7 @@ export const replyPane = (t: Elements[keyof Elements], key: string, head: string
   const { Box, Text } = t
   return (
     <Box flexDirection="column" gap={1}>
-      <Text dimColor wrap="truncate-end">{head}</Text>
+      {head && <Text dimColor wrap="truncate-end">{head}</Text>}
       {translations}
       {note && <Text dimColor>{note}</Text>}
       {speak && <Box>{speaker(t, `${key}-speak`, speak, true)}</Box>}

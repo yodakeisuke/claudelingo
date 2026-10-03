@@ -33,7 +33,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     asked.push(prompt)
     if (prompt.startsWith('{"pressed"') && e.system?.includes('EX: <sentence>')) return { value: { isAnswered: true, text: 'EX: Please carry on.\nTR: どうぞ続けて。', usage } }
     if (prompt.startsWith('{"pressed"')) return gate.then(() => ({ value: card(JSON.parse(prompt).pressed) }))
-    if (prompt.startsWith('[1] ')) return { value: { isAnswered: true, text: `FROM: Japanese\n${prompt.replace(/\] /g, '] EN ')}`, usage } }
+    if (prompt.startsWith('[1] ') && !fail) return { value: { isAnswered: true, text: `FROM: Japanese\n${prompt.replace(/\] /g, '] EN ')}`, usage } }
     models.push(e.model)
     if (fail === 'reject') throw new Error('model blocked')
     const value: ModelCompleteResult = fail === 'api-error'
@@ -309,8 +309,8 @@ describe('register', () => {
     expect(await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'aspect-carry-origin') })).toBeDefined()
   })
 
-  test('返事の 🌐 を押すと横のパネルに段落ごとの訳が出て（コードは訳さない）、訳の語から絵が出る。返事はそのままで、同じ文の返事でも 🌐 はメッセージごとに別の名前', async ($, on) => {
-    const { asked } = engine(on)
+  test('返事の 🌐 を押すと横のパネルに段落ごとの訳が出て（コードは訳さない）、訳の語から絵が出る。返事はそのまま。訳した返事は頼み直さず、言語を変えたら訳し直す。同じ文の返事でも 🌐 はメッセージごとに別の名前', async ($, on) => {
+    const { asked, store } = engine(on)
     on('ui.open', () => ({ value: { isPlaced: true } }))
     const text = '原因はここ。\n\n```ts\nconst a = 1\n\nconst b = 2\n```\n\ncarry on して'
     const side = await $.ui.mount(replyPane)
@@ -326,8 +326,25 @@ describe('register', () => {
     expect(await side.find({ type: 'Text', text: /^carry on$/ })).toBeDefined()
     expect(asked.at(-1)).toBe('{"pressed":"carry","sentence":"EN carry on して"}')
     expect(await side.find({ type: 'Button', key: replyKey(text, 'word-2-resize-carry') })).toBeDefined()
+    const count = asked.length
+    await ui.press({ key: replyKey(text, 'translate') })
+    expect(asked.length).toBe(count)
+    store.set('settings', { target: 'French' })
+    await ui.press({ key: replyKey(text, 'translate') })
+    expect(asked.length).toBe(count + 1)
     const again = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', requestId: 'again', props: { text, isFirstOfReply: true } })
     expect(await again.find({ type: 'Button', key: replyKey('again', 'translate') })).toBeDefined()
+  })
+
+  test('返事を訳せなかったらパネルに理由が出て、🌐 を押し直すと頼み直す', async ($, on) => {
+    const { asked } = engine(on, 'api-error')
+    on('ui.open', () => ({ value: { isPlaced: true } }))
+    const text = '原因はここ。'
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', requestId: text, props: { text, isFirstOfReply: true } })
+    await ui.press({ key: replyKey(text, 'translate') })
+    expect(await (await $.ui.mount(replyPane)).find({ type: 'Text', text: /^訳せませんでした：.+/ })).toBeDefined()
+    await ui.press({ key: replyKey(text, 'translate') })
+    expect(asked).toEqual(['[1] 原因はここ。', '[1] 原因はここ。'])
   })
 
   test('返事の表は、パネルでセルごとに同じ幅の列に並ぶ（3 列でも描ける）', async ($, on) => {

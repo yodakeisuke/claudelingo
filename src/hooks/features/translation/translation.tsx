@@ -251,7 +251,7 @@ export const translation = (on: On) => {
     if (!opened) return band ?? next(e)
     const hands = { hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, now => now && { sample: now.sample, pron: now.pron, heard: '' }) }
     const { Box } = t
-    return <Box flexDirection="column" gap={1}>{practiceBand(t, opened, coachedOf(opened.coach), hands)}{band}</Box>
+    return <Box flexDirection="column" gap={1}>{practiceBand(t, e.surface === 'terminal', opened, coachedOf(opened.coach), hands)}{band}</Box>
   })
 
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {

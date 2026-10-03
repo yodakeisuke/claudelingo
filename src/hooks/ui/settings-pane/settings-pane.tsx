@@ -14,13 +14,13 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
   const room = isTerminal ? 0 : 1
   const field = (label: string, control: RenderElement) => (
     <Box alignItems="center" gap={1} paddingLeft={2}>
-      <Box width={12}><Text dimColor>{label}</Text></Box>
+      <Box width={12} flexShrink={0}><Text dimColor>{label}</Text></Box>
       {control}
     </Box>
   )
   const group = (title: string, onOff: RenderElement | null, ...fields: RenderElement[]) => (
     <Box flexDirection="column" gap={room}>
-      <Box alignItems="center" gap={1}><Box width={14}><Text bold>{title}</Text></Box>{onOff}</Box>
+      <Box alignItems="center" gap={1}><Box width={14} flexShrink={0}><Text bold>{title}</Text></Box>{onOff}</Box>
       {fields}
     </Box>
   )

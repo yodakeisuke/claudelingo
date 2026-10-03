@@ -11,6 +11,8 @@ const count = async ($: EngineInterface, text: string) => {
   if (!LingoSettings.of(await $.store.get('settings')).enabled) return
   const today = Grass.day(await $.clock.now())
   await Result.given($.store.set('words', Grass.added(await $.store.get('words'), today, text)))
+  // 開いている草も描き直させる（$.store の変化だけでは描き直らない）
+  $.ui.invalidate('ui.render')
 }
 
 export const grass = (on: On) => {

@@ -223,10 +223,10 @@ describe('register', () => {
 
   test('自分で送った指示の語数をその日の分に足し、設定パネルの下に草と合計を出す。mod がオフなら数えず、草も出さない', async ($, on) => {
     const { clock, store } = engine(on)
+    const desktop = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
     for (const origin of [composer, { kind: 'task-notification' }] as const) await $.prompt.submit({ text: 'fix the tests', wait: false, origin })
     await clock.advance(0)
     expect(Object.values(store.get('words') as object)).toEqual([3])
-    const desktop = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
     expect(await desktop.find({ type: 'Svg' })).toBeDefined()
     const terminal = await $.ui.mount({ plugin: 'claudelingo', surface: 'terminal', component: 'Pane', requestId: 'claudelingo', props: pane })
     await terminal.drawn()

@@ -1,7 +1,7 @@
 import type { Elements, RenderElement } from 'claude-code'
 
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
-import { speaker, symbolLine } from '../read-aloud/read-aloud'
+import { microphone, speaker, symbolLine } from '../read-aloud/read-aloud'
 import type { Voice } from '../read-aloud/read-aloud'
 
 type Line = NonNullable<ReturnType<typeof PromptTranslations.line>>
@@ -9,7 +9,7 @@ type Line = NonNullable<ReturnType<typeof PromptTranslations.line>>
 // 外国語版を薄く、直した所（** で囲んだ所）は薄くせず太字で。薄い Markdown は端末で太字が消えるので、分けて描く
 const restated = (t: Elements[keyof Elements], text: string) => {
   const { Text } = t
-  return <Text>{text.split('**').map((part, i) => (i % 2 ? <Text bold>{part}</Text> : <Text dimColor>{part}</Text>))}</Text>
+  return <Text>{PromptTranslations.parts(text).map((part, i) => (i % 2 ? <Text bold>{part}</Text> : <Text dimColor>{part}</Text>))}</Text>
 }
 
 // 外国語版と、アドバイスがあれば1点ずつ続けて
@@ -23,7 +23,7 @@ export const translationLine = (t: Elements[keyof Elements], line: Line) => {
   )
 }
 
-// 指示の行のすぐ下に、その外国語版（押せる語の並びがあればそれで）と、訳せたときは読み上げ。押すとその下に発音記号。アドバイスは見出し「💡 ヒント」の下に「•」で、少し空けて並べ、単語の絵は 1 行空けて続ける
+// 指示の行のすぐ下に、その外国語版（押せる語の並びがあればそれで）と、訳せたときは読み上げと話す練習。読み上げを押すとその下に発音記号。アドバイスは見出し「💡 ヒント」の下に「•」で、少し空けて並べ、単語の絵は 1 行空けて続ける
 export const withTranslation = (t: Elements[keyof Elements], row: RenderElement, line: Line, voice?: Voice, words?: RenderElement, cards: RenderElement[] = []) => {
   const { Box, Markdown, Text } = t
   return (
@@ -32,6 +32,7 @@ export const withTranslation = (t: Elements[keyof Elements], row: RenderElement,
       <Box alignItems="flex-start" gap={1}>
         <Box flexShrink={1}>{words ?? restated(t, line.restated)}</Box>
         {voice && speaker(t, 'line-speak', () => voice.sayWithSymbols(line.restated))}
+        {voice && microphone(t, 'line-practise', () => voice.practise(line.restated))}
       </Box>
       {voice && symbolLine(t, voice.symbols(line.restated))}
       {line.tips.length > 0 && (

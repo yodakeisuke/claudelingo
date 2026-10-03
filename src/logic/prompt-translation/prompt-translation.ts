@@ -10,6 +10,8 @@ export const PromptTranslations = {
   key: (text: string) => key(text),
   of: (reply: Promise<Completion>) => of(reply),
   line: (version?: Translation, shown?: (value: string) => string) => line(version, shown),
+  parts: (text: string) => parts(text),
+  plain: (text: string) => plain(text),
 }
 
 // --- I/O
@@ -47,6 +49,10 @@ const split = (value: string) => {
   const isTip = (l: string) => l.startsWith('💡 ')
   return { restated: lines.filter(l => !isTip(l)).join(' '), tips: lines.filter(isTip).map(l => l.slice('💡 '.length)) }
 }
+// 直した所は、空白で始まらず終わらない文字を ** で囲んだ所。分けると奇数番目が直した所（src/**/*.ts のように対にならない ** は文字のまま）
+const parts = (text: string) => text.split(/\*\*([^\s*](?:[^*]*[^\s*])?)\*\*/)
+// 直した所の ** だけを外した文
+const plain = (text: string) => parts(text).join('')
 // モデルの下書き（<think> などで囲んだ考え）は捨て、残ったタグも外す。訳文だけを残す
 const withoutScratch = (text: string) => text.replace(/<(think|thinking|reasoning|scratchpad)>[\s\S]*?<\/\1>/g, '').replace(/<\/?(message|think|thinking|reasoning|scratchpad)>/g, '').trim()
 // 送った後の訳だけ、貼り付けやコードを写させない（帯では置換で貼り付けが消えるため）

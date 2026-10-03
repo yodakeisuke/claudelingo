@@ -28,9 +28,15 @@ const spoken = (lines: readonly string[]) => lines.map(plain)
 const plain = (text: string) => text.replace(/\*\*/g, '')
 // 返事が来れば、その文面。来なければ、その理由で失敗
 const answered = (c: Completion) => (c.isAnswered ? c.text : Result.fail(c.reason))
-// [n] の記号を n 番目の文に（欠けた番号は空）。1 つも無ければ形が違うとする
+// [n] の記号を n 番目の文に（欠けた番号は空）。[n] が / の中にあっても読み、どの行にも無ければ / で始まる行を順に。1 つも無ければ形が違うとする
 const symbols = (text: string) => {
-  const parts = text.split(/^\[(\d+)\][ \t]*/m)
-  const byNumber = new Map(parts.flatMap((s, i) => (i % 2 === 1 ? [[Number(s), parts[i + 1]?.trim() ?? ''] as const] : [])))
+  const lines = text.split('\n').map(l => l.trim()).map(symbolLine)
+  const numbered = lines.some(l => l.n > 0) ? lines.filter(l => l.n > 0) : lines.filter(l => l.isSlashed).map((l, i) => ({ ...l, n: i + 1 }))
+  const byNumber = new Map(numbered.map(l => [l.n, l.symbol] as const))
   return byNumber.size > 0 ? Array.from({ length: Math.max(...byNumber.keys()) }, (_, k) => byNumber.get(k + 1) ?? '') : Result.fail('format')
+}
+// 1 行の番号（無ければ 0）と、/ で囲み直した記号
+const symbolLine = (line: string) => {
+  const symbol = line.replace(/^\/?\[\d+\]/, '').replaceAll('/', '').trim()
+  return { n: Number(/^\/?\[(\d+)\]/.exec(line)?.[1] ?? 0), isSlashed: line.startsWith('/'), symbol: symbol && `/${symbol}/` }
 }

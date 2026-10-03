@@ -7,7 +7,7 @@ export const draftBand = (t: Elements[keyof Elements], line: Parameters<typeof t
   const { Box, Button } = t
   return (
     <Box flexDirection="row" gap={1}>
-      {replace && <Box flexShrink={0}><Button label="置換" onPress={replace} /></Box>}
+      {replace && <Box flexShrink={0}><Button key="replace" label="置換" onPress={replace} /></Box>}
       <Box flexGrow={1} flexShrink={1}>{translationLine(t, line)}</Box>
     </Box>
   )

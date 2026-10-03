@@ -22,7 +22,7 @@ type Pressed = { word: string; restated: string }
 // --- operations
 // 絵を頼むときは、文の ** を外して渡す
 const request = (settings: Settings, word: string, restated: string) => CardRequest.of(settings, word, plain(restated))
-// 返事が UNIT / CAPTION / SVG の形で、句が押した語と関わるときだけ絵にする。それ以外は描けなかったとする
+// 返事が UNIT / PRON / CAPTION / SVG の形で、句が押した語と関わるときだけ絵にする。それ以外は描けなかったとする
 const of = async (reply: Promise<Completion>, pressed: Pressed) => (await Result.given(reply)).and(answered).and(parse).and(card => near(card, pressed)).either<Card | undefined>(card => card, () => undefined)
 
 // --- business rules
@@ -45,10 +45,10 @@ const saved = (all: unknown, { word, restated }: Pressed) => (all as Record<stri
 const up = (shown: readonly Shown[]) => new Set(shown.flatMap(s => [s.word, ...(s.card ? parts(s.card.unit) : [])]))
 // 返事が来れば、その文面。来なければ、その理由で失敗
 const answered = (c: Completion) => (c.isAnswered ? c.text : Result.fail(c.reason))
-// 返事から句・一文・SVG を取り出す。どれか欠ければ失敗
+// 返事から句・発音記号・一文・SVG を取り出す。発音記号のほかが欠ければ失敗
 const parse = (text: string) => {
-  const card = { unit: field(text, 'UNIT'), caption: field(text, 'CAPTION'), svg: /<svg[\s\S]*<\/svg>/.exec(text)?.[0] ?? '' }
-  return Object.values(card).every(Boolean) ? card : Result.fail('format')
+  const card = { unit: field(text, 'UNIT'), pron: field(text, 'PRON'), caption: field(text, 'CAPTION'), svg: /<svg[\s\S]*<\/svg>/.exec(text)?.[0] ?? '' }
+  return [card.unit, card.caption, card.svg].every(Boolean) ? card : Result.fail('format')
 }
 // "名前: 値" の行の値
 const field = (text: string, name: string) => new RegExp(`^${name}:\\s*(.+)$`, 'm').exec(text)?.[1]?.trim() ?? ''

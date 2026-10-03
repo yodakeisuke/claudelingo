@@ -1,6 +1,8 @@
 import type { Elements, RenderElement } from 'claude-code'
 
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
+import { speaker, symbolLine } from '../read-aloud/read-aloud'
+import type { Voice } from '../read-aloud/read-aloud'
 
 type Line = NonNullable<ReturnType<typeof PromptTranslations.line>>
 
@@ -21,13 +23,17 @@ export const translationLine = (t: Elements[keyof Elements], line: Line) => {
   )
 }
 
-// 指示の行のすぐ下に、その外国語版（押せる語の並びがあればそれで）。アドバイスは見出し「💡 ヒント」の下に「•」で、少し空けて並べ、単語の絵は 1 行空けて続ける
-export const withTranslation = (t: Elements[keyof Elements], row: RenderElement, line: Line, words?: RenderElement, cards: RenderElement[] = []) => {
+// 指示の行のすぐ下に、その外国語版（押せる語の並びがあればそれで）と、訳せたときは読み上げ。押すとその下に発音記号。アドバイスは見出し「💡 ヒント」の下に「•」で、少し空けて並べ、単語の絵は 1 行空けて続ける
+export const withTranslation = (t: Elements[keyof Elements], row: RenderElement, line: Line, voice?: Voice, words?: RenderElement, cards: RenderElement[] = []) => {
   const { Box, Markdown, Text } = t
   return (
     <Box flexDirection="column" marginBottom={cards.length > 0 || line.tips.length > 0 ? 1 : 0}>
       {row}
-      {words ?? restated(t, line.restated)}
+      <Box alignItems="flex-start" gap={1}>
+        <Box flexShrink={1}>{words ?? restated(t, line.restated)}</Box>
+        {voice && speaker(t, 'line-speak', () => voice.sayWithSymbols(line.restated))}
+      </Box>
+      {voice && symbolLine(t, voice.symbols(line.restated))}
       {line.tips.length > 0 && (
         <Box flexDirection="column" marginTop={1} gap={0.5}>
           <Text dimColor bold>💡 ヒント</Text>

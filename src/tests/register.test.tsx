@@ -53,7 +53,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
 
 // 単語の絵の返事：carry と on は carry on、tests は文の別の句（迷子）、ほかはその語
 const UNITS: Record<string, string> = { carry: 'carry on', on: 'carry on', tests: 'carry on' }
-const card = (pressed: string): ModelCompleteResult => ({ isAnswered: true, text: `UNIT: ${UNITS[pressed] ?? pressed}\nCAPTION: ${pressed} の絵\nSVG:\n<svg viewBox="0 0 480 288" width="480"><rect/></svg>`, usage })
+const card = (pressed: string): ModelCompleteResult => ({ isAnswered: true, text: `UNIT: ${UNITS[pressed] ?? pressed}\nPRON: /x/\nCAPTION: ${pressed} の絵\nSVG:\n<svg viewBox="0 0 480 288" width="480"><rect/></svg>`, usage })
 
 const row = (text: string, origin: PromptOrigin = composer) =>
   ({ plugin: 'claudelingo', component: 'UserMessage', props: { text, origin, isExpanded: true } }) as const
@@ -136,7 +136,7 @@ describe('register', () => {
       await ui.input({ key: 'target', text: target })
       await ui.input({ key: 'level', text: `${target} 初級` })
       await ui.press({ key: `model-${model}` })
-      expect(store.get('settings')).toEqual({ enabled: true, native: 'Japanese', target, level: `${target} 初級`, model, afterSend: true, live: true, liveModel: 'sonnet', livePause: '0.5', card: true, cardModel: 'sonnet' })
+      expect(store.get('settings')).toEqual({ enabled: true, native: 'Japanese', target, level: `${target} 初級`, model, afterSend: true, live: true, liveModel: 'sonnet', livePause: '0.5', card: true, cardModel: 'sonnet', voice: 'Samantha' })
       expect((await ui.find({ type: 'Button', key: `model-${model}` }))?.props.variant).toBe('primary')
       for (const enabled of [false, true]) {
         await ui.press({ key: 'enabled' })
@@ -315,5 +315,22 @@ describe('register', () => {
     expect(await ui.find({ type: 'Button', key: 'word-2-0-1' })).toBeUndefined()
     await ui.press({ key: 'reply-translate' })
     expect(await ui.find({ type: 'Button', key: 'word-2-resize-carry' })).toBeUndefined()
+  })
+
+  test('🔊 を押すと設定の声で読み、文はその下に発音記号が出る。返事は学ぶ言語の段落を順に読む', async ($, on) => {
+    const { clock } = engine(on, undefined, undefined, { card: false })
+    const spoken: string[] = []
+    on('audio.speak', (_$, e) => (spoken.push(`${e.voice}: ${e.text}`), { value: { via: 'system' } }))
+    await $.prompt.submit({ text: 'fix **tests**', wait: false, origin: composer })
+    await clock.advance(0)
+    const ui = await $.ui.mount({ ...row('fix **tests**'), surface: 'desktop' })
+    await ui.press({ key: 'line-speak' })
+    expect(spoken).toEqual(['Samantha: EN: fix tests'])
+    expect(await ui.find({ type: 'Text', text: 'EN EN: fix tests' })).toBeDefined()
+    const reply = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text: '原因はここ。\n\n直した', isFirstOfReply: true } })
+    await reply.press({ key: 'reply-translate' })
+    await reply.press({ key: 'reply-speak' })
+    expect(spoken.slice(1)).toEqual(['Samantha: EN 原因はここ。', 'Samantha: EN 直した'])
+    expect(await reply.find({ type: 'Text', text: 'EN EN 直した' })).toBeDefined()
   })
 })

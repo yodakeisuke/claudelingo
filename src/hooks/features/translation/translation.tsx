@@ -4,12 +4,15 @@ import type { EngineInterface, On, Timer } from 'claude-code'
 import type { Aspect, Opened, Shown, Translation } from '../../../engine-protocol'
 import { DraftTranslations } from '../../../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
+import { Pronunciations } from '../../../logic/pronunciation/pronunciation'
 import { ReplyTranslations } from '../../../logic/reply-translation/reply-translation'
 import { Result } from '../../../logic/result/result'
 import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
 import { draftBand } from '../../ui/draft-band/draft-band'
+import { symbolLine } from '../../ui/read-aloud/read-aloud'
+import type { Voice } from '../../ui/read-aloud/read-aloud'
 import { paragraphTranslation, replyBlock } from '../../ui/reply-translation/reply-translation'
 import { withTranslation } from '../../ui/translation-line/translation-line'
 import { wordCard, wordLine } from '../../ui/word-card/word-card'
@@ -72,8 +75,39 @@ const showCards = async ($: EngineInterface, row: string, change: (list: Shown[]
 }
 
 // 開いている絵を描く。拡大・縮小と欄はその絵だけ
-const cardsOf = ($: EngineInterface, t: Parameters<typeof wordCard>[0], isTerminal: boolean, row: string, restated: string, shown: Shown[], prefix?: string) =>
-  shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, row, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))), aspect => void pressAspect($, row, s.word, restated, aspect), prefix))
+const cardsOf = ($: EngineInterface, t: Parameters<typeof wordCard>[0], isTerminal: boolean, row: string, restated: string, shown: Shown[], voice: Voice, prefix?: string) =>
+  shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, row, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))), aspect => void pressAspect($, row, s.word, restated, aspect), voice, prefix))
+
+// 読み上げた文の並び（Pronunciations.key）→ 文ごとの発音記号。書いている間は null
+const sounds = atom({ plugin: 'claudelingo', key: 'sounds' } as const, {})
+
+// 手順書「読み上げる」：押したらすぐ設定の声で読ませる。段落は 1 つずつ渡せば順に読まれる。読み終わりは待たず、読めなくても何も出さない
+const say = async ($: EngineInterface, lines: string[]) => {
+  const { voice } = await settingsOf($)
+  // 声の欄が空なら渡さず、既定の声で読む
+  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(line, { voice: voice.trim() || undefined })))
+}
+
+// 文は読ませながら、発音記号も頼む。書いた記号は残してすぐ出し、書けなかったら次に押したときに頼み直す
+const sayWithSymbols = async ($: EngineInterface, lines: string[]) => {
+  void say($, lines)
+  const key = Pronunciations.key(lines)
+  if (key in (await read($, sounds))) return
+  await showSymbols($, key, null)
+  await showSymbols($, key, await Pronunciations.of($.model.complete(Pronunciations.request(await settingsOf($), lines))))
+}
+
+const showSymbols = async ($: EngineInterface, key: string, symbols?: string[] | null) => {
+  await update($, sounds, all => (symbols === undefined ? Object.fromEntries(Object.entries(all).filter(([k]) => k !== key)) : { ...all, [key]: symbols }))
+  $.ui.invalidate('ui.render')
+}
+
+// 描くときに渡す読み上げの手。一文の記号は、その文だけの並びの 1 つ目
+const voiceOf = async ($: EngineInterface): Promise<Voice> => {
+  const shown = await read($, sounds)
+  return { say: text => void say($, [text]), sayWithSymbols: text => void sayWithSymbols($, [text]), symbols: text => first(shown[Pronunciations.key([text])]) }
+}
+const first = (symbols?: string[] | null) => symbols && symbols[0]
 
 // 返事の文面 → その訳。訳している間は null。閉じたら消す
 const replies = atom({ plugin: 'claudelingo', key: 'replies' } as const, {})
@@ -184,12 +218,14 @@ export const translation = (on: On) => {
     const line = PromptTranslations.line(version)
     if (!line) return row
     const t = $.ui.resolve(e)
-    if (!Result.given(version).either(() => true, () => false) || !(await settingsOf($)).card) return withTranslation(t, row, line)
+    const voice = await voiceOf($)
+    const isTranslated = Result.given(version).either(() => true, () => false)
+    if (!isTranslated || !(await settingsOf($)).card) return withTranslation(t, row, line, isTranslated ? voice : undefined)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
     const shown = (await read($, cards))[key] ?? []
     const isTerminal = e.surface === 'terminal'
     const words = wordLine(t, isTerminal, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated))
-    return withTranslation(t, row, line, words, cardsOf($, t, isTerminal, key, line.restated, shown))
+    return withTranslation(t, row, line, voice, words, cardsOf($, t, isTerminal, key, line.restated, shown, voice))
   })
 
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
@@ -206,20 +242,26 @@ export const translation = (on: On) => {
     if (version === undefined) return replyBlock(t, [{ row: await next(e) }], indent, { label: '訳', press: () => void translateReply($, text, request) })
     if (version === null) return replyBlock(t, [{ row: await next(e) }], indent, undefined, '訳しています…')
     // 段落ごとに Claude Code の描き方で描き、その下に訳。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る（訳は行ごと）
+    // 読み上げは学ぶ言語の側（学ぶ言語への訳か、学ぶ言語で書かれた本文）を段落ごとに読み、その文の下に発音記号
     return Result.given(version).either(async value => {
       const { paragraphs, isIntoTarget } = ReplyTranslations.shown(text, value)
       const shownCards = await read($, cards)
+      const voice = await voiceOf($)
+      const spoken = paragraphs.flatMap(p => (p.translation ? [isIntoTarget ? p.translation : p.text] : []))
+      const said = (await read($, sounds))[Pronunciations.key(spoken)]
       const rows = await Promise.all(paragraphs.map(async (p, i) => {
         const row = await next({ ...e, props: { ...e.props, text: p.text, isFirstOfReply: e.props.isFirstOfReply && i === 0 } })
         const restated = p.translation
         if (!restated) return { row }
+        const symbol = symbolLine(t, said && said[paragraphs.slice(0, i).filter(q => q.translation).length])
         const key = `${text}#${i}`
         const shown = shownCards[key] ?? []
-        if (!isIntoTarget || !settings.card) return { row, translation: paragraphTranslation(t, restated) }
+        if (!isIntoTarget) return { row, symbol, translation: paragraphTranslation(t, restated) }
+        if (!settings.card) return { row, translation: paragraphTranslation(t, restated, symbol) }
         const lines = restated.split('\n').map((line, j) => wordLine(t, isTerminal, WordCards.words(line), WordCards.up(shown), word => void pressWord($, key, word, restated), `word-${i}-${j}`))
-        return { row, translation: paragraphTranslation(t, restated, lines, cardsOf($, t, isTerminal, key, restated, shown, `word-${i}-`)) }
+        return { row, translation: paragraphTranslation(t, restated, symbol, lines, cardsOf($, t, isTerminal, key, restated, shown, voice, `word-${i}-`)) }
       }))
-      return replyBlock(t, rows, indent, close)
+      return replyBlock(t, rows, indent, close, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)
     }, async error => replyBlock(t, [{ row: await next(e) }], indent, close, `訳せませんでした：${error}`))
   })
 }

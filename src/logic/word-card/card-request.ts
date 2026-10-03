@@ -10,7 +10,7 @@ export const CardRequest = {
 type Settings = Parameters<typeof Learner.context>[0] & { cardModel: string }
 
 // --- business rules
-// 押した語と文を JSON で渡し、その語のまとまり（句なら句）を決めさせて、コアイメージを動く SVG で描かせる。形は UNIT / CAPTION / SVG の 3 つ
+// 押した語と文を JSON で渡し、その語のまとまり（句なら句）を決めさせて、コアイメージを動く SVG で描かせる。形は UNIT / PRON / CAPTION / SVG の 4 つ
 const of = (settings: Settings, word: string, sentence: string) => ({
   model: settings.cardModel,
   effort: 'low' as const,
@@ -29,7 +29,8 @@ const system = ({ native, target, level }: Settings) => [
   '3. MOTION. Motion carries the meaning: the reader should get it from watching once. Use SMIL only (animate, animateTransform, animateMotion with a path attribute, set). It starts by itself and loops forever: one clear story of 6 to 8 seconds that ends in a held final state for about 1.5 seconds before repeating. Every animation shares the same total cycle length (use keyTimes and values on one dur, repeatCount="indefinite"). At most 6 animated elements. Nothing blinks or moves for decoration.',
   style({ native, target }),
   `5. CAPTION. One sentence of natural ${native}, at most 45 characters, that says only what the picture shows happening. It is not a definition, not a translation, and does not contain the unit or its ${native} equivalent.`,
-  'Reply in exactly this form and nothing else, no Markdown fence:\nUNIT: <unit>\nCAPTION: <caption>\nSVG:\n<svg ...>...</svg>',
+  '6. PRON. The pronunciation of the unit in IPA between slashes, as a dictionary gives it (for example /ˈjuːnɪfaɪ/).',
+  'Reply in exactly this form and nothing else, no Markdown fence:\nUNIT: <unit>\nPRON: <IPA>\nCAPTION: <caption>\nSVG:\n<svg ...>...</svg>',
 ].join('\n\n')
 // 押した語のまとまりの決め方。語を深める欄も同じ決め方にして、絵と同じ句を語る
 const unit = () => 'Decide silently what the pressed word means in the sentence. If it works there as part of a phrasal verb, idiom or fixed phrase (for example "carry" in "carry on"), the unit is that whole phrase in dictionary form; otherwise the unit is the pressed word alone in dictionary form. The unit always contains the pressed word; never pick a different word of the sentence.'

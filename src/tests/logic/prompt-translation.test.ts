@@ -2,7 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import { PromptTranslations } from '../../logic/prompt-translation/prompt-translation'
 
-const on = { enabled: true, afterSend: true, native: 'Japanese', target: 'English', model: 'haiku' }
+const on = { enabled: true, afterSend: true, native: 'Japanese', target: 'English', level: '', model: 'haiku' }
 
 describe('prompt-translation', () => {
   test('外国語版を作るのは、オンのときに自分で打った指示だけ', () => {

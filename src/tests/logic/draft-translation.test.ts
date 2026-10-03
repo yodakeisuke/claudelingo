@@ -2,7 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import { DraftTranslations } from '../../logic/draft-translation/draft-translation'
 
-const on = { enabled: true, live: true, native: 'Japanese', target: 'English', liveModel: 'haiku' }
+const on = { enabled: true, live: true, native: 'Japanese', target: 'English', level: '', liveModel: 'haiku' }
 const fixed = { ok: true, value: 'Please check why this test **is failing**.\n💡 is fail ではなく is failing\n! is fail' } as const
 
 describe('draft-translation', () => {

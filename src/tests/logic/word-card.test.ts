@@ -15,7 +15,7 @@ describe('word-card', () => {
     ])
     expect(WordCards.words('Déjà vu, ça va ?').map(w => w.word)).toEqual(['déjà', 'vu', 'ça', 'va', ''])
     expect(WordCards.words('テストを直して').map(w => w.word)).toEqual(['テストを直して'])
-    expect(WordCards.request({ native: 'Japanese', target: 'English', cardModel: 'sonnet' }, 'carry', restated).prompt).toBe(`{"pressed":"carry","sentence":"I'll carry on with the tests."}`)
+    expect(WordCards.request({ native: 'Japanese', target: 'English', level: '', cardModel: 'sonnet' }, 'carry', restated).prompt).toBe(`{"pressed":"carry","sentence":"I'll carry on with the tests."}`)
   })
 
   test('UNIT / CAPTION / SVG がそろい、句が押した語と関わるときだけ絵にする', async () => {

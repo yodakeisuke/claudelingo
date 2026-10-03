@@ -42,11 +42,13 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
   const nudge = (by: 1 | -1, label: string) => <Button key={`livePause-${label}`} label={label} variant="secondary" onPress={() => save('livePause', TranslationSettings.step(settings.livePause, by))} />
   const pause = <Box alignItems="center" gap={1}><Text dimColor>速い</Text>{nudge(-1, '-')}<Box width={8} flexDirection="column"><Input key="livePause" value={settings.livePause} onSubmit={v => save('livePause', TranslationSettings.pause(v, settings.livePause))} /></Box><Text>秒</Text>{nudge(1, '+')}<Text dimColor>遅い</Text></Box>
   const text = (field: 'native' | 'target') => <Box width={28} flexDirection="column"><Input key={field} value={settings[field]} onSubmit={v => save(field, v)} /></Box>
+  // レベルは自由記述なので残りの幅を使い、書く粒度（できること・苦手なこと）を例で見せる
+  const level = <Box flexGrow={1} flexDirection="column"><Input key="level" value={settings.level} placeholder="例: 技術文書は読める。書くと冠詞・前置詞が怪しい" onSubmit={v => save('level', v)} /></Box>
   return (
     <Box flexDirection="column" gap={room * 2} paddingX={room * 2} paddingY={room}>
       {group('claudelingo', 'enabled')}
       {settings.enabled && [
-        group('言語', null, field('母語', text('native')), field('学ぶ言語', text('target'))),
+        group('言語', null, field('母語', text('native')), field('学ぶ言語', text('target')), field('今のレベル', level)),
         group('送った後の訳', 'afterSend', model('model')),
         group('入力中の校正', 'live', model('liveModel'), field('反応の速さ', pause)),
         group('単語の絵', 'card', model('cardModel')),

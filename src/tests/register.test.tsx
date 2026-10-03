@@ -62,12 +62,12 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
 const UNITS: Record<string, string> = { carry: 'carry on', on: 'carry on', tests: 'carry on' }
 const card = (pressed: string): ModelCompleteResult => ({ isAnswered: true, text: `UNIT: ${UNITS[pressed] ?? pressed}\nPRON: /x/\nCAPTION: ${pressed} の絵\nSVG:\n<svg viewBox="0 0 480 288" width="480"><rect/></svg>`, usage })
 
-// 指示の行・返事のブロックのボタンの名前
+// 指示の行・返事のブロックのボタンの名前（テストではメッセージの id を文にする）
 const lineKey = (text: string, key: string) => `${ElementKeys.of('line', text)}-${key}`
 const replyKey = (text: string, key: string) => `${ElementKeys.of('reply', text)}-${key}`
 
 const row = (text: string, origin: PromptOrigin = composer) =>
-  ({ plugin: 'claudelingo', component: 'UserMessage', props: { text, origin, isExpanded: true } }) as const
+  ({ plugin: 'claudelingo', component: 'UserMessage', requestId: text, props: { text, origin, isExpanded: true } }) as const
 
 const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
 // 返事の訳のパネル
@@ -309,11 +309,11 @@ describe('register', () => {
     expect(await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'aspect-carry-origin') })).toBeDefined()
   })
 
-  test('返事の 🌐 を押すと横のパネルに段落ごとの訳が出て（コードは訳さない）、訳の語から絵が出る。返事はそのまま', async ($, on) => {
+  test('返事の 🌐 を押すと横のパネルに段落ごとの訳が出て（コードは訳さない）、訳の語から絵が出る。返事はそのままで、同じ文の返事でも 🌐 はメッセージごとに別の名前', async ($, on) => {
     const { asked } = engine(on)
     on('ui.open', () => ({ value: { isPlaced: true } }))
     const text = '原因はここ。\n\n```ts\nconst a = 1\n\nconst b = 2\n```\n\ncarry on して'
-    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text, isFirstOfReply: true } })
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', requestId: text, props: { text, isFirstOfReply: true } })
     await ui.press({ key: replyKey(text, 'translate') })
     expect(asked).toEqual(['[1] 原因はここ。\n\n[2] carry on して'])
     expect(await ui.find({ type: 'Text', text })).toBeDefined()
@@ -325,6 +325,18 @@ describe('register', () => {
     expect(await side.find({ type: 'Text', text: /^carry on$/ })).toBeDefined()
     expect(asked.at(-1)).toBe('{"pressed":"carry","sentence":"EN carry on して"}')
     expect(await side.find({ type: 'Button', key: replyKey(text, 'word-2-resize-carry') })).toBeDefined()
+    const again = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', requestId: 'again', props: { text, isFirstOfReply: true } })
+    expect(await again.find({ type: 'Button', key: replyKey('again', 'translate') })).toBeDefined()
+  })
+
+  test('返事の表は、パネルでセルごとに同じ幅の列に並ぶ（3 列でも描ける）', async ($, on) => {
+    engine(on)
+    on('ui.open', () => ({ value: { isPlaced: true } }))
+    const text = '| a | b | c |\n|---|---|---|\n| d | e | f |'
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', requestId: text, props: { text, isFirstOfReply: true } })
+    await ui.press({ key: replyKey(text, 'translate') })
+    const side = await $.ui.mount(replyPane)
+    expect((await side.find({ type: 'Button', key: replyKey(text, 'word-0-1-2-0') }))?.props.label).toBe('f')
   })
 
   test('🔊 を押すと設定の声で読み、文はその下に発音記号が出る。返事は学ぶ言語の段落を順に読む', async ($, on) => {
@@ -338,7 +350,7 @@ describe('register', () => {
     await ui.press({ key: lineKey('fix **tests**', 'speak') })
     expect(spoken).toEqual(['Samantha: EN: fix tests'])
     expect(await ui.find({ type: 'Text', text: 'EN EN: fix tests' })).toBeDefined()
-    const reply = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text: '原因はここ。\n\n直した', isFirstOfReply: true } })
+    const reply = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', requestId: '原因はここ。\n\n直した', props: { text: '原因はここ。\n\n直した', isFirstOfReply: true } })
     await reply.press({ key: replyKey('原因はここ。\n\n直した', 'translate') })
     const side = await $.ui.mount(replyPane)
     await side.press({ key: replyKey('原因はここ。\n\n直した', 'speak') })

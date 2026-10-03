@@ -13,7 +13,7 @@ type Line = ReturnType<typeof WordLines.all>[number]
 // 行の頭の字下げとリストの印は Markdown のとおり、表の行はセルを同じ幅の列に並べる（WordLines）。ボタンの key は id-番号（返事では段落ごと、表ではセルごとに id を変える）
 export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, { indent, mark, words, cells }: Line, up: Set<string>, press: (word: string) => void, id = 'word') => {
   const { Box, Text } = t
-  if (cells) return <Box>{cells.map((cell, c) => <Box width={`${100 / cells.length}%`} paddingRight={1}>{wrapped(t, isTerminal, cell, up, press, `${id}-${c}`)}</Box>)}</Box>
+  if (cells) return <Box>{cells.map((cell, c) => <Box width={`${Math.floor(100 / cells.length)}%`} paddingRight={1}>{wrapped(t, isTerminal, cell, up, press, `${id}-${c}`)}</Box>)}</Box>
   return <Box paddingLeft={indent}>{wrapped(t, isTerminal, words, up, press, id, mark && <Box marginRight={1}><Text dimColor>{mark}</Text></Box>)}</Box>
 }
 

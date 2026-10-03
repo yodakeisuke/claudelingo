@@ -271,7 +271,7 @@ export const translation = (on: On) => {
     const voice = await voiceOf($)
     const isTranslated = Result.given(version).either(() => true, () => false)
     const isTerminal = e.surface === 'terminal'
-    const id = ElementKeys.of('line', e.props.text)
+    const id = ElementKeys.of('line', e.requestId)
     if (!isTranslated || !(await settingsOf($)).card) return withTranslation(t, isTerminal, id, row, line, isTranslated ? voice : undefined)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る
     const shown = (await read($, cards))[key] ?? []
@@ -286,7 +286,7 @@ export const translation = (on: On) => {
     if (!settings.enabled || !request) return next(e)
     // 端末の返事の頭の行は「● 」の 2 マス下げで描かれる。🌐 もそこにそろえる
     const indent = e.surface === 'terminal' && e.props.isFirstOfReply ? 2 : 0
-    return replyBlock($.ui.resolve(e), ElementKeys.of('reply', text), await next(e), indent, () => void openReply($, text, request))
+    return replyBlock($.ui.resolve(e), ElementKeys.of('reply', e.requestId), await next(e), indent, () => void openReply($, text, request))
   })
 
   // パネルに出している返事の訳を段落ごとに描く。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る（訳は行ごと）

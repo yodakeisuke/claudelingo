@@ -1,4 +1,4 @@
-import type { Card, Shown } from '../../types'
+import type { Card, Completion, Shown } from '../../engine-protocol'
 import { Result } from '../result/result'
 import { CardRequest } from './card-request'
 
@@ -14,10 +14,9 @@ export const WordCards = {
 }
 
 // データ構造
-type Settings = { native: string; target: string; cardModel: string }
+type Settings = Parameters<typeof CardRequest.of>[0]
 // 押した語と、それがある訳の行
 type Pressed = { word: string; restated: string }
-type Completion = { isAnswered: true; text: string } | { isAnswered: false; reason: string }
 // 描いた絵の保存：押した語と文 → 絵
 type Saved = Record<string, Card>
 

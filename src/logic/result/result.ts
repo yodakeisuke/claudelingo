@@ -1,4 +1,4 @@
-import type { Result as Data } from '../../types'
+import type { Result as Data } from '../../engine-protocol'
 
 // 公開する操作
 export const Result = {

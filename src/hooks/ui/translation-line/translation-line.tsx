@@ -1,6 +1,8 @@
 import type { Elements, RenderElement } from 'claude-code'
 
-type Line = { restated: string; tips: string[] }
+import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
+
+type Line = NonNullable<ReturnType<typeof PromptTranslations.line>>
 
 // 外国語版を薄く。Markdown で描く（直した所の ** が太字になる）。アドバイスがあれば1点ずつ続けて
 export const translationLine = (t: Elements[keyof Elements], line: Line) => {

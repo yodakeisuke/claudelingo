@@ -1,9 +1,9 @@
 import type { Elements } from 'claude-code'
 
-import type { Shown } from '../../../types'
+import type { Shown } from '../../../engine-protocol'
 import { WordCards } from '../../../logic/word-card/word-card'
 
-type Word = { label: string; word: string }
+type Word = ReturnType<typeof WordCards.words>[number]
 
 // 訳の行を、押せる語の並びで。飾りのないボタンは灰色の文字に見える（リンクは青になる）。絵が開いている語は濃く
 // 記号だけの語（? や —）は押せない文字のまま。端末はボタンの間に空白が無いので、空白を挟む

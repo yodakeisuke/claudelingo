@@ -1,4 +1,4 @@
-import type { Translation } from '../../types'
+import type { Translation } from '../../engine-protocol'
 import { PromptTranslations } from '../prompt-translation/prompt-translation'
 import { TranslationRequest } from '../prompt-translation/translation-request'
 import { Result } from '../result/result'

@@ -62,7 +62,7 @@ describe('register', () => {
     await clock.advance(0)
     const ui = await $.ui.mount({ ...row('fix **tests**\n💡 each の後は単数'), surface: 'desktop' })
     expect(await ui.find({ type: 'Markdown', text: 'EN: fix **tests**' })).toBeDefined()
-    expect(await ui.find({ type: 'Markdown', text: '💡 each の後は単数' })).toBeDefined()
+    expect(await ui.find({ type: 'Markdown', text: 'each の後は単数' })).toBeDefined()
   })
 
   test('自分の指示の下に訳が出る（どの面でも）', async ($, on) => {

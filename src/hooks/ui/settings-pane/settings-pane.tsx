@@ -59,7 +59,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
         group('送った後の訳', 'afterSend', model('model')),
         group('入力中の校正', 'live', model('liveModel'), field('反応の速さ', pause)),
         group('単語の絵', 'card', model('cardModel')),
-        group('読み上げ', null, field('声', text('voice', 'Mac の声の名前（システム設定 › アクセシビリティ › 読み上げコンテンツ）'))),
+        group('読み上げ', null, field('声', text('voice', 'Mac の声の名前（システム設定 › アクセシビリティ › リーダーと読み上げ）'))),
       ]}
       {denied && <Text color="error">保存できませんでした：{denied}</Text>}
     </Box>

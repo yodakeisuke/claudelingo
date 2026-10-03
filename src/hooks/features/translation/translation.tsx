@@ -1,16 +1,19 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, On, Timer } from 'claude-code'
 
-import type { Aspect, Opened, Shown, Translation } from '../../../engine-protocol'
+import type { Aspect, Opened, Practice, Shown, Translation } from '../../../engine-protocol'
 import { DraftTranslations } from '../../../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
 import { Pronunciations } from '../../../logic/pronunciation/pronunciation'
 import { ReplyTranslations } from '../../../logic/reply-translation/reply-translation'
 import { Result } from '../../../logic/result/result'
+import { CoachRequest } from '../../../logic/speaking-coach/coach-request'
 import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
 import { draftBand } from '../../ui/draft-band/draft-band'
+import { practiceBand } from '../../ui/practice-band/practice-band'
+import type { Coached } from '../../ui/practice-band/practice-band'
 import { symbolLine } from '../../ui/read-aloud/read-aloud'
 import type { Voice } from '../../ui/read-aloud/read-aloud'
 import { paragraphTranslation, replyBlock } from '../../ui/reply-translation/reply-translation'
@@ -105,7 +108,7 @@ const showSymbols = async ($: EngineInterface, key: string, symbols?: string[] |
 // 描くときに渡す読み上げの手。一文の記号は、その文だけの並びの 1 つ目
 const voiceOf = async ($: EngineInterface): Promise<Voice> => {
   const shown = await read($, sounds)
-  return { say: text => void say($, [text]), sayWithSymbols: text => void sayWithSymbols($, [text]), symbols: text => first(shown[Pronunciations.key([text])]) }
+  return { say: text => void say($, [text]), sayWithSymbols: text => void sayWithSymbols($, [text]), symbols: text => first(shown[Pronunciations.key([text])]), practise: (sample, pron) => void practise($, sample, pron) }
 }
 const first = (symbols?: string[] | null) => symbols && symbols[0]
 
@@ -129,6 +132,33 @@ const closeReply = async ($: EngineInterface, text: string) => {
   await update($, cards, all => Object.fromEntries(Object.entries(all).filter(([k]) => !k.startsWith(`${text}#`))))
   $.ui.invalidate('ui.render')
 }
+
+// 開いている話す練習。開いていなければ null
+const practice = atom({ plugin: 'claudelingo', key: 'practice' } as const, null)
+
+// 手順書「話す練習を開く」：押した文の練習を入力欄の上に開く。同じ文の練習が開いていれば閉じる
+const practise = async ($: EngineInterface, text: string, pron?: string) => {
+  const sample = Pronunciations.spoken([text]).join('')
+  await showPractice($, now => (now?.sample === sample ? null : { sample, pron }))
+}
+
+// 手順書「声を聞いてコーチする」：入れた文をお手本と比べさせ、届いたら帯に出す。その間に練習が変わっていたら捨てる
+const hear = async ($: EngineInterface, heard: string) => {
+  const asked = await read($, practice)
+  if (!asked || !heard.trim()) return
+  await showPractice($, () => ({ ...asked, heard, coach: null }))
+  const coach = await PromptTranslations.of($.model.complete(CoachRequest.of(await settingsOf($), { sample: asked.sample, heard })))
+  await showPractice($, now => (now?.sample === asked.sample && now.heard === heard ? { ...now, coach } : now))
+}
+
+const showPractice = async ($: EngineInterface, change: (now: Practice | null) => Practice | null) => {
+  await update($, practice, change)
+  $.ui.invalidate('ui.render')
+}
+
+// 帯に出すコーチの返事。頼んでいなければ何も、頼んでいる間は一言、失敗したらその理由
+const coachedOf = (coach?: Translation | null) =>
+  coach === undefined ? undefined : coach === null ? '聞いています…' : Result.given(coach).either<Coached>(() => PromptTranslations.line(coach), error => `コーチできませんでした：${error}`)
 
 // 打ちかけと、その校正。まだ無いときは null
 const draft = atom({ plugin: 'claudelingo', key: 'draft' } as const, null)
@@ -178,6 +208,22 @@ const hideDraftTranslation = async ($: EngineInterface) => {
   $.ui.invalidate('ui.render')
 }
 
+// 打ちかけの校正の帯。校正がなければ undefined
+const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0]) => {
+  const shown = await read($, draft)
+  const settings = await settingsOf($)
+  const line = shown && DraftTranslations.line(shown.version)
+  if (!shown || !line || !settings.enabled || !settings.live) return undefined
+  const replacement = DraftTranslations.replacement(shown.text, shown.version)
+  // 置き換えるのは、校正した打ちかけのままのときだけ（待ちの間に打たれていたら、古い言い直しになる）
+  const replace = async (text: string) => {
+    if ((await $.prompt.read()).text.trim() !== shown.text.trim()) return
+    const { isFilled } = await $.prompt.fill({ text, mode: 'replace' })
+    if (isFilled) void translateAfterPause($, text)
+  }
+  return draftBand(t, line, replacement ? () => void replace(replacement) : undefined)
+}
+
 export const translation = (on: On) => {
   on('prompt.submit', ($, e, next) => {
     // 送信は待たせない。訳は自分の dispatch で走らせる
@@ -195,20 +241,16 @@ export const translation = (on: On) => {
     return { ...box, decorations: [...(box.decorations ?? []), ...(shown ? underlines(box.text, shown.version) : [])] }
   })
 
+  // 入力欄の上は、開いている話す練習と打ちかけの校正を上下に
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const shown = await read($, draft)
-    const settings = await settingsOf($)
-    if (!shown || e.props.hasSurvey || !settings.enabled || !settings.live) return next(e)
-    const line = DraftTranslations.line(shown.version)
-    const replacement = DraftTranslations.replacement(shown.text, shown.version)
-    if (!line) return next(e)
-    // 置き換えるのは、校正した打ちかけのままのときだけ（待ちの間に打たれていたら、古い言い直しになる）
-    const replace = async (text: string) => {
-      if ((await $.prompt.read()).text.trim() !== shown.text.trim()) return
-      const { isFilled } = await $.prompt.fill({ text, mode: 'replace' })
-      if (isFilled) void translateAfterPause($, text)
-    }
-    return draftBand($.ui.resolve(e), line, replacement ? () => void replace(replacement) : undefined)
+    if (e.props.hasSurvey) return next(e)
+    const t = $.ui.resolve(e)
+    const band = await draftBandOf($, t)
+    const opened = await read($, practice)
+    if (!opened) return band ?? next(e)
+    const hands = { hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, now => now && { sample: now.sample, pron: now.pron, heard: '' }) }
+    const { Box } = t
+    return <Box flexDirection="column" gap={1}>{practiceBand(t, opened, coachedOf(opened.coach), hands)}{band}</Box>
   })
 
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {

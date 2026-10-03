@@ -15,9 +15,11 @@ export type Item = { text: string; notes: string[] }
 export type Opened = { items?: Item[]; isFailed?: boolean }
 // 指示の下に開いている絵。押した順に、押した語ごと（描いている間は card が無い）。その下に開いている欄
 export type Shown = { word: string; card?: Card; isFailed?: boolean; isWide?: boolean; aspects?: Partial<Record<Aspect, Opened>> }
+// 話す練習：お手本とその発音記号、声で入れた文、そのコーチ（頼んでいる間は null）
+export type Practice = { sample: string; pron?: string; heard?: string; coach?: Translation | null }
 
 declare module 'claude-code' {
   interface PluginState {
-    claudelingo: { translations: Record<string, Translation>; denied: string; draft: { text: string; version: Translation } | null; cards: Record<string, Shown[]>; drawn: Record<string, Card>; replies: Record<string, Translation | null>; sounds: Record<string, string[] | null> }
+    claudelingo: { translations: Record<string, Translation>; denied: string; draft: { text: string; version: Translation } | null; cards: Record<string, Shown[]>; drawn: Record<string, Card>; replies: Record<string, Translation | null>; sounds: Record<string, string[] | null>; practice: Practice | null }
   }
 }

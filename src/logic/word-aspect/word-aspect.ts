@@ -1,4 +1,4 @@
-import type { Aspect, Completion, Item } from '../../engine-protocol'
+import type { Aspect, Item, Translation } from '../../engine-protocol'
 import { PromptTranslations } from '../prompt-translation/prompt-translation'
 import { Result } from '../result/result'
 import { AspectRequest } from './aspect-request'
@@ -7,7 +7,7 @@ import { AspectRequest } from './aspect-request'
 export const WordAspects = {
   all: () => all(),
   request: (settings: Settings, aspect: Aspect, pressed: Pressed) => request(settings, aspect, pressed),
-  of: (reply: Promise<Completion>, aspect: Aspect) => of(reply, aspect),
+  of: (version: Translation, aspect: Aspect) => of(version, aspect),
 }
 
 // --- I/O
@@ -18,15 +18,13 @@ type Pressed = { word: string; restated: string }
 // --- operations
 // 頼むときは、文の直した所の ** を外して渡す
 const request = (settings: Settings, aspect: Aspect, { word, restated }: Pressed) => AspectRequest.of(settings, aspect, { word, sentence: PromptTranslations.plain(restated) })
-// 返事を項目に分ける。答えがないか、項目が 1 つもなければ書けなかったとする
-const of = async (reply: Promise<Completion>, aspect: Aspect) =>
-  (await Result.given(reply)).and(answered).and(text => parse(text, aspect)).either<Item[] | undefined>(items => items, () => undefined)
+// 返事（Completions.of で受けたもの）を項目に分ける。答えがないか、項目が 1 つもなければ書けなかったとする
+const of = (version: Translation, aspect: Aspect) =>
+  Result.given(version).and(text => parse(text, aspect)).either<Item[] | undefined>(items => items, () => undefined)
 
 // --- business rules
 // 欄は例文・類似表現・語源の順に並べる
 const all = (): Aspect[] => ['examples', 'similar', 'origin']
-// 返事が来れば、その文面。来なければ、その理由で失敗
-const answered = (c: Completion) => (c.isAnswered ? c.text : Result.fail(c.reason))
 // 欄ごとの "名前: 値" の行。本文の名前で項目を始め、添える行の名前はその項目の下に足す
 const tags = (aspect: Aspect) => ({
   examples: { head: 'EX', notes: ['TR', 'FEEL'] },

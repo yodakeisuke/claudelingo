@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'claude-code/testing'
 
+import { Completions } from '../../logic/completion/completion'
 import { WordCards } from '../../logic/word-card/word-card'
 
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const restated = "I'll **carry on** with the tests."
-const answered = (text: string) => Promise.resolve({ isAnswered: true as const, text, usage })
+const answered = (text: string) => Completions.of(Promise.resolve({ isAnswered: true as const, text, usage }))
 const reply = (unit: string) => answered(`UNIT: ${unit}\nPRON: /ˈkæri ɒn/\nCAPTION: 運び続ける\nSVG:\n<svg viewBox="0 0 480 288" width="480" height="288"><rect/></svg>`)
 
 describe('word-card', () => {
@@ -21,17 +22,16 @@ describe('word-card', () => {
 
   test('UNIT / CAPTION / SVG がそろい、句が押した語と関わるときだけ絵にする', async () => {
     const carry = { word: 'carry', restated }
-    expect((await WordCards.of(reply('carry on'), carry))?.unit).toBe('carry on')
-    expect((await WordCards.of(reply('test'), { word: 'tests', restated }))?.unit).toBe('test')
-    expect((await WordCards.of(reply('test'), { word: 'tests', restated: 'Add tests and test it.' }))?.unit).toBe('test')
-    expect(await WordCards.of(reply('carry on'), { word: 'tests', restated })).toBeUndefined()
-    expect(await WordCards.of(answered('UNIT: carry on'), carry)).toBeUndefined()
-    expect(await WordCards.of(Promise.resolve({ isAnswered: false as const, reason: 'timeout' }), carry)).toBeUndefined()
-    expect(await WordCards.of(Promise.reject(new Error('blocked')), carry)).toBeUndefined()
+    expect((WordCards.of(await reply('carry on'), carry))?.unit).toBe('carry on')
+    expect((WordCards.of(await reply('test'), { word: 'tests', restated }))?.unit).toBe('test')
+    expect((WordCards.of(await reply('test'), { word: 'tests', restated: 'Add tests and test it.' }))?.unit).toBe('test')
+    expect(WordCards.of(await reply('carry on'), { word: 'tests', restated })).toBeUndefined()
+    expect(WordCards.of(await answered('UNIT: carry on'), carry)).toBeUndefined()
+    expect(WordCards.of({ ok: false, error: 'timeout' }, carry)).toBeUndefined()
   })
 
   test('描いた絵は句のどの語からも引け、幅は 380px（拡大で 560px）で左に寄せる', async () => {
-    const card = (await WordCards.of(reply('carry on'), { word: 'carry', restated }))!
+    const card = (WordCards.of(await reply('carry on'), { word: 'carry', restated }))!
     const all = WordCards.saving(undefined, card, { word: 'carry', restated })
     expect(WordCards.saved(all, { word: 'on', restated })).toBe(card)
     expect(WordCards.saved(all, { word: 'on', restated: 'go on' })).toBeUndefined()

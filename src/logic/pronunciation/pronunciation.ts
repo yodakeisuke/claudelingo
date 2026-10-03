@@ -5,14 +5,18 @@ import { PronunciationRequest } from './pronunciation-request'
 
 // --- public interface
 export const Pronunciations = {
-  key: (lines: readonly string[]) => key(lines),
   spoken: (lines: readonly string[]) => spoken(lines),
   request: (settings: Settings, lines: readonly string[]) => request(settings, lines),
   of: (version: Translation) => of(version),
+  isAsked: (all: Sounds, lines: readonly string[]) => isAsked(all, lines),
+  saving: (all: Sounds, lines: readonly string[], symbols?: string[] | null) => saving(all, lines, symbols),
+  symbol: (all: Sounds, lines: readonly string[], n: number) => symbol(all, lines, n),
 }
 
 // --- I/O
 type Settings = Parameters<typeof PronunciationRequest.of>[0]
+// 読み上げた文の並び → 文ごとの発音記号。書いている間は null
+type Sounds = Record<string, string[] | null>
 
 // --- operations
 // 読み上げた文の ** を外して頼む
@@ -23,6 +27,16 @@ const of = (version: Translation) => Result.given(version).and(symbols).either<s
 // --- business rules
 // 同じ文の並びなら、同じ記号
 const key = (lines: readonly string[]) => spoken(lines).join('\n')
+// 一度頼んだ並び（書いている間も含む）は、頼み直さない
+const isAsked = (all: Sounds, lines: readonly string[]) => key(lines) in all
+// 書けた記号と書いている間の null は残す。書けなかったら消し、次に押したときに頼み直す
+const saving = (all: Sounds, lines: readonly string[], symbols?: string[] | null) =>
+  (symbols === undefined ? Object.fromEntries(Object.entries(all).filter(([k]) => k !== key(lines))) : { ...all, [key(lines)]: symbols })
+// 並びの n 番目の文の記号。頼んでいなければ undefined、書いている間は null
+const symbol = (all: Sounds, lines: readonly string[], n: number) => {
+  const symbols = all[key(lines)]
+  return symbols && symbols[n]
+}
 // 読ませる文は、直した所の ** を外したもの
 const spoken = (lines: readonly string[]) => lines.map(PromptTranslations.plain)
 // [n] の記号を n 番目の文に（欠けた番号は空）。[n] が / の中にあっても読み、どの行にも無ければ / で始まる行を順に。1 つも無ければ形が違うとする

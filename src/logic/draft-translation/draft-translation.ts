@@ -1,38 +1,40 @@
 import type { Translation } from '../../engine-protocol'
 import { PromptTranslations } from '../prompt-translation/prompt-translation'
-import { TranslationRequest } from '../prompt-translation/translation-request'
 import { Result } from '../result/result'
+import { DraftRequest } from './draft-request'
 
 // --- public interface
 export const DraftTranslations = {
   request: (settings: Settings, draft: string, commands: readonly string[]) => request(settings, draft, commands),
-  line: (version: Translation) => line(version),
-  marks: (draft: string, version: Translation) => marks(draft, version),
-  replacement: (draft: string, version: Translation) => replacement(draft, version),
+  band: (settings: Settings, shown: Shown | null) => band(settings, shown),
+  underlines: (draft: string, shown: Shown | null) => underlines(draft, shown),
 }
 
 // --- I/O
-type Settings = { enabled: boolean; live: boolean; native: string; target: string; level: string; liveModel: string }
+type Settings = Parameters<typeof DraftRequest.of>[0] & { enabled: boolean; live: boolean }
+// 校正した打ちかけと、その校正
+type Shown = { text: string; version: Translation }
 
 // --- operations
-// 打ちかけを校正するときだけ、送信後の訳と同じ頼み方（入力中の校正のモデル）に、赤線の場所を返させる指示を足す
+// 打ちかけを校正するときだけ頼む
 const request = (settings: Settings, draft: string, commands: readonly string[]) =>
-  Result.given(draft)
-    .and(d => wanted(settings, d, commands))
-    .and(d => marking(settings.target, TranslationRequest.of({ ...settings, model: settings.liveModel }, d)))
-    .either(asked => asked, () => undefined)
-// 帯には "! " の行を除いて、送信後の訳と同じ形で出す
-const line = (version: Translation) => oneTip(PromptTranslations.line(version, withoutMarks))
-// 赤線は一度に 1 つ。"! " の行の文字列が今の下書きに残っている所のうち、一番前。直せば次が出る
-const marks = (draft: string, version: Translation) =>
-  Result.given(version).either(markLines, () => [])
-    .map(mark => ({ start: wordAt(draft, mark), end: wordAt(draft, mark) + mark.length }))
+  Result.given(draft).and(d => wanted(settings, d, commands)).and(d => DraftRequest.of(settings, d)).either(asked => asked, () => undefined)
+
+// --- business rules
+// 帯を出すのは、mod と入力中の校正がオンで、校正が届いているとき
+const band = (settings: Settings, shown: Shown | null) => (settings.enabled && settings.live && shown ? banded(shown) : undefined)
+// 帯には "! " の行を除いて送信後の訳と同じ形で出し、言い直しが下書きと違えば置き換えも
+const banded = ({ text, version }: Shown) => {
+  const line = oneTip(PromptTranslations.line(version, withoutMarks))
+  return line && { line, replacement: differing(restatedOf(version), text) }
+}
+// 赤線（文字は変えない赤い下線）は一度に 1 つ。"! " の行の文字列が今の下書きに残っている所のうち、一番前。直せば次が出る
+const underlines = (draft: string, shown: Shown | null) =>
+  (shown ? Result.given(shown.version).either(markLines, () => []) : [])
+    .map(mark => ({ start: wordAt(draft, mark), end: wordAt(draft, mark) + mark.length, color: 'error', underline: true }))
     .filter(range => range.start >= 0)
     .sort((a, b) => a.start - b.start)
     .slice(0, 1)
-const replacement = (draft: string, version: Translation) => differing(restatedOf(version), draft)
-
-// --- business rules
 // 打ちかけを校正するのは、mod と入力中の校正がオンで、空でなく、コマンドを打っている途中でもないとき
 const wanted = (settings: Settings, draft: string, commands: readonly string[]) =>
   settings.enabled && settings.live && draft.trim() !== '' && !isCommand(draft, commands) ? draft.trim() : Result.fail('unwanted')
@@ -41,9 +43,6 @@ const isCommand = (draft: string, commands: readonly string[]) => {
   const name = /^\/(\S*)/.exec(draft)?.[1]
   return name !== undefined && commands.some(c => c.startsWith(name))
 }
-// 直した所が下書きのどこかを "! " の行で返させる（入力欄に赤線を引く）
-const marking = (target: string, asked: ReturnType<typeof TranslationRequest.of>) =>
-  ({ ...asked, system: `${asked.system}\n\nFinally, for each mistake in the ${target} parts of the message, in the order they appear, add one line starting with "! " followed by only the wrong word or words, copied exactly from the message (as few words as possible, never the whole sentence). Add none for parts you only translated.` })
 // "! " で始まる行が、赤線を引く所
 const isMark = (l: string) => l.trim().startsWith('! ')
 // 赤線を引く文字列は、"! " の後ろ

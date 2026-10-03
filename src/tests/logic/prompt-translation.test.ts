@@ -55,13 +55,4 @@ describe('prompt-translation', () => {
     expect(PromptTranslations.parts('Lint `src/**/*.ts` and **use** it')).toEqual(['Lint `src/**/*.ts` and ', 'use', ' it'])
     expect(PromptTranslations.plain('I **carry on** with 2**10.')).toBe('I carry on with 2**10.')
   })
-
-  test('返事が来れば訳文、来なければその理由を持つ', async () => {
-    expect(await PromptTranslations.of(Promise.resolve({ isAnswered: true, text: ' Check the logs. \n' }))).toEqual({ ok: true, value: 'Check the logs.' })
-    expect(await PromptTranslations.of(Promise.resolve({ isAnswered: true, text: '<reasoning>needs fixing</reasoning>I want to know why.' }))).toEqual({ ok: true, value: 'I want to know why.' })
-    expect(await PromptTranslations.of(Promise.resolve({ isAnswered: true, text: '<message>fix the <button> styling</message>' }))).toEqual({ ok: true, value: 'fix the <button> styling' })
-    expect(await PromptTranslations.of(Promise.resolve({ isAnswered: true, text: '<message>I want to know why.</message>' }))).toEqual({ ok: true, value: 'I want to know why.' })
-    expect(await PromptTranslations.of(Promise.resolve({ isAnswered: false, reason: 'empty-reply' }))).toEqual({ ok: false, error: 'empty-reply' })
-    expect(await PromptTranslations.of(Promise.reject(new Error('model blocked')))).toEqual({ ok: false, error: 'model blocked' })
-  })
 })

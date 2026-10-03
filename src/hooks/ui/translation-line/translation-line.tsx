@@ -31,7 +31,7 @@ export const withTranslation = (t: Elements[keyof Elements], row: RenderElement,
       {row}
       <Box alignItems="flex-start" gap={1}>
         <Box flexShrink={1}>{words ?? restated(t, line.restated)}</Box>
-        {voice && speaker(t, 'speak-line', () => voice.sayWithSymbols(line.restated))}
+        {voice && speaker(t, 'line-speak', () => voice.sayWithSymbols(line.restated))}
       </Box>
       {voice && symbolLine(t, voice.symbols(line.restated))}
       {line.tips.length > 0 && (

@@ -322,7 +322,7 @@ describe('register', () => {
     await $.prompt.submit({ text: 'fix **tests**', wait: false, origin: composer })
     await clock.advance(0)
     const ui = await $.ui.mount({ ...row('fix **tests**'), surface: 'desktop' })
-    await ui.press({ key: 'speak-line' })
+    await ui.press({ key: 'line-speak' })
     expect(spoken).toEqual(['Samantha: EN: fix tests'])
     expect(await ui.find({ type: 'Text', text: 'EN EN: fix tests' })).toBeDefined()
     const reply = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', props: { text: '原因はここ。\n\n直した', isFirstOfReply: true } })

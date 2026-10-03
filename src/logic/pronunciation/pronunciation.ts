@@ -17,7 +17,7 @@ type Settings = Parameters<typeof PronunciationRequest.of>[0]
 // 読み上げた文の ** を外して頼む
 const request = (settings: Settings, lines: readonly string[]) => PronunciationRequest.of(settings, spoken(lines))
 // 返事が来れば文ごとの記号、来なければ記号なし
-const of = async (reply: Promise<Completion>) => (await Result.given(reply)).and(answered).either<string[] | undefined>(symbols, () => undefined)
+const of = async (reply: Promise<Completion>) => (await Result.given(reply)).and(answered).and(symbols).either<string[] | undefined>(s => s, () => undefined)
 
 // --- business rules
 // 同じ文の並びなら、同じ記号
@@ -28,5 +28,8 @@ const spoken = (lines: readonly string[]) => lines.map(plain)
 const plain = (text: string) => text.replace(/\*\*/g, '')
 // 返事が来れば、その文面。来なければ、その理由で失敗
 const answered = (c: Completion) => (c.isAnswered ? c.text : Result.fail(c.reason))
-// [n] の後の記号を順に
-const symbols = (text: string) => text.split(/^\[\d+\]\s*/m).slice(1).map(s => s.trim())
+// [n] の後の記号を順に。1 つも無ければ形が違うとする
+const symbols = (text: string) => {
+  const list = text.split(/^\[\d+\]\s*/m).slice(1).map(s => s.trim())
+  return list.length > 0 ? list : Result.fail('format')
+}

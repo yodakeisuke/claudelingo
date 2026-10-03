@@ -11,7 +11,7 @@ export default {
   meta: { name: 'ui-layout' },
   rules: {
     'ui-pure': rule('ui は受け取った値から木を返すだけ', context => {
-      const report = node => context.report({ node, message: 'ui は描くだけ。状態（atom / read / update）・$・async は register.tsx（ui.render フック）で扱い、値と関数を渡す' })
+      const report = node => context.report({ node, message: 'ui は描くだけ。状態（atom / read / update）・$・async は hooks/features（ui.render フック）で扱い、値と関数を渡す' })
       const isAsync = node => node.async && report(node)
       return {
         ImportDeclaration: node => /^claude-code(\/|$)/.test(node.source.value) && node.specifiers.some(s => (node.importKind !== 'type' && s.importKind !== 'type') || s.imported?.name === 'EngineInterface') && report(node),

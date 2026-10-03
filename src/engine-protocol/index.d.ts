@@ -7,8 +7,14 @@ export type Completion = { isAnswered: true; text: string } | { isAnswered: fals
 
 // 単語の絵：押した語のまとまり（句なら句）、絵が示すことの一文、動く SVG
 export type Card = { unit: string; caption: string; svg: string }
-// 指示の下に開いている絵。押した順に、押した語ごと（描いている間は card が無い）
-export type Shown = { word: string; card?: Card; isFailed?: boolean; isWide?: boolean }
+// 語を深める欄：例文・類似表現・語源
+export type Aspect = 'examples' | 'similar' | 'origin'
+// 欄の 1 項目：本文と、その下に薄く添える行（訳と気持ち、使い分け、由来）
+export type Item = { text: string; notes: string[] }
+// 開いている欄（書いている間は items が無い）
+export type Opened = { items?: Item[]; isFailed?: boolean }
+// 指示の下に開いている絵。押した順に、押した語ごと（描いている間は card が無い）。その下に開いている欄
+export type Shown = { word: string; card?: Card; isFailed?: boolean; isWide?: boolean; aspects?: Partial<Record<Aspect, Opened>> }
 
 declare module 'claude-code' {
   interface PluginState {

@@ -1,6 +1,7 @@
 import type { Elements } from 'claude-code'
 
-import type { Shown } from '../../../engine-protocol'
+import type { Aspect, Opened, Shown } from '../../../engine-protocol'
+import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
 
 type Word = ReturnType<typeof WordCards.words>[number]
@@ -21,22 +22,52 @@ export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, words
   )
 }
 
-// 押した語の絵：枠の中に、句（太字）と拡大、動く絵とその横に絵の一文（薄く）。描いている間と失敗は 1 行。絵を描けない端末では句と一文の 1 行
-export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown: Shown, resize: (isWide: boolean) => void) => {
+const labels: Record<Aspect, string> = { examples: '例文', similar: '類似表現', origin: '語源' }
+
+// 押した語の絵：枠の中に、句（太字）と拡大、動く絵とその横に絵の一文（薄く）。描いている間は同じ大きさの地で場所を取り、描けなければ 1 行
+// 絵の下に例文・類似表現・語源のボタン（開いている欄は濃く）。描いている間も押せ、開いた欄はこの順に並ぶ。絵を描けない端末では枠を付けず、絵の代わりに句と一文の 1 行
+export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown: Shown, resize: (isWide: boolean) => void, open: (aspect: Aspect) => void) => {
   const { Box, Text, Button } = t
-  const { card } = shown
-  if (!card) return <Box marginTop={1}><Text dimColor>{shown.isFailed ? `描けませんでした：${shown.word}` : `コアイメージを描画中… ${shown.word}`}</Text></Box>
-  if (isTerminal || !('Svg' in t)) return <Box marginTop={1}><Text bold>{card.unit}  </Text><Text dimColor>{card.caption}</Text></Box>
-  const { Svg } = t
+  const { word, card, aspects } = shown
+  const Svg = !isTerminal && 'Svg' in t ? t.Svg : undefined
+  const status = <Text dimColor>{shown.isFailed ? `描けませんでした：${word}` : `コアイメージを描画中… ${word}`}</Text>
+  const head = !card ? status : Svg ? (
+    <Box gap={2} alignItems="center">
+      <Text bold>{card.unit}</Text>
+      <Button key={`resize-${word}`} label={shown.isWide ? '縮小' : '拡大'} dimColor onPress={() => resize(!shown.isWide)} />
+    </Box>
+  ) : <Box><Text bold>{card.unit}  </Text><Text dimColor>{card.caption}</Text></Box>
+  const picture = Svg && (card ? (
+    <Box flexWrap="wrap" alignItems="flex-end" gap={2}>
+      <Svg {...WordCards.picture(card.svg, shown.isWide)} alt={card.caption} isInteractive />
+      <Text dimColor>{card.caption}</Text>
+    </Box>
+  ) : !shown.isFailed && <Svg {...WordCards.waiting()} alt={`コアイメージを描画中… ${word}`} />)
   return (
-    <Box flexDirection="column" alignItems="flex-start" gap={1} marginTop={1} paddingX={1} borderStyle="round" borderDimColor>
-      <Box gap={2} alignItems="center">
-        <Text bold>{card.unit}</Text>
-        <Button key={`resize-${shown.word}`} label={shown.isWide ? '縮小' : '拡大'} dimColor onPress={() => resize(!shown.isWide)} />
+    <Box flexDirection="column" alignItems="flex-start" gap={1} marginTop={1} {...(Svg ? { paddingX: 1, borderStyle: 'round', borderDimColor: true } : {})}>
+      {head}
+      {picture}
+      <Box gap={1} flexWrap="wrap">
+        {WordAspects.all().map(a => <Button key={`aspect-${word}-${a}`} label={labels[a]} dimColor={!aspects?.[a]} onPress={() => open(a)} />)}
       </Box>
-      <Box flexWrap="wrap" alignItems="flex-end" gap={2}>
-        <Svg {...WordCards.picture(card.svg, shown.isWide)} alt={card.caption} isInteractive />
-        <Text dimColor>{card.caption}</Text>
+      {WordAspects.all().map(a => aspects?.[a] && aspect(t, labels[a], aspects[a]))}
+    </Box>
+  )
+}
+
+// 開いた欄：見出し（薄い太字）の下に少し空けて、項目の本文と、その下に一段下げて添える行（薄く）。書いている間と失敗は 1 行
+const aspect = (t: Elements[keyof Elements], label: string, opened: Opened) => {
+  const { Box, Text } = t
+  return (
+    <Box flexDirection="column" gap={0.5}>
+      <Text dimColor bold>{label}</Text>
+      <Box flexDirection="column">
+        {opened.items?.map(item => (
+          <Box flexDirection="column">
+            <Text>{item.text}</Text>
+            {item.notes.map(note => <Box paddingLeft={2}><Text dimColor>{note}</Text></Box>)}
+          </Box>
+        )) ?? <Text dimColor>{opened.isFailed ? '書けませんでした' : '書いています…'}</Text>}
       </Box>
     </Box>
   )

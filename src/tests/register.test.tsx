@@ -8,6 +8,13 @@ const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, c
 // エンジン役：返事は "EN: <入力>"、行はそのまま。fail で失敗の仕方を変える
 const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[] = ['terminal'], saved?: object, isWritable = true) => {
   const clock = mock.clock(on)
+  // 絵の返事を待たせる関所。hold で閉じ、返る関数で開ける。テストごとに別
+  let gate = Promise.resolve()
+  const hold = () => {
+    let release = () => {}
+    gate = new Promise(resolve => (release = resolve))
+    return release
+  }
   const store = new Map<string, unknown>(saved ? [['settings', saved]] : [])
   on('store.get', (_$, e) => ({ value: store.get(e.key) }))
   on('store.set', (_$, e) => {
@@ -21,7 +28,8 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
   on('model.complete', (_$, e) => {
     const prompt = e.prompt.replace(/<\/?message>/g, '')
     asked.push(prompt)
-    if (prompt.startsWith('{"pressed"')) return { value: card(JSON.parse(prompt).pressed) }
+    if (prompt.startsWith('{"pressed"') && e.system?.includes('EX: <sentence>')) return { value: { isAnswered: true, text: 'EX: Please carry on.\nTR: どうぞ続けて。', usage } }
+    if (prompt.startsWith('{"pressed"')) return gate.then(() => ({ value: card(JSON.parse(prompt).pressed) }))
     models.push(e.model)
     if (fail === 'reject') throw new Error('model blocked')
     const value: ModelCompleteResult = fail === 'api-error'
@@ -35,7 +43,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     const { Text } = $.ui.resolve(e)
     return <Text>{e.props.text}</Text>
   })
-  return { clock, asked, models, store }
+  return { clock, asked, models, store, hold }
 }
 
 // 単語の絵の返事：carry と on は carry on、tests は文の別の句（迷子）、ほかはその語
@@ -255,5 +263,31 @@ describe('register', () => {
     const ui = await sent($, clock)
     expect(await ui.find({ type: 'Markdown', text: 'EN: fix the tests and carry on' })).toBeDefined()
     expect(await ui.find({ type: 'Button', key: 'word-0' })).toBeUndefined()
+  })
+
+  test('絵を描いている間も例文を押せ、開いた欄は絵が届いても残り、押し直すと閉じる', async ($, on) => {
+    const { clock, hold } = engine(on)
+    const ui = await sent($, clock)
+    const release = hold()
+    await ui.press({ key: 'word-5' })
+    expect((await ui.find({ type: 'Svg' }))?.props.width).toBe(380)
+    await ui.press({ key: 'aspect-carry-examples' })
+    expect(await ui.find({ type: 'Text', text: 'どうぞ続けて。' })).toBeDefined()
+    expect((await ui.find({ type: 'Button', key: 'aspect-carry-examples' }))?.props.dimColor).toBe(false)
+    release()
+    await clock.advance(0)
+    expect(await ui.find({ type: 'Text', text: 'carry の絵' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Please carry on.' })).toBeDefined()
+    await ui.press({ key: 'aspect-carry-examples' })
+    expect(await ui.find({ type: 'Text', text: 'Please carry on.' })).toBeUndefined()
+  })
+
+  test('端末でも例文などのボタンが出て、欄は文字で開く', async ($, on) => {
+    const { clock } = engine(on)
+    const ui = await sent($, clock, 'terminal')
+    await ui.press({ key: 'word-5' })
+    await ui.press({ key: 'aspect-carry-examples' })
+    expect(await ui.find({ type: 'Text', text: 'どうぞ続けて。' })).toBeDefined()
+    expect(await ui.find({ type: 'Button', key: 'aspect-carry-origin' })).toBeDefined()
   })
 })

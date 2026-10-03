@@ -19,7 +19,9 @@
         "logic-layout/exports": "error",
         "logic-layout/sections": "error",
         "logic-layout/placement": "error",
-        "logic-layout/shared-util": "error",
+        "logic-layout/interface-forward": "error",
+        "logic-layout/io-only": "error",
+        "logic-layout/one-expression": "error",
         "logic-layout/rule-comment": "error",
         "no-unused-vars": [
           "error",
@@ -92,7 +94,8 @@
         "**/logic/result/**"
       ],
       "rules": {
-        "logic-layout/result-only": "off"
+        "logic-layout/result-only": "off",
+        "logic-layout/io-only": "off"
       }
     }
   ]

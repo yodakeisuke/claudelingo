@@ -1,11 +1,11 @@
-// --- operations
+// --- public interface
 export const TranslationSettings = {
-  of: (saved: unknown) => of(saved),
+  of: (saved: unknown): Settings => of(saved),
   models: () => models(),
   pauses: () => pauses(),
 }
 
-// --- data
+// --- I/O
 type Settings = { enabled: boolean; native: string; target: string; model: string; afterSend: boolean; live: boolean; liveModel: string; livePause: string; card: boolean; cardModel: string }
 
 // --- business rules

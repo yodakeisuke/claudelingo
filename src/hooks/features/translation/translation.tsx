@@ -205,14 +205,14 @@ const translateAfterPause = async ($: EngineInterface, text: string) => {
   if (!own.signal.aborted) pause = $.clock.after(Number(livePause) * 1000, () => void showDraftTranslation($, text, own.signal))
 }
 
-// 送ったら、入力欄が空になるのに合わせて帯もすぐ消す
+// 送ったら、入力欄が空になるのに合わせて帯もすぐ消す。✕ でも消す（次に打てばまた出る）
 const hideDraftTranslation = async ($: EngineInterface) => {
   cancelDraftTranslation()
   await showDraft($, null)
 }
 
 // 打ちかけの校正の帯。校正がなければ undefined
-const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0]) => {
+const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0], isTerminal: boolean) => {
   const shown = await read($, draft)
   const band = DraftTranslations.band(await settingsOf($), shown)
   if (!shown || !band) return undefined
@@ -223,7 +223,7 @@ const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0
     const { isFilled } = await $.prompt.fill({ text, mode: 'replace' })
     if (isFilled) void translateAfterPause($, text)
   }
-  return draftBand(t, line, replacement ? () => void replace(replacement) : undefined)
+  return draftBand(t, isTerminal, line, () => void hideDraftTranslation($), replacement ? () => void replace(replacement) : undefined)
 }
 
 export const translation = (on: On) => {
@@ -247,7 +247,7 @@ export const translation = (on: On) => {
     if (e.props.hasSurvey) return next(e)
     // 入力欄の上の帯は端末と Desktop にしかない
     const t = $.ui.resolve(e) as Parameters<typeof practiceBand>[0]
-    const band = await draftBandOf($, t)
+    const band = await draftBandOf($, t, e.surface === 'terminal')
     const opened = await read($, practice)
     if (!opened || !(await settingsOf($)).enabled) return band ?? next(e)
     // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない

@@ -50,10 +50,7 @@ export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown
       <Box gap={1} flexWrap="wrap">
         {WordAspects.all().map(a => <Button key={`aspect-${word}-${a}`} label={labels[a]} dimColor={!aspects?.[a]} onPress={() => open(a)} />)}
       </Box>
-      {WordAspects.all().flatMap(a => {
-        const opened = aspects?.[a]
-        return opened ? [aspect(t, labels[a], opened)] : []
-      })}
+      {WordAspects.all().map(a => aspects?.[a] && aspect(t, labels[a], aspects[a]))}
     </Box>
   )
 }

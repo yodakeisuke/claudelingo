@@ -7,9 +7,10 @@ const answered = (text: string) => Promise.resolve({ isAnswered: true as const, 
 
 describe('word-aspect', () => {
   test('文の ** を外し、絵と同じ形の入力で頼む', () => {
-    const request = WordAspects.request({ native: 'Japanese', target: 'English', model: 'haiku' }, 'similar', { word: 'carry', restated: "I'll **carry on**." })
+    const request = WordAspects.request({ native: 'Japanese', target: 'English', level: 'B1', model: 'haiku' }, 'similar', { word: 'carry', restated: "I'll **carry on**." })
     expect(request.prompt).toBe(`{"pressed":"carry","sentence":"I'll carry on."}`)
     expect(request.model).toBe('haiku')
+    expect(request.system).toContain('Self-described English level: "B1"')
     expect(request.system).toContain('ALT: <expression>')
   })
 

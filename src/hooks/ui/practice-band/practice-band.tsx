@@ -1,7 +1,7 @@
 import type { Elements } from 'claude-code'
 
 import type { Practice } from '../../../engine-protocol'
-import type { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
+import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
 
 // コーチの返事：書き起こし（違う語は ** で囲む）とアドバイス、頼んでいる間の一言、失敗の理由
 export type Coached = NonNullable<ReturnType<typeof PromptTranslations.line>> | string | undefined
@@ -21,7 +21,7 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
         <Box flexDirection="column">
           <Box gap={1}>
             <Text dimColor bold>聞き取り</Text>
-            <Text>{coached.restated.split('**').map((part, i) => (i % 2 ? <Text color="error" underline>{part}</Text> : <Text>{part}</Text>))}</Text>
+            <Text>{PromptTranslations.parts(coached.restated).map((part, i) => (i % 2 ? <Text color="error" underline>{part}</Text> : <Text>{part}</Text>))}</Text>
           </Box>
           {coached.tips.map(tip => <Markdown dimColor text={`💡 ${tip}`} />)}
         </Box>

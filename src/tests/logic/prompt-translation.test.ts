@@ -51,6 +51,11 @@ describe('prompt-translation', () => {
     expect(PromptTranslations.key('これ見て\n<pasted_content id="1">\nError: boom\n</pasted_content id="1">')).toBe(PromptTranslations.key('これ見て\nError: boom'))
   })
 
+  test('直した所は ** の対だけ。対にならない ** は文字のまま残す', () => {
+    expect(PromptTranslations.parts('Lint `src/**/*.ts` and **use** it')).toEqual(['Lint `src/**/*.ts` and ', 'use', ' it'])
+    expect(PromptTranslations.plain('I **carry on** with 2**10.')).toBe('I carry on with 2**10.')
+  })
+
   test('返事が来れば訳文、来なければその理由を持つ', async () => {
     expect(await PromptTranslations.of(Promise.resolve({ isAnswered: true, text: ' Check the logs. \n' }))).toEqual({ ok: true, value: 'Check the logs.' })
     expect(await PromptTranslations.of(Promise.resolve({ isAnswered: true, text: '<reasoning>needs fixing</reasoning>I want to know why.' }))).toEqual({ ok: true, value: 'I want to know why.' })

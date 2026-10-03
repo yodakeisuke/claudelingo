@@ -54,10 +54,10 @@ const withoutMarks = (value: string) => value.split('\n').filter(l => !isMark(l)
 const oneTip = (shown: ReturnType<typeof PromptTranslations.line>) => shown && { ...shown, tips: shown.tips.slice(0, 1) }
 // 下書きの中で、その文字列が単語として現れる最初の位置（"this" の中の "is" は拾わない）
 const wordAt = (draft: string, mark: string) => new RegExp(`(?<![\\p{L}\\p{N}])${mark.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').exec(draft)?.index ?? -1
-// 置き換える文は、訳せたときの言い直しから ** を外したもの。返事は 言い直し → 💡 の行 → "! " の行 の順なので、末尾から "! " の行、続けて 💡 の行だけを落とす
+// 置き換える文は、訳せたときの言い直しから直した所の ** を外したもの。返事は 言い直し → 💡 の行 → "! " の行 の順なので、末尾から "! " の行、続けて 💡 の行だけを落とす
 // ほかの行は字下げも空行もそのまま（下書きにある "! " や 💡 で始まる行も、末尾の指摘より前なら残る）
 const restatedOf = (version: Translation) =>
-  Result.given(version).either(value => dropTrailing(dropTrailing(value.split('\n'), isMark), l => l.trim().startsWith('💡 ')).join('\n').trim().replaceAll('**', ''), () => '')
+  Result.given(version).either(value => PromptTranslations.plain(dropTrailing(dropTrailing(value.split('\n'), isMark), l => l.trim().startsWith('💡 ')).join('\n').trim()), () => '')
 // 末尾から、空行と、条件に合う行を落とす
 const dropTrailing = (lines: string[], isNote: (line: string) => boolean): string[] => {
   const last = lines.at(-1)

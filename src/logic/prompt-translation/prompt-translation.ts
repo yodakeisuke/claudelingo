@@ -1,4 +1,4 @@
-import type { Translation } from '../../types'
+import type { Completion, Translation } from '../../types'
 import { Result } from '../result/result'
 import { TranslationRequest } from './translation-request'
 
@@ -17,7 +17,6 @@ type Line = { restated: string; tips: string[] }
 // 送られた指示：送り元と文面
 type Sent = { from: string; text: string }
 type Settings = { enabled: boolean; native: string; target: string; model: string }
-type Completion = { isAnswered: true; text: string } | { isAnswered: false; reason: string }
 
 // ビジネスルール
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの

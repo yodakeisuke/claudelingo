@@ -7,7 +7,10 @@ import { PromptTranslations } from '../logic/prompt-translation/prompt-translati
 import { Result } from '../logic/result/result'
 import { TranslationSettings } from '../logic/translation-settings/translation-settings'
 import { WordCards } from '../logic/word-card/word-card'
-import { SETTINGS_PANE, draftBand, settingsPane, withTranslation, wordCard, wordLine } from './ui'
+import { draftBand } from './ui/draft-band/draft-band'
+import { SETTINGS_PANE, settingsPane } from './ui/settings-pane/settings-pane'
+import { withTranslation } from './ui/translation-line/translation-line'
+import { wordCard, wordLine } from './ui/word-card/word-card'
 
 // 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})

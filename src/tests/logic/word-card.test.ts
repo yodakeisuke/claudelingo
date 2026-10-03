@@ -8,13 +8,14 @@ const answered = (text: string) => Promise.resolve({ isAnswered: true as const, 
 const reply = (unit: string) => answered(`UNIT: ${unit}\nPRON: /ˈkæri ɒn/\nCAPTION: 運び続ける\nSVG:\n<svg viewBox="0 0 480 288" width="480" height="288"><rect/></svg>`)
 
 describe('word-card', () => {
-  test('訳の行の語は、** を外して見せ（中の語には印）、小文字の英字だけで渡す', () => {
+  test('訳の行の語は、直した所の ** を外して見せ（中の語には印）、小文字の英字だけで渡す。記号だけの語は押せない', () => {
     expect(WordCards.words(restated)).toEqual([
       { label: "I'll", word: "i'll", isFixed: false }, { label: 'carry', word: 'carry', isFixed: true }, { label: 'on', word: 'on', isFixed: true },
       { label: 'with', word: 'with', isFixed: false }, { label: 'the', word: 'the', isFixed: false }, { label: 'tests.', word: 'tests', isFixed: false },
     ])
     expect(WordCards.words('Déjà vu, ça va ?').map(w => w.word)).toEqual(['déjà', 'vu', 'ça', 'va', ''])
     expect(WordCards.words('テストを直して').map(w => w.word)).toEqual(['テストを直して'])
+    expect(WordCards.words('- fix `src/**/*.ts` and **use** it').map(w => [w.label, w.word, w.isFixed])).toEqual([['-', '', false], ['fix', 'fix', false], ['`src/**/*.ts`', 'srcts', false], ['and', 'and', false], ['use', 'use', true], ['it', 'it', false]])
     expect(WordCards.request({ native: 'Japanese', target: 'English', level: '', cardModel: 'sonnet' }, 'carry', restated).prompt).toBe(`{"pressed":"carry","sentence":"I'll carry on with the tests."}`)
   })
 

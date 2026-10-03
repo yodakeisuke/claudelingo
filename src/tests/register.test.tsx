@@ -88,7 +88,7 @@ describe('register', () => {
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ ...row('ログ見て'), surface })
       expect(await ui.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: 'ログ見て' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^ログ見て$/ })).toBeDefined()
     }
   })
 
@@ -227,7 +227,7 @@ describe('register', () => {
     const { clock, asked } = engine(on)
     const ui = await sent($, clock)
     await ui.press({ key: 'word-5' })
-    expect(await ui.find({ type: 'Text', text: 'carry on' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^carry on$/ })).toBeDefined()
     expect((await ui.find({ type: 'Svg' }))?.props.width).toBe(380)
     expect(await ui.find({ type: 'Text', text: 'carry の絵' })).toBeDefined()
     await ui.press({ key: 'word-6' })
@@ -307,11 +307,11 @@ describe('register', () => {
     expect(await ui.find({ type: 'Text', text })).toBeDefined()
     await ui.press({ key: 'reply-translate' })
     expect(asked).toEqual(['[1] 原因はここ。\n\n[2] carry on して'])
-    for (const paragraph of ['原因はここ。', '```ts\nconst a = 1\n\nconst b = 2\n```', 'carry on して']) expect(await ui.find({ type: 'Text', text: paragraph })).toBeDefined()
+    for (const paragraph of ['原因はここ。', '```ts\nconst a = 1\n\nconst b = 2\n```', 'carry on して']) expect(await ui.find({ type: 'Text', text: new RegExp(`^${paragraph}$`) })).toBeDefined()
     expect(await ui.find({ type: 'Button', key: 'word-0-0-1' })).toBeDefined()
     expect(await ui.find({ type: 'Button', key: 'word-1-0-0' })).toBeUndefined()
     await ui.press({ key: 'word-2-0-1' })
-    expect(await ui.find({ type: 'Text', text: 'carry on' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^carry on$/ })).toBeDefined()
     expect(asked.at(-1)).toBe('{"pressed":"carry","sentence":"EN carry on して"}')
     expect(await ui.find({ type: 'Button', key: 'word-2-resize-carry' })).toBeDefined()
     await ui.press({ key: 'reply-translate' })

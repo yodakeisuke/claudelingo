@@ -97,7 +97,7 @@ const sayWithSymbols = async ($: EngineInterface, lines: string[]) => {
   const key = Pronunciations.key(lines)
   if (key in (await read($, sounds))) return
   await showSymbols($, key, null)
-  await showSymbols($, key, await Pronunciations.of($.model.complete(Pronunciations.request(await settingsOf($), lines))))
+  await showSymbols($, key, Pronunciations.of(await PromptTranslations.of($.model.complete(Pronunciations.request(await settingsOf($), lines)))))
 }
 
 const showSymbols = async ($: EngineInterface, key: string, symbols?: string[] | null) => {

@@ -1,4 +1,5 @@
 import type { Aspect, Completion, Item } from '../../engine-protocol'
+import { PromptTranslations } from '../prompt-translation/prompt-translation'
 import { Result } from '../result/result'
 import { AspectRequest } from './aspect-request'
 
@@ -15,8 +16,8 @@ type Settings = Parameters<typeof AspectRequest.of>[0]
 type Pressed = { word: string; restated: string }
 
 // --- operations
-// 頼むときは、文の ** を外して渡す
-const request = (settings: Settings, aspect: Aspect, { word, restated }: Pressed) => AspectRequest.of(settings, aspect, { word, sentence: restated.replace(/\*\*/g, '') })
+// 頼むときは、文の直した所の ** を外して渡す
+const request = (settings: Settings, aspect: Aspect, { word, restated }: Pressed) => AspectRequest.of(settings, aspect, { word, sentence: PromptTranslations.plain(restated) })
 // 返事を項目に分ける。答えがないか、項目が 1 つもなければ書けなかったとする
 const of = async (reply: Promise<Completion>, aspect: Aspect) =>
   (await Result.given(reply)).and(answered).and(text => parse(text, aspect)).either<Item[] | undefined>(items => items, () => undefined)

@@ -39,7 +39,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
       {group('送った後の訳', onOff('afterSend', settings.afterSend), model('model'))}
       {group('入力中の校正', onOff('live', settings.live), model('liveModel'), field('反応の速さ', choice('livePause', settings.livePause, TranslationSettings.pauses().map(value => ({ value, label: `${value}秒` })))))}
       {group('単語の絵', onOff('card', settings.card), model('cardModel'))}
-      {denied && <Text color="red">保存できませんでした：{denied}</Text>}
+      {denied && <Text color="error">保存できませんでした：{denied}</Text>}
     </Box>
   )
 }

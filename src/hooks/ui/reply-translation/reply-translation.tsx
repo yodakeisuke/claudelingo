@@ -5,7 +5,7 @@ import { speaker } from '../read-aloud/read-aloud'
 
 // 返事のブロック：段落の行（空きは Claude Code の行が持つ）、その発音記号、その下の訳。最初の行の後は indent だけ下げて本文にそろえる
 // 最後に訳すボタン 🌐（訳した後は閉じる 🌐 と読み上げ）、訳している間などは 1 行空けて一言
-export const replyBlock = (t: Elements[keyof Elements], paragraphs: { row: RenderElement; symbol?: RenderElement; translation?: RenderElement }[], indent: number, isTerminal: boolean, button?: { label: string; press: () => void }, note?: string, speak?: () => void) => {
+export const replyBlock = (t: Elements[keyof Elements], key: string, paragraphs: { row: RenderElement; symbol?: RenderElement; translation?: RenderElement }[], indent: number, isTerminal: boolean, button?: { label: string; press: () => void }, note?: string, speak?: () => void) => {
   const { Box, Text } = t
   const [first, ...rest] = paragraphs
   return (
@@ -15,7 +15,7 @@ export const replyBlock = (t: Elements[keyof Elements], paragraphs: { row: Rende
         {first?.symbol}
         {first?.translation}
         {rest.map(p => [p.row, p.symbol, p.translation])}
-        {button && glyphs(t, isTerminal, [glyph(t, 'reply-translate', '🌐', button.label, button.press, true), ...(speak ? [speaker(t, 'reply-speak', speak, true)] : [])])}
+        {button && glyphs(t, isTerminal, [glyph(t, `${key}-translate`, '🌐', button.label, button.press, true), ...(speak ? [speaker(t, `${key}-speak`, speak, true)] : [])])}
         {note && <Box marginTop={1}><Text dimColor>{note}</Text></Box>}
       </Box>
     </Box>

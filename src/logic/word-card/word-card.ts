@@ -14,7 +14,7 @@ export const WordCards = {
 }
 
 // データ構造
-type Settings = { native: string; target: string; cardModel: string }
+type Settings = Parameters<typeof CardRequest.of>[0]
 // 押した語と、それがある訳の行
 type Pressed = { word: string; restated: string }
 // 描いた絵の保存：押した語と文 → 絵

@@ -2,14 +2,19 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import { ReplyTranslations } from '../../logic/reply-translation/reply-translation'
 
+const settings = { native: 'Japanese', target: 'English', level: '', model: 'sonnet' }
+
 describe('reply-translation', () => {
-  test('学ぶ言語でない方へ訳すかは返事の INTO で、訳は段落の順に当て、欠けた段落とコードには無い', () => {
-    const text = 'one\n\n```\na\n\nb\n```\n\ntwo\n\nthree'
-    expect(ReplyTranslations.shown(text, { ok: true, value: 'INTO: NATIVE\n[1] 一\n[2] 二' })).toEqual({
-      paragraphs: [{ text: 'one', translation: '一' }, { text: '```\na\n\nb\n```', translation: undefined }, { text: 'two', translation: '二' }, { text: 'three', translation: undefined }],
+  test('訳は番号で段落に当て、欠けた番号とコードの段落には無い。学ぶ言語へ訳したかは INTO で', () => {
+    const text = 'one\n\n~~~\na\n\nb\n~~~\n\n    indented\n\ntwo\n\nthree'
+    expect(ReplyTranslations.shown(text, 'INTO: NATIVE\n[1] 一\n[1]: https://x\n[3] 二')).toEqual({
+      paragraphs: [{ text: 'one', translation: '一\n[1]: https://x' }, { text: '~~~\na\n\nb\n~~~', translation: undefined }, { text: '    indented', translation: undefined }, { text: 'two', translation: '二' }, { text: 'three', translation: undefined }],
       isIntoTarget: false,
-      error: '',
     })
-    expect(ReplyTranslations.shown('one', { ok: false, error: 'timeout' })).toEqual({ paragraphs: [{ text: 'one', translation: undefined }], isIntoTarget: false, error: 'timeout' })
+  })
+
+  test('フェンスの外に文が残る段落は訳し、コードだけの返事は頼まない', () => {
+    expect(ReplyTranslations.request(settings, 'Run:\n```\nls\n```')?.prompt).toBe('[1] Run:\n```\nls\n```')
+    expect(ReplyTranslations.request(settings, '```\nls\n```')).toBeUndefined()
   })
 })

@@ -35,7 +35,7 @@ const wrapped = (t: Elements[keyof Elements], isTerminal: boolean, words: Line['
 
 const labels: Record<Aspect, string> = { examples: '例文', similar: '類似表現', origin: '語源' }
 
-// 押した語の絵：枠の中に、句（太字）とその発音記号（薄く）、読み上げと話す練習と拡大、動く絵とその横に絵の一文（薄く）。描いている間は同じ大きさの地で場所を取り、描けなければ 1 行
+// 押した語の絵：枠の中に、句（太字）とその発音記号（薄く）、読み上げと話す練習と拡大、動く絵とその横に絵の一文（薄く）。描いている間は同じ大きさの地で場所を取り、押した語で読み上げ・話す練習ができる。描けなければ 1 行
 // 絵の下に例文・類似表現・語源のボタン（開いている欄は濃く）。ボタンの key の頭に prefix（返事では段落ごと）。描いている間も押せ、開いた欄はこの順に並ぶ。絵を描けない端末では枠を付けず、絵の代わりに句・記号・一文の 1 行と読み上げ・話す練習
 export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown: Shown, resize: (isWide: boolean) => void, open: (aspect: Aspect) => void, voice: Voice, prefix = '') => {
   const { Box, Text, Button } = t
@@ -43,8 +43,9 @@ export const wordCard = (t: Elements[keyof Elements], isTerminal: boolean, shown
   // 絵なしで届いた絵（端末だけのときに頼んだ）は、端末と同じ 1 行で
   const Svg = !isTerminal && 'Svg' in t && card?.svg !== '' ? t.Svg : undefined
   const status = <Text dimColor>{shown.isFailed ? `描けませんでした：${word}` : `コアイメージを描画中… ${word}`}</Text>
-  const voiceButtons = card && speakerAndMicrophone(t, isTerminal, { speak: `${prefix}speak-${word}`, practise: `${prefix}practise-${word}` }, () => voice.say(card.unit), () => voice.practise(card.unit, card.pron))
-  const head = !card ? status : Svg ? (
+  const unit = card?.unit ?? word
+  const voiceButtons = !shown.isFailed && speakerAndMicrophone(t, isTerminal, { speak: `${prefix}speak-${word}`, practise: `${prefix}practise-${word}` }, () => voice.say(unit), () => voice.practise(unit, card?.pron))
+  const head = !card ? <Box gap={2} alignItems="center">{status}{voiceButtons}</Box> : Svg ? (
     <Box gap={2} alignItems="center">
       <Text bold>{card.unit}</Text>
       <Text dimColor>{card.pron}</Text>

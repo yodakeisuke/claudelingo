@@ -9,7 +9,7 @@ export const PromptTranslations = {
   isNeeded: (surfaces: readonly string[]) => isNeeded(surfaces),
   key: (text: string) => key(text),
   of: (reply: Promise<Completion>) => of(reply),
-  line: (version?: Translation) => line(version),
+  line: (version?: Translation, shown?: (value: string) => string) => line(version, shown),
 }
 
 // --- I/O
@@ -25,7 +25,7 @@ const request = (settings: Settings, sent: Sent, commands: readonly string[]) =>
     .and(text => withoutCopies(TranslationRequest.of(settings, text)))
     .either(asked => asked, () => undefined)
 // 返事が来れば下書きを捨てた訳文、来なければその理由。呼び出し自体が拒まれたときは、その message
-const of = async (reply: Promise<Completion>): Promise<Translation> => (await Result.given(reply)).and(answered).and(withoutScratch).data()
+const of = async (reply: Promise<Completion>): Promise<Translation> => (await Result.given(reply)).and(answered).and(withoutScratch).either<Translation>(value => ({ ok: true, value }), error => ({ ok: false, error }))
 
 // --- business rules
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの
@@ -39,8 +39,8 @@ const isCommand = (text: string, commands: readonly string[]) => commands.includ
 const key = (text: string) => text.replace(/<\/?pasted_content[^>]*>|\s/g, '')
 // 訳を頼むのは、描く面があるときだけ（-p は誰も見ない）
 const isNeeded = (surfaces: readonly string[]) => surfaces.length > 0
-// 訳せていれば、言い直しとアドバイスに分けて出す。訳せなかったら、その理由を出す（訳がまだなら何も出さない）
-const line = (version?: Translation) => version && Result.given(version).either(split, error => ({ restated: `訳せませんでした：${error}`, tips: [] }))
+// 訳せていれば、shown で整えてから言い直しとアドバイスに分けて出す。訳せなかったら、その理由を出す（訳がまだなら何も出さない）
+const line = (version?: Translation, shown = (value: string) => value) => version && Result.given(version).and(shown).either(split, error => ({ restated: `訳せませんでした：${error}`, tips: [] }))
 // "💡 " で始まる行がアドバイス（指示の箇条書き "- " と区別する）、残りの行をつないだものが言い直し（複数段落の指示でも切らない）
 const split = (value: string) => {
   const lines = value.split('\n').map(l => l.trim()).filter(Boolean)

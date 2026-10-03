@@ -10,7 +10,7 @@ import { TranslationSettings } from '../../../logic/translation-settings/transla
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
 import { draftBand } from '../../ui/draft-band/draft-band'
-import { replyBlock } from '../../ui/reply-translation/reply-translation'
+import { paragraphTranslation, replyBlock } from '../../ui/reply-translation/reply-translation'
 import { withTranslation } from '../../ui/translation-line/translation-line'
 import { wordCard, wordLine } from '../../ui/word-card/word-card'
 
@@ -191,22 +191,24 @@ export const translation = (on: On) => {
     const version = (await read($, replies))[text]
     if (!settings.enabled) return next(e)
     const t = $.ui.resolve(e)
-    if (version === undefined) return replyBlock(t, [await next(e)], { label: '訳', press: () => void translateReply($, text) })
-    if (version === null) return replyBlock(t, [await next(e)], undefined, '訳しています…')
+    const isTerminal = e.surface === 'terminal'
+    // 端末の返事の頭の行は「● 」の 2 マス下げで描かれる。訳とボタンもそこにそろえる
+    const indent = isTerminal && e.props.isFirstOfReply ? 2 : 0
+    if (version === undefined) return replyBlock(t, [{ row: await next(e) }], indent, { label: '訳', press: () => void translateReply($, text) })
+    if (version === null) return replyBlock(t, [{ row: await next(e) }], indent, undefined, '訳しています…')
     // 段落ごとに Claude Code の描き方で描き、その下に訳。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る
     const { paragraphs, isIntoTarget, error } = ReplyTranslations.shown(text, version)
-    const isTerminal = e.surface === 'terminal'
     const shownCards = await read($, cards)
     const rows = await Promise.all(paragraphs.map(async (p, i) => {
       const row = await next({ ...e, props: { ...e.props, text: p.text, isFirstOfReply: e.props.isFirstOfReply && i === 0 } })
-      if (!p.translation) return row
       const restated = p.translation
+      if (!restated) return { row }
       const key = `${text}#${i}`
       const shown = shownCards[key] ?? []
-      if (!isIntoTarget || !settings.card) return withTranslation(t, row, { restated, tips: [] })
+      if (!isIntoTarget || !settings.card) return { row, translation: paragraphTranslation(t, restated) }
       const words = wordLine(t, isTerminal, WordCards.words(restated), WordCards.up(shown), word => void pressWord($, key, word, restated), `word-${i}`)
-      return withTranslation(t, row, { restated, tips: [] }, words, cardsOf($, t, isTerminal, key, restated, shown, `word-${i}-`))
+      return { row, translation: paragraphTranslation(t, restated, words, cardsOf($, t, isTerminal, key, restated, shown, `word-${i}-`)) }
     }))
-    return replyBlock(t, rows, { label: '訳を閉じる', press: () => void showReply($, text) }, error && `訳せませんでした：${error}`)
+    return replyBlock(t, rows, indent, { label: '訳を閉じる', press: () => void showReply($, text) }, error && `訳せませんでした：${error}`)
   })
 }

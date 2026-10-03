@@ -3,7 +3,7 @@ import { PromptTranslations } from '../prompt-translation/prompt-translation'
 import { TranslationRequest } from '../prompt-translation/translation-request'
 import { Result } from '../result/result'
 
-// 公開する操作
+// --- 公開する操作
 export const DraftTranslations = {
   request: (settings: Settings, draft: string, commands: readonly string[]) => request(settings, draft, commands),
   line: (version: Translation) => line(version),
@@ -11,10 +11,10 @@ export const DraftTranslations = {
   replacement: (draft: string, version: Translation) => replacement(draft, version),
 }
 
-// データ構造
+// --- データ構造
 type Settings = { enabled: boolean; live: boolean; native: string; target: string; liveModel: string }
 
-// ビジネスルール
+// --- ビジネスルール
 // 打ちかけを校正するのは、mod と入力中の校正がオンで、空でなく、コマンドを打っている途中でもないとき
 const isWanted = (settings: Settings, draft: string, commands: readonly string[]) => settings.enabled && settings.live && draft.trim() !== '' && !isCommand(draft, commands)
 // コマンドを打っている途中とみなすのは、先頭の /名前 が、今使えるコマンドのどれかの書き出しのとき

@@ -1,12 +1,12 @@
-// 公開する操作
+// --- 公開する操作
 export const CardRequest = {
   of: (settings: Settings, word: string, sentence: string) => of(settings, word, sentence),
 }
 
-// データ構造
+// --- データ構造
 type Settings = { native: string; target: string; cardModel: string }
 
-// ビジネスルール
+// --- ビジネスルール
 // 押した語と文を JSON で渡し、その語のまとまり（句なら句）を決めさせて、コアイメージを動く SVG で描かせる。形は UNIT / CAPTION / SVG の 3 つ
 const of = (settings: Settings, word: string, sentence: string) => ({
   model: settings.cardModel,

@@ -11,22 +11,22 @@ RuleTester.describe = describe
 RuleTester.it = it
 const tester = new RuleTester({ languageOptions: { parserOptions: { lang: 'ts' } } })
 const file = (...sections) => sections.join('\n')
-const operations = '// 公開する操作\nexport const A = { f: (): T => b() + c(), g: () => c() }'
-const data = '// データ構造\ntype T = number'
-const rules = '// ビジネスルール\n// b は 1\nconst b = () => 1'
-const util = '// util\nconst c = () => 2'
+const operations = '// --- 公開する操作\nexport const A = { f: (): T => b() + c(), g: () => c() }'
+const data = '// --- データ構造\ntype T = number'
+const rules = '// --- ビジネスルール\n// b は 1\nconst b = () => 1'
+const util = '// --- util\nconst c = () => 2'
 const valid = file(operations, data, rules, util)
 
 // 独立入力: 規則ごとの落ちる例 / 出力: 違反 1 つ。通る例はどれも valid
 const cases = {
   exports: ['export function f() { return 1 }', 'export type T = number', 'export const x = 1', 'export const A = { v: 1 }',
     'export default {}', "export * from './x'", 'export const A = { f: () => 1 }\nexport const B = { g: () => 1 }'],
-  sections: [file(operations, rules, data), file(operations, data), file(operations, data, rules, '// ビジネスルール')],
-  placement: [file(operations, data, rules, '// util\ntype U = number'), file(operations, '// データ構造\nconst x = 1', rules),
-    file(operations, data, '// ビジネスルール\n// x は 1\nconst x = 1')],
-  'rule-comment': [file(operations, data, '// ビジネスルール\nconst b = () => 1', util)],
-  'shared-util': [file('// 公開する操作\nexport const A = { f: () => c() }', data, '// ビジネスルール', util),
-    file('// 公開する操作\nexport const A = { f: () => b(), g: () => b() }', data, '// ビジネスルール\n// b は c\nconst b = () => c()', util)],
+  sections: [file(operations, rules, data), file(operations, data), file(operations, data, rules, '// --- ビジネスルール')],
+  placement: [file(operations, data, rules, '// --- util\ntype U = number'), file(operations, '// --- データ構造\nconst x = 1', rules),
+    file(operations, data, '// --- ビジネスルール\n// x は 1\nconst x = 1')],
+  'rule-comment': [file(operations, data, '// --- ビジネスルール\nconst b = () => 1', util)],
+  'shared-util': [file('// --- 公開する操作\nexport const A = { f: () => c() }', data, '// --- ビジネスルール', util),
+    file('// --- 公開する操作\nexport const A = { f: () => b(), g: () => b() }', data, '// --- ビジネスルール\n// b は c\nconst b = () => c()', util)],
   'comment-run': ['// a\n// b\n// c\nconst x = 1'],
   'result-only': ["throw new Error('x')", 'try { f() } catch { g() }', 'p.catch(() => 1)', "Promise.reject('x')", 'p.then(f, g)', 'r.ok ? 1 : 2'],
 }

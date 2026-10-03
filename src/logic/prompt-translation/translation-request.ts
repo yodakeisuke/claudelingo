@@ -1,12 +1,12 @@
-// 公開する操作
+// --- 公開する操作
 export const TranslationRequest = {
   of: (settings: Settings, words: string) => of(settings, words),
 }
 
-// データ構造
+// --- データ構造
 type Settings = { native: string; target: string; model: string }
 
-// ビジネスルール
+// --- ビジネスルール
 // 指示を丸ごと <message> で渡し、答えず言い直させる。母語の部分は訳し、外国語の部分は直す（** は直した所だけ）。続けて、次に使える学びを母語で1〜2行。全部が自然に書けていれば、そう伝える1行
 const of = (settings: Settings, words: string) => ({
   model: settings.model,

@@ -16,7 +16,7 @@ const isFunctionStatement = s => s.type === 'FunctionDeclaration' || (s.type ===
 const isType = s => ['TSTypeAliasDeclaration', 'TSInterfaceDeclaration'].includes(s.type)
 const belongs = [s => !!operationsOf(s), isType, isFunctionStatement, isFunctionStatement]
 
-const sectionOf = comment => comment.type === 'Line' ? SECTIONS.indexOf(comment.value.trim()) : -1
+const sectionOf = comment => comment.type === 'Line' ? SECTIONS.indexOf(/^ --- (.+)$/.exec(comment.value)?.[1]) : -1
 const sectionComments = context => context.sourceCode.getAllComments().filter(c => sectionOf(c) >= 0)
 // 一番外側の文は、その前にある最後のセクションコメントの節に属する。
 const placed = (context, program) => {
@@ -55,7 +55,7 @@ export default {
     sections: rule('セクションコメントが決まった順に 1 回ずつある', (context, program) => {
       const order = sectionComments(context).map(sectionOf).join()
       if (order !== [OPERATIONS, DATA, RULES].join() && order !== [OPERATIONS, DATA, RULES, UTIL].join()) {
-        context.report({ node: program, message: `セクションコメントは // ${SECTIONS.slice(0, 3).join(' → // ')}（→ // util）の順に 1 回ずつ` })
+        context.report({ node: program, message: `セクションコメントは // --- ${SECTIONS.slice(0, 3).join(' → // --- ')}（→ // --- util）の順に 1 回ずつ` })
       }
     }),
     placement: rule('一番外側の文が正しいセクションにある', (context, program) => {

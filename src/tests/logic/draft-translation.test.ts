@@ -44,10 +44,11 @@ describe('draft-translation', () => {
     expect(DraftTranslations.marks('this is fail', { ok: true, value: 'x\n! is' })).toEqual([{ start: 5, end: 7 }])
   })
 
-  test('置き換えは、言い直しが違うときだけで、** は外し、改行は保つ', () => {
+  test('置き換えは、言い直しが違うときだけで、** は外し、改行・字下げ・空行・本文の "! " 行は保つ', () => {
     expect(DraftTranslations.replacement('please check why this test is fail', fixed)).toBe('Please check why this test is failing.')
     expect(DraftTranslations.replacement('Check the logs.', { ok: true, value: 'Check the logs.\n💡 自然です' })).toBeUndefined()
     expect(DraftTranslations.replacement('x', { ok: false, error: 'api-error' })).toBeUndefined()
     expect(DraftTranslations.replacement('見て\n// --- rules', { ok: true, value: 'Take a look\n// --- **rules**\n💡 x\n! rule' })).toBe('Take a look\n// --- rules')
+    expect(DraftTranslations.replacement('見て\n\n  - a\n! b', { ok: true, value: 'Look\n\n  - a\n! b\n\n💡 x\n! Look' })).toBe('Look\n\n  - a\n! b')
   })
 })

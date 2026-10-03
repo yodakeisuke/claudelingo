@@ -4,11 +4,13 @@ import type { EngineInterface, On, Timer } from 'claude-code'
 import type { Aspect, Opened, Shown, Translation } from '../../../engine-protocol'
 import { DraftTranslations } from '../../../logic/draft-translation/draft-translation'
 import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
+import { ReplyTranslations } from '../../../logic/reply-translation/reply-translation'
 import { Result } from '../../../logic/result/result'
 import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
 import { draftBand } from '../../ui/draft-band/draft-band'
+import { replyBlock } from '../../ui/reply-translation/reply-translation'
 import { withTranslation } from '../../ui/translation-line/translation-line'
 import { wordCard, wordLine } from '../../ui/word-card/word-card'
 
@@ -66,6 +68,24 @@ const changeAspect = ($: EngineInterface, row: string, word: string, aspect: Asp
 // 開いている絵は置き換えで変える（中を書き換えると Desktop が描き直さない）
 const showCards = async ($: EngineInterface, row: string, change: (list: Shown[]) => Shown[]) => {
   await update($, cards, all => ({ ...all, [row]: change(all[row] ?? []) }))
+  $.ui.invalidate('ui.render')
+}
+
+// 開いている絵を描く。拡大・縮小と欄はその絵だけ
+const cardsOf = ($: EngineInterface, t: Parameters<typeof wordCard>[0], isTerminal: boolean, row: string, restated: string, shown: Shown[]) =>
+  shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, row, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))), aspect => void pressAspect($, row, s.word, restated, aspect)))
+
+// 返事の文面 → その訳。訳している間は null。閉じたら消す
+const replies = atom({ plugin: 'claudelingo', key: 'replies' } as const, {})
+
+// 手順書「返事を訳す」：押したら訳を頼み、届いたら段落ごとに添える
+const translateReply = async ($: EngineInterface, text: string) => {
+  await showReply($, text, null)
+  await showReply($, text, await ReplyTranslations.of($.model.complete(ReplyTranslations.request(await settingsOf($), text))))
+}
+
+const showReply = async ($: EngineInterface, text: string, version?: Translation | null) => {
+  await update($, replies, all => (version === undefined ? Object.fromEntries(Object.entries(all).filter(([k]) => k !== text)) : { ...all, [text]: version }))
   $.ui.invalidate('ui.render')
 }
 
@@ -162,6 +182,31 @@ export const translation = (on: On) => {
     const shown = (await read($, cards))[key] ?? []
     const isTerminal = e.surface === 'terminal'
     const words = wordLine(t, isTerminal, WordCards.words(line.restated), WordCards.up(shown), word => void pressWord($, key, word, line.restated))
-    return withTranslation(t, row, line, words, shown.map(s => wordCard(t, isTerminal, s, isWide => void showCards($, key, list => list.map(o => (o.word === s.word ? { ...o, isWide } : o))), aspect => void pressAspect($, key, s.word, line.restated, aspect))))
+    return withTranslation(t, row, line, words, cardsOf($, t, isTerminal, key, line.restated, shown))
+  })
+
+  on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
+    const settings = await settingsOf($)
+    const text = e.props.text
+    const version = (await read($, replies))[text]
+    if (!settings.enabled) return next(e)
+    const t = $.ui.resolve(e)
+    if (version === undefined) return replyBlock(t, [await next(e)], { label: '訳', press: () => void translateReply($, text) })
+    if (version === null) return replyBlock(t, [await next(e)], undefined, '訳しています…')
+    // 段落ごとに Claude Code の描き方で描き、その下に訳。学ぶ言語への訳で単語の絵がオンなら、訳の語を押すとその語の絵が出る
+    const { paragraphs, isIntoTarget, error } = ReplyTranslations.shown(text, version)
+    const isTerminal = e.surface === 'terminal'
+    const shownCards = await read($, cards)
+    const rows = await Promise.all(paragraphs.map(async (p, i) => {
+      const row = await next({ ...e, props: { ...e.props, text: p.text, isFirstOfReply: e.props.isFirstOfReply && i === 0 } })
+      if (!p.translation) return row
+      const restated = p.translation
+      const key = `${text}#${i}`
+      const shown = shownCards[key] ?? []
+      if (!isIntoTarget || !settings.card) return withTranslation(t, row, { restated, tips: [] })
+      const words = wordLine(t, isTerminal, WordCards.words(restated), WordCards.up(shown), word => void pressWord($, key, word, restated), `word-${i}`)
+      return withTranslation(t, row, { restated, tips: [] }, words, cardsOf($, t, isTerminal, key, restated, shown))
+    }))
+    return replyBlock(t, rows, { label: '訳を閉じる', press: () => void showReply($, text) }, error && `訳せませんでした：${error}`)
   })
 }

@@ -31,7 +31,11 @@ export const settings = (on: On) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: SETTINGS_PANE }, async ($, e) => {
-    // スマホには入力欄がないので描けず、engine が自前で描く
-    return settingsPane($.ui.resolve(e) as Parameters<typeof settingsPane>[0], e.surface === 'terminal', await settingsOf($), await read($, denied), (field, value) => void changeSetting($, field, value))
+    // スマホには入力欄がないので、開く場所を案内する
+    if (e.surface === 'mobile') {
+      const { Text } = $.ui.resolve(e)
+      return <Text dimColor>設定は Desktop か CLI で開いてください</Text>
+    }
+    return settingsPane($.ui.resolve(e), e.surface === 'terminal', await settingsOf($), await read($, denied), (field, value) => void changeSetting($, field, value))
   })
 }

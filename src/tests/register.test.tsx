@@ -181,7 +181,7 @@ describe('register', () => {
     expect(await ui.find({ type: 'Button', key: 'live' })).toBeUndefined()
   })
 
-  test('無効にしても、モデルを変えても、出ている訳は消えない', async ($, on) => {
+  test('無効にしても、モデルを変えても、出ている訳は消えない（無効の間は読み上げなどのボタンを出さない）', async ($, on) => {
     const { clock } = engine(on, undefined, undefined, { card: false })
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
     await clock.advance(0)
@@ -190,6 +190,7 @@ describe('register', () => {
     await ui.press({ key: 'enabled' })
     const message = await $.ui.mount({ ...row('ログ見て'), surface: 'desktop' })
     expect(await message.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
+    expect(await message.find({ type: 'Button', key: lineKey('ログ見て', 'speak') })).toBeUndefined()
   })
 
   test('同じ指示も、送るたびに今の設定で訳す', async ($, on) => {

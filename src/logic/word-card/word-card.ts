@@ -6,7 +6,7 @@ import { CardRequest } from './card-request'
 // --- public interface
 export const WordCards = {
   words: (restated: string) => words(restated),
-  request: (settings: Settings, word: string, restated: string) => request(settings, word, restated),
+  request: (settings: Settings, pressed: Pressed, surfaces: readonly string[]) => request(settings, pressed, surfaces),
   of: (version: Translation, pressed: Pressed) => of(version, pressed),
   saved: (all: unknown, pressed: Pressed) => saved(all, pressed),
   saving: (all: unknown, card: Card, pressed: Pressed) => saving(all, card, pressed),
@@ -21,9 +21,9 @@ type Settings = Parameters<typeof CardRequest.of>[0]
 type Pressed = { word: string; restated: string }
 
 // --- operations
-// 絵を頼むときは、文の ** を外して渡す
-const request = (settings: Settings, word: string, restated: string) => CardRequest.of(settings, word, PromptTranslations.plain(restated))
-// 返事（Completions.of で受けたもの）に UNIT / CAPTION / SVG がそろい（PRON は無くてもよい）、句が押した語と関わるときだけ絵にする。それ以外は描けなかったとする
+// 絵を頼むときは、文の ** を外して渡す。SVG は、絵を描ける面があるときだけ頼む
+const request = (settings: Settings, { word, restated }: Pressed, surfaces: readonly string[]) => CardRequest.of(settings, { word, sentence: PromptTranslations.plain(restated) }, isPictured(surfaces))
+// 返事（Completions.of で受けたもの）に UNIT / CAPTION がそろい（PRON と SVG は無くてもよい）、句が押した語と関わるときだけ絵にする。それ以外は描けなかったとする
 const of = (version: Translation, pressed: Pressed) => Result.given(version).and(parse).and(card => near(card, pressed)).either<Card | undefined>(card => card, () => undefined)
 
 // --- business rules
@@ -42,10 +42,12 @@ const saving = (all: unknown, card: Card, { word, restated }: Pressed) =>
 const saved = (all: unknown, { word, restated }: Pressed) => (all as Record<string, Card> | undefined)?.[key(word, restated)]
 // 絵が出ている語は、押した語と、その絵の句のどの語も
 const up = (shown: readonly Shown[]) => new Set(shown.flatMap(s => [s.word, ...(s.card ? parts(s.card.unit) : [])]))
-// 返事から句・発音記号・一文・SVG を取り出す。発音記号のほかが欠ければ失敗
+// 絵を描ける面（端末のほか）が 1 つでもあれば、SVG も頼む
+const isPictured = (surfaces: readonly string[]) => surfaces.some(s => s !== 'terminal')
+// 返事から句・発音記号・一文・SVG を取り出す。句か一文が欠ければ失敗
 const parse = (text: string) => {
   const card = { unit: field(text, 'UNIT'), pron: field(text, 'PRON'), caption: field(text, 'CAPTION'), svg: /<svg[\s\S]*<\/svg>/.exec(text)?.[0] ?? '' }
-  return [card.unit, card.caption, card.svg].every(Boolean) ? card : Result.fail('format')
+  return [card.unit, card.caption].every(Boolean) ? card : Result.fail('format')
 }
 // "名前: 値" の行の値
 const field = (text: string, name: string) => new RegExp(`^${name}:[ \\t]*(.+)$`, 'm').exec(text)?.[1]?.trim() ?? ''

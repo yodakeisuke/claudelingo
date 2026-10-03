@@ -17,6 +17,7 @@ describe('reply-translation', () => {
   test('主な言語から訳したら訳を読み、単語の絵がオンなら訳の語から絵を出す', () => {
     expect(ReplyTranslations.shown(settings, 'いち', 'FROM: Japanese\n[1] one')).toEqual({ translated: [{ text: 'いち', restated: 'one', at: 0 }], spoken: ['one'], withCards: true })
     expect(ReplyTranslations.shown({ ...settings, card: false }, 'いち', 'FROM: Japanese\n[1] one').withCards).toBe(false)
+    expect(ReplyTranslations.shown({ ...settings, enabled: false }, 'いち', 'FROM: Japanese\n[1] one')).toEqual({ translated: [{ text: 'いち', restated: 'one', at: 0 }], spoken: [], withCards: false })
   })
 
   test('訳を頼むのは、まだ頼んでいないか、訳せなかったとき', () => {
@@ -24,6 +25,11 @@ describe('reply-translation', () => {
     expect(ReplyTranslations.isDue({ ok: false, error: 'api-error' })).toBe(true)
     expect(ReplyTranslations.isDue(null)).toBe(false)
     expect(ReplyTranslations.isDue({ ok: true, value: '[1] one' })).toBe(false)
+  })
+
+  test('訳せても、どの段落の訳も読み取れなければ失敗にする', () => {
+    expect(ReplyTranslations.checked('one', { ok: true, value: 'FROM: English\n1. 一' })).toEqual({ ok: false, error: 'format' })
+    expect(ReplyTranslations.checked('one', { ok: true, value: 'FROM: English\n[1] 一' })).toEqual({ ok: true, value: 'FROM: English\n[1] 一' })
   })
 
   test('フェンスの外に文が残る段落は訳し、コードだけの返事は頼まない', () => {

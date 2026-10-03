@@ -28,7 +28,7 @@ const of = (version: Translation) => Result.given(version).and(symbols).either<s
 // 同じ文の並びなら、同じ記号
 const key = (lines: readonly string[]) => spoken(lines).join('\n')
 // 一度頼んだ並び（書いている間も含む）は、頼み直さない
-const isAsked = (all: Sounds, lines: readonly string[]) => key(lines) in all
+const isAsked = (all: Sounds, lines: readonly string[]) => Object.hasOwn(all, key(lines))
 // 書けた記号と書いている間の null は残す。書けなかったら消し、次に押したときに頼み直す
 const saving = (all: Sounds, lines: readonly string[], symbols?: string[] | null) =>
   (symbols === undefined ? Object.fromEntries(Object.entries(all).filter(([k]) => k !== key(lines))) : { ...all, [key(lines)]: symbols })
@@ -37,8 +37,8 @@ const symbol = (all: Sounds, lines: readonly string[], n: number) => {
   const symbols = all[key(lines)]
   return symbols && symbols[n]
 }
-// 読ませる文は、直した所の ** を外したもの
-const spoken = (lines: readonly string[]) => lines.map(PromptTranslations.plain)
+// 読ませる文は、直した所の ** とリンクの URL を外したもの（[文字](URL) は文字だけ読む）
+const spoken = (lines: readonly string[]) => lines.map(line => PromptTranslations.plain(line).replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'))
 // [n] の記号を n 番目の文に（欠けた番号は空）。[n] が / の中にあっても読み、どの行にも無ければ / で始まる行を順に。1 つも無ければ形が違うとする
 const symbols = (text: string) => {
   const lines = text.split('\n').map(l => l.trim()).map(symbolLine)

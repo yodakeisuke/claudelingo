@@ -9,7 +9,7 @@ import type { Voice } from '../read-aloud/read-aloud'
 
 type Line = ReturnType<typeof WordLines.all>[number]
 
-// 訳の行を、押せる語の並びで（press が無ければ薄い文字で）。飾りのないボタンは灰色の文字に見える（リンクは青になる）。直した語と絵が開いている語は濃く
+// 訳の行を、押せる語の並びで（press が無ければ文字で）。飾りのないボタンは灰色の文字に見える（リンクは青になる）。直した語と絵が開いている語は濃く
 // 行の頭の字下げとリストの印は Markdown のとおり、表の行はセルを同じ幅の列に並べる（WordLines）。ボタンの key は id-番号（返事では段落ごと、表ではセルごとに id を変える）
 export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, { indent, mark, words, cells }: Line, up: Set<string>, press?: (word: string) => void, id = 'word') => {
   const { Box, Text } = t
@@ -21,7 +21,7 @@ export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, { ind
 // 押せないなら 1 つの文として印の横で折り返す（空白の無い日本語の行も印の横に収まる）
 const wrapped = (t: Elements[keyof Elements], isTerminal: boolean, words: Line['words'], up: Set<string>, press: ((word: string) => void) | undefined, id: string, lead?: RenderElement) => {
   const { Box, Button, Text } = t
-  if (!press) return <Box>{lead}<Text>{words.map((w, i) => <Text dimColor={!w.isFixed}>{i ? ' ' : ''}{w.label}</Text>)}</Text></Box>
+  if (!press) return <Box>{lead}<Text>{words.map((w, i) => <Text bold={w.isFixed}>{i ? ' ' : ''}{w.label}</Text>)}</Text></Box>
   return (
     <Box flexWrap="wrap">
       {lead}

@@ -17,7 +17,7 @@ import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
 import { WordLines } from '../../../logic/word-line/word-line'
 import { draftBand } from '../../ui/draft-band/draft-band'
-import { practiceBand } from '../../ui/practice-band/practice-band'
+import { practiceBand, VOICE_HELP } from '../../ui/practice-band/practice-band'
 import { symbolLine } from '../../ui/read-aloud/read-aloud'
 import type { Voice } from '../../ui/read-aloud/read-aloud'
 import { REPLY_PANE, paragraphTranslation, replyBlock, replyPane } from '../../ui/reply-translation/reply-translation'
@@ -94,8 +94,8 @@ const sounds = atom({ plugin: 'claudelingo', key: 'sounds' } as const, {})
 // 手順書「読み上げる」：押したらすぐ設定の声で読ませる。段落は 1 つずつ渡せば順に読まれる。読み終わりは待たず、読めなくても何も出さない
 const say = async ($: EngineInterface, lines: string[]) => {
   const { voice } = await settingsOf($)
-  // 声の欄が空なら渡さず、既定の声で読む
-  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(line, { voice: voice.trim() || undefined })))
+  // 声の欄が空なら渡さず、既定の声で読む。末尾の無音は、Bluetooth の遅れで語尾が切れるのを無音側で受けるため
+  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(`${line} [[slnc 500]]`, { voice: voice.trim() || undefined })))
 }
 
 // 文は読ませながら、発音記号も頼む。書いた記号は残してすぐ出す
@@ -250,7 +250,7 @@ export const translation = (on: On) => {
     const opened = await read($, practice)
     if (!opened) return band ?? next(e)
     // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
-    const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again) }
+    const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: () => $.ui.toast(VOICE_HELP, { timeoutMs: 15000 }), close: () => void showPractice($, () => null) }
     const { Box } = t
     return <Box flexDirection="column" gap={1}>{practiceBand(t, e.surface === 'terminal', opened, SpeakingPractice.shown(opened.coach), hands)}{band}</Box>
   })

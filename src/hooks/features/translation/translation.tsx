@@ -225,6 +225,9 @@ const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0
   return draftBand(t, line, replacement ? () => void replace(replacement) : undefined)
 }
 
+// 声は手元の音声入力で欄に入れる（mods にマイクはない）
+const VOICE_HELP = '欄をクリックし、手元の音声入力アプリ（Mac 標準なら fn 2回）でお手本を話して Enter。アプリの言語は練習する言語に'
+
 export const translation = (on: On) => {
   on('prompt.submit', ($, e, next) => {
     // 送信は待たせない。訳は自分の dispatch で走らせる
@@ -250,7 +253,7 @@ export const translation = (on: On) => {
     const opened = await read($, practice)
     if (!opened) return band ?? next(e)
     // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
-    const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again) }
+    const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: () => $.ui.toast(VOICE_HELP, { timeoutMs: 15000 }) }
     const { Box } = t
     return <Box flexDirection="column" gap={1}>{practiceBand(t, e.surface === 'terminal', opened, SpeakingPractice.shown(opened.coach), hands)}{band}</Box>
   })

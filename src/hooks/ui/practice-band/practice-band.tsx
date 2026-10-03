@@ -5,8 +5,8 @@ import { PromptTranslations } from '../../../logic/prompt-translation/prompt-tra
 import type { SpeakingPractice } from '../../../logic/speaking-practice/speaking-practice'
 
 type Coached = ReturnType<typeof SpeakingPractice.shown>
-// 帯の手：欄の文を残す、声で入れた文を聞かせる、お手本を読む、入れ直す
-type Hands = { keep: (text: string) => void; hear: (heard: string) => void; say: () => void; again: () => void }
+// 帯の手：欄の文を残す、声で入れた文を聞かせる、お手本を読む、入れ直す、声の入れ方を出す
+type Hands = { keep: (text: string) => void; hear: (heard: string) => void; say: () => void; again: () => void; help: () => void }
 
 // 入力欄の上に、話す練習。お手本（と発音記号）、声で入れる欄、コーチの返事。違う語は赤い下線
 // 右端の 4 マスは、帯の折りたたみ印 [-] に重ならないよう空ける。端末では帯が開いても打鍵は入力欄に残るので、欄へ移る鍵を添える
@@ -15,7 +15,10 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], isT
   return (
     <Box flexDirection="column" paddingRight={4}>
       <Box gap={1}><Text dimColor bold>お手本</Text><Text>{practice.sample}</Text>{practice.pron && <Text dimColor italic>{practice.pron}</Text>}</Box>
-      <Input key="practice" label="練習" placeholder={`${isTerminal ? 'ctrl+x tab で欄へ移り、' : ''}声で入れて Enter（Claude には送られません）`} value={practice.heard ?? ''} autoFocus onInput={hands.keep} onSubmit={hands.hear} />
+      <Box gap={1}>
+        <Input key="practice" label="練習" placeholder={`${isTerminal ? 'ctrl+x tab で欄へ移り、' : ''}声で入れて Enter（Claude には送られません）`} value={practice.heard ?? ''} autoFocus onInput={hands.keep} onSubmit={hands.hear} />
+        <Button key="practice-help" label="?" plain dimColor onPress={hands.help} />
+      </Box>
       {typeof coached === 'string' && <Text dimColor>{coached}</Text>}
       {typeof coached === 'object' && (
         <Box flexDirection="column">

@@ -7,9 +7,10 @@ export const Result = {
 }
 
 // --- I/O
-// 鎖でつなげる Result。either で分けて、data でデータの Result に戻して鎖を抜ける
+// 鎖でつなげる Result。and は成功を、or は失敗を受けて進む。either で分けて、data でデータの Result に戻して鎖を抜ける
 type Fluent<T, E> = {
   and: <U, F = never>(fn: (value: T) => U | Fluent<U, F>) => Fluent<U, E | F>
+  or: <F, U = never>(fn: (error: E) => F | Fluent<U, F>) => Fluent<T | U, F>
   either: <R>(onOk: (value: T) => R, onError: (error: E) => R) => R
   data: () => Data<T, E>
 }
@@ -17,22 +18,25 @@ type Fluent<T, E> = {
 type Given<T> = T extends Promise<infer U> ? Promise<Fluent<U, string>> : [T] extends [Data<unknown, unknown>] ? Fluent<Extract<T, { ok: true }>['value'], Extract<T, { ok: false }>['error']> : Fluent<T, never>
 
 // --- business rules
-// and は成功のときだけ通す。戻りが Result ならそのままつなぎ、普通の値なら成功に包む。either と data で鎖を抜ける
+// and は成功のときだけ、or は失敗のときだけ通す。戻りが Result ならそのままつなぎ、普通の値なら and は成功に、or は失敗に包む。either と data で鎖を抜ける
 const wrap = <T, E>(data: Data<T, E>): Fluent<T, E> => ({
-  and: <U, F>(fn: (value: T) => U | Fluent<U, F>) => (data.ok ? lift(fn(data.value)) : wrap<U, E | F>(data)),
+  and: <U, F>(fn: (value: T) => U | Fluent<U, F>) => (data.ok ? lift<U, E | F>(fn(data.value), succeed) : wrap<U, E | F>(data)),
+  or: <F, U>(fn: (error: E) => F | Fluent<U, F>) => (data.ok ? wrap<T | U, F>(data) : lift<T | U, F>(fn(data.error), fail)),
   either: (onOk, onError) => (data.ok ? onOk(data.value) : onError(data.error)),
   data: () => data,
 })
 // 値は成功に包む。データの Result はそのまま鎖に。Promise は決着を待って包み、拒まれたらその message で失敗
 const given = <T>(value: T) =>
   (value instanceof Promise
-    ? value.then(v => wrap({ ok: true, value: v }), (error: unknown) => Result.fail(error instanceof Error ? error.message : String(error)))
-    : wrap(isData(value) ? value : { ok: true, value })) as Given<T>
+    ? value.then(succeed, (error: unknown) => Result.fail(error instanceof Error ? error.message : String(error)))
+    : isData(value) ? wrap(value) : succeed(value)) as Given<T>
 // データの Result（{ ok, value } か { ok, error }）かどうか
 const isData = (value: unknown): value is Data<unknown, unknown> => typeof value === 'object' && value !== null && 'ok' in value && ('value' in value || 'error' in value)
+// 成功の Result
+const succeed = <T>(value: T) => wrap<T, never>({ ok: true, value })
 // 失敗の Result
 const fail = <E>(error: E) => wrap<never, E>({ ok: false, error })
-// 関数の戻りが Result ならそのまま、普通の値なら成功に包む
-const lift = <U, F>(returned: U | Fluent<U, F>): Fluent<U, F> => (isFluent(returned) ? returned : wrap({ ok: true, value: returned })) as Fluent<U, F>
+// 関数の戻りが Result ならそのまま、普通の値なら plain で包む
+const lift = <U, F>(returned: unknown, plain: (value: never) => Fluent<unknown, unknown>): Fluent<U, F> => (isFluent(returned) ? returned : plain(returned as never)) as Fluent<U, F>
 // 鎖でつなげる Result かどうか
 const isFluent = (value: unknown) => typeof value === 'object' && value !== null && 'and' in value && 'either' in value

@@ -13,6 +13,12 @@ describe('result', () => {
     expect(Result.given(1).and(n => Result.given(n + 1)).data()).toEqual({ ok: true, value: 2 })
   })
 
+  test('or は失敗のときだけ働く。普通の値は失敗に包み、Result を返せば平らにつなぐ', () => {
+    expect(Result.fail('e').or(e => `${e}!`).data()).toEqual({ ok: false, error: 'e!' })
+    expect(Result.given(1).or(() => 'x').data()).toEqual({ ok: true, value: 1 })
+    expect(Result.fail('e').or(() => Result.given(0)).data()).toEqual({ ok: true, value: 0 })
+  })
+
   test('given にデータの Result を渡すと、そのまま鎖に乗る', () => {
     expect(Result.given({ ok: true, value: 1 } as const).and(n => n + 1).data()).toEqual({ ok: true, value: 2 })
     expect(Result.given({ ok: false, error: 'e' } as const).and(() => 1).data()).toEqual({ ok: false, error: 'e' })

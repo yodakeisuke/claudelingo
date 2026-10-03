@@ -1,15 +1,15 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, On } from 'claude-code'
 
+import { LingoSettings } from '../../../logic/lingo-settings/lingo-settings'
 import { Result } from '../../../logic/result/result'
-import { TranslationSettings } from '../../../logic/translation-settings/translation-settings'
 import { SETTINGS_PANE, settingsPane } from '../../ui/settings-pane/settings-pane'
 
 // 設定の保存に失敗したときの理由
 const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
 
 // 設定は mod 自身の保存領域（$.store）に置く。engine の設定行（userConfig）は Desktop のセッションには無く、$.config.set で書けない
-const settingsOf = async ($: EngineInterface) => TranslationSettings.of(await $.store.get('settings'))
+const settingsOf = async ($: EngineInterface) => LingoSettings.of(await $.store.get('settings'))
 
 // 手順書「言語設定を変える」：保存して、失敗の理由（成功なら空）を残す。パネルはそれを読んで描き直る
 const changeSetting = async ($: EngineInterface, field: string, value: string | boolean) => {

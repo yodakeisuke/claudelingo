@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { Completions } from '../../logic/completion/completion'
+import { Answers } from '../../logic/answer/answer'
 import { WordCards } from '../../logic/word-card/word-card'
 
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const restated = "I'll **carry on** with the tests."
-const answered = (text: string) => Completions.of(Promise.resolve({ isAnswered: true as const, text, usage }))
+const answered = (text: string) => Answers.of(Promise.resolve({ isAnswered: true as const, text, usage }))
 const reply = (unit: string) => answered(`UNIT: ${unit}\nPRON: /ˈkæri ɒn/\nCAPTION: 運び続ける\nSVG:\n<svg viewBox="0 0 480 288" width="480" height="288"><rect/></svg>`)
 
 describe('word-card', () => {
@@ -51,7 +51,7 @@ describe('word-card', () => {
 
   test('描いた絵は句のどの語からも引け、幅は 380px（拡大で 560px）で左に寄せる', async () => {
     const card = (WordCards.of(await reply('carry on'), { word: 'carry', restated }))!
-    const all = WordCards.saving(undefined, card, { word: 'carry', restated })
+    const all = WordCards.saving({}, card, { word: 'carry', restated })
     expect(WordCards.saved(all, { word: 'on', restated })).toBe(card)
     expect(WordCards.saved(all, { word: 'on', restated: 'go on' })).toBeUndefined()
     expect(WordCards.picture(card.svg).source).toBe('<svg viewBox="0 0 480 288" width="380" height="228" preserveAspectRatio="xMinYMid meet"><rect/></svg>')

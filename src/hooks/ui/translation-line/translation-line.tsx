@@ -1,15 +1,15 @@
 import type { Elements, RenderElement } from 'claude-code'
 
-import { PromptTranslations } from '../../../logic/prompt-translation/prompt-translation'
+import { Restatements } from '../../../logic/restatement/restatement'
 import { speakerAndMicrophone, symbolLine } from '../read-aloud/read-aloud'
 import type { Voice } from '../read-aloud/read-aloud'
 
-type Line = NonNullable<ReturnType<typeof PromptTranslations.line>>
+type Line = ReturnType<typeof Restatements.of>
 
 // 外国語版を薄く、直した所（** で囲んだ所）は薄くせず太字で。薄い Markdown は端末で太字が消えるので、分けて描く
 const restated = (t: Elements[keyof Elements], text: string) => {
   const { Text } = t
-  return <Text>{PromptTranslations.parts(text).map((part, i) => (i % 2 ? <Text bold>{part}</Text> : <Text dimColor>{part}</Text>))}</Text>
+  return <Text>{Restatements.parts(text).map((part, i) => (i % 2 ? <Text bold>{part}</Text> : <Text dimColor>{part}</Text>))}</Text>
 }
 
 // 外国語版と、アドバイスがあれば1点ずつ続けて

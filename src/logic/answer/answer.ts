@@ -1,14 +1,14 @@
-import type { Completion, Translation } from '../../engine-protocol'
+import type { Answer, Completion } from '../../engine-protocol'
 import { Result } from '../result/result'
 
 // --- public interface
-export const Completions = {
-  of: (reply: Promise<Completion>) => of(reply),
+export const Answers = {
+  of: (completion: Promise<Completion>) => of(completion),
 }
 
 // --- operations
 // 返事が来れば下書きを捨てた文面、来なければその理由。呼び出し自体が拒まれたときは、その message
-const of = async (reply: Promise<Completion>): Promise<Translation> => (await Result.given(reply)).and(answered).and(withoutScratch).either<Translation>(value => ({ ok: true, value }), error => ({ ok: false, error }))
+const of = async (completion: Promise<Completion>): Promise<Answer> => (await Result.given(completion)).and(answered).and(withoutScratch).either<Answer>(value => ({ ok: true, value }), error => ({ ok: false, error }))
 
 // --- business rules
 // 返事が来れば、その文面。来なければ、その理由で失敗

@@ -1,5 +1,5 @@
 // --- public interface
-export const TranslationSettings = {
+export const LingoSettings = {
   of: (saved: unknown): Settings => of(saved),
   models: () => models(),
   pause: (text: string, now: string) => pause(text, now),

@@ -50,9 +50,4 @@ describe('prompt-translation', () => {
   test('訳を引く鍵は、貼り付けの印があってもなくても同じ', () => {
     expect(PromptTranslations.key('これ見て\n<pasted_content id="1">\nError: boom\n</pasted_content id="1">')).toBe(PromptTranslations.key('これ見て\nError: boom'))
   })
-
-  test('直した所は ** の対だけ。対にならない ** は文字のまま残す', () => {
-    expect(PromptTranslations.parts('Lint `src/**/*.ts` and **use** it')).toEqual(['Lint `src/**/*.ts` and ', 'use', ' it'])
-    expect(PromptTranslations.plain('I **carry on** with 2**10.')).toBe('I carry on with 2**10.')
-  })
 })

@@ -1,4 +1,5 @@
-import type { Translation } from '../../engine-protocol'
+import type { Answer } from '../../engine-protocol'
+import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { TranslationRequest } from './translation-request'
 
@@ -8,9 +9,7 @@ export const PromptTranslations = {
   isOwn: (from: string) => isOwn(from),
   isNeeded: (surfaces: readonly string[]) => isNeeded(surfaces),
   key: (text: string) => key(text),
-  line: (version?: Translation, shown?: (value: string) => string) => line(version, shown),
-  parts: (text: string) => parts(text),
-  plain: (text: string) => plain(text),
+  line: (version?: Answer, shown?: (value: string) => string) => line(version, shown),
 }
 
 // --- I/O
@@ -39,16 +38,6 @@ const key = (text: string) => text.replace(/<\/?pasted_content[^>]*>|\s/g, '')
 // 訳を頼むのは、描く面があるときだけ（-p は誰も見ない）
 const isNeeded = (surfaces: readonly string[]) => surfaces.length > 0
 // 訳せていれば、shown で整えてから言い直しとアドバイスに分けて出す。訳せなかったら、その理由を出す（訳がまだなら何も出さない）
-const line = (version?: Translation, shown = (value: string) => value) => version && Result.given(version).and(shown).either(split, error => ({ restated: `訳せませんでした：${error}`, tips: [] }))
-// "💡 " で始まる行がアドバイス（指示の箇条書き "- " と区別する）、残りの行をつないだものが言い直し（複数段落の指示でも切らない）
-const split = (value: string) => {
-  const lines = value.split('\n').map(l => l.trim()).filter(Boolean)
-  const isTip = (l: string) => l.startsWith('💡 ')
-  return { restated: lines.filter(l => !isTip(l)).join(' '), tips: lines.filter(isTip).map(l => l.slice('💡 '.length)) }
-}
-// 直した所は、空白で始まらず終わらない文字を ** で囲んだ所。分けると奇数番目が直した所（src/**/*.ts のように対にならない ** は文字のまま）
-const parts = (text: string) => text.split(/\*\*([^\s*](?:[^*]*[^\s*])?)\*\*/)
-// 直した所の ** だけを外した文
-const plain = (text: string) => parts(text).join('')
+const line = (version?: Answer, shown = (value: string) => value) => version && Result.given(version).and(shown).either(Restatements.of, error => ({ restated: `訳せませんでした：${error}`, tips: [] }))
 // 送った後の訳だけ、貼り付けやコードを写させない（帯では置換で貼り付けが消えるため）
 const withoutCopies = (asked: { model: string; system: string; prompt: string }) => ({ ...asked, system: `${asked.system}\n\nDo not copy pasted content or code blocks; write [...] in their place.` })

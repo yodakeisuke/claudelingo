@@ -1,5 +1,5 @@
-import type { Translation } from '../../engine-protocol'
-import { PromptTranslations } from '../prompt-translation/prompt-translation'
+import type { Answer } from '../../engine-protocol'
+import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { PronunciationRequest } from './pronunciation-request'
 
@@ -7,7 +7,7 @@ import { PronunciationRequest } from './pronunciation-request'
 export const Pronunciations = {
   spoken: (lines: readonly string[]) => spoken(lines),
   request: (settings: Settings, lines: readonly string[]) => request(settings, lines),
-  of: (version: Translation) => of(version),
+  of: (answer: Answer) => of(answer),
   isAsked: (all: Sounds, lines: readonly string[]) => isAsked(all, lines),
   saving: (all: Sounds, lines: readonly string[], symbols?: string[] | null) => saving(all, lines, symbols),
   symbol: (all: Sounds, lines: readonly string[], n: number) => symbol(all, lines, n),
@@ -21,8 +21,8 @@ type Sounds = Record<string, string[] | null>
 // --- operations
 // 読み上げた文の ** を外して頼む
 const request = (settings: Settings, lines: readonly string[]) => PronunciationRequest.of(settings, spoken(lines))
-// 返事（Completions.of で受けたもの）が来れば文ごとの記号、来なければ記号なし
-const of = (version: Translation) => Result.given(version).and(symbols).either<string[] | undefined>(s => s, () => undefined)
+// 答え（Answers.of で受けたもの）があれば文ごとの記号、なければ記号なし
+const of = (answer: Answer) => Result.given(answer).and(symbols).either<string[] | undefined>(s => s, () => undefined)
 
 // --- business rules
 // 同じ文の並びなら、同じ記号
@@ -38,7 +38,7 @@ const symbol = (all: Sounds, lines: readonly string[], n: number) => {
   return symbols && symbols[n]
 }
 // 読ませる文は、直した所の ** とリンクの URL を外したもの（[文字](URL) は文字だけ読む）
-const spoken = (lines: readonly string[]) => lines.map(line => PromptTranslations.plain(line).replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'))
+const spoken = (lines: readonly string[]) => lines.map(line => Restatements.plain(line).replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'))
 // [n] の記号を n 番目の文に（欠けた番号は空）。[n] が / の中にあっても読み、どの行にも無ければ / で始まる行を順に。1 つも無ければ形が違うとする
 const symbols = (text: string) => {
   const lines = text.split('\n').map(l => l.trim()).map(symbolLine)

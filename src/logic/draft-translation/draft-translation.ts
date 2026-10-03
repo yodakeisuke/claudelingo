@@ -22,7 +22,7 @@ const request = (settings: Settings, draft: string, commands: readonly string[])
     .and(d => marking(settings.target, TranslationRequest.of({ ...settings, model: settings.liveModel }, d)))
     .either(asked => asked, () => undefined)
 // 帯には "! " の行を除いて、送信後の訳と同じ形で出す
-const line = (version: Translation) => oneTip(PromptTranslations.line(Result.given(version).and(withoutMarks).data()))
+const line = (version: Translation) => oneTip(PromptTranslations.line(version, withoutMarks))
 // 赤線は一度に 1 つ。"! " の行の文字列が今の下書きに残っている所のうち、一番前。直せば次が出る
 const marks = (draft: string, version: Translation) =>
   Result.given(version).either(markLines, () => [])

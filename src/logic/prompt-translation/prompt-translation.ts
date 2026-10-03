@@ -40,7 +40,9 @@ const split = (value: string): Line => {
   return { restated: lines.filter(l => !isTip(l)).join(' '), tips: lines.filter(isTip).map(l => l.slice('💡 '.length)) }
 }
 // 言い直しの依頼：外国語版を作る指示なら、文面をそのまま渡す。作らない指示には依頼がない
-const request = (settings: Settings, sent: Sent, commands: readonly string[]) => (isWanted(settings, sent, commands) ? TranslationRequest.of(settings, sent.text) : undefined)
+const request = (settings: Settings, sent: Sent, commands: readonly string[]) => (isWanted(settings, sent, commands) ? withoutCopies(TranslationRequest.of(settings, sent.text)) : undefined)
+// 送った後の訳だけ、貼り付けやコードを写させない（帯では置換で貼り付けが消えるため）
+const withoutCopies = (asked: { model: string; system: string; prompt: string }) => ({ ...asked, system: `${asked.system}\n\nDo not copy pasted content or code blocks; write [...] in their place.` })
 // モデルの下書き（<think> などで囲んだ考え）は捨て、残ったタグも外す。訳文だけを残す
 const withoutScratch = (text: string) => text.replace(/<(think|thinking|reasoning|scratchpad)>[\s\S]*?<\/\1>/g, '').replace(/<\/?(message|think|thinking|reasoning|scratchpad)>/g, '').trim()
 // 返事が来れば訳文、来なければその理由。呼び出し自体が拒まれたときは、その message

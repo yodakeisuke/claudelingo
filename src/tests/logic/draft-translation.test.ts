@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import type { Translation } from '../../engine-protocol'
+import type { Answer } from '../../engine-protocol'
 import { DraftTranslations } from '../../logic/draft-translation/draft-translation'
 
 const on = { enabled: true, live: true, native: 'Japanese', target: 'English', level: '', liveModel: 'haiku' }
 const fixed = { ok: true, value: 'Please check why this test **is failing**.\n💡 is fail ではなく is failing\n! is fail' } as const
-const band = (text: string, version: Translation) => DraftTranslations.band(on, { text, version })
-const marks = (text: string, version: Translation) => DraftTranslations.underlines(text, { text, version }).map(({ start, end }) => ({ start, end }))
+const band = (text: string, version: Answer) => DraftTranslations.band(on, { text, version })
+const marks = (text: string, version: Answer) => DraftTranslations.underlines(text, { text, version }).map(({ start, end }) => ({ start, end }))
 
 describe('draft-translation', () => {
   test('打ちかけを校正するのは、mod と入力中の校正がオンで、空でなく、コマンドの途中でもないとき', () => {

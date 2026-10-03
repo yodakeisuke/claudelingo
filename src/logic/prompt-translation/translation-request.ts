@@ -2,7 +2,7 @@ import { Learner } from '../learner/learner'
 
 // --- public interface
 export const TranslationRequest = {
-  of: (settings: Settings, words: string) => of(settings, words),
+  of: (settings: Settings, message: string) => of(settings, message),
 }
 
 // --- I/O
@@ -10,7 +10,7 @@ type Settings = Parameters<typeof Learner.context>[0] & { model: string }
 
 // --- business rules
 // 指示を丸ごと <message> で渡し、答えず言い直させる。母語の部分は訳し、外国語の部分は直す（** は直した所だけ）。続けて、次に使える学びを母語で1〜2行。全部が自然に書けていれば、そう伝える1行。長い指示でも切れない上限にする（切れた言い直しを置換すると下書きの後ろが消える）。タグで囲ませず下書きも書かせない（書き直しの独り言が続くため）
-const of = (settings: Settings, words: string) => ({
+const of = (settings: Settings, message: string) => ({
   model: settings.model,
   maxTokens: 32000,
   system: [
@@ -20,5 +20,5 @@ const of = (settings: Settings, words: string) => ({
     `Then add one or two lines, each starting with "💡 " and written in ${settings.native}. Each line is one takeaway the learner can reuse the next time they write ${settings.target}: why a part you wrapped in ** was wrong, a phrase or pattern worth remembering, a nuance, or a common pitfall. If the whole message was already natural ${settings.target} and you changed nothing, one of the lines says so. Output only that.`,
     `Write your answer directly, with no tags around it and no draft before it.`,
   ].join('\n\n'),
-  prompt: `<message>${words}</message>`,
+  prompt: `<message>${message}</message>`,
 })

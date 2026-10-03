@@ -1,8 +1,8 @@
 export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
-// 外国語版：訳文か、訳せなかった理由
-export type Translation = Result<string, string>
-// モデルの返事：本文か、答えられなかった理由
+// モデルの答え（訳・絵・発音記号・コーチのどれも）：本文か、答えられなかった理由
+export type Answer = Result<string, string>
+// engine から届くモデルの返事。Answers.of で Answer にする
 export type Completion = { isAnswered: true; text: string } | { isAnswered: false; reason: string }
 
 // 単語の絵：押した語のまとまり（句なら句）、その発音記号、絵が示すことの一文、動く SVG
@@ -12,14 +12,14 @@ export type Aspect = 'examples' | 'similar' | 'origin'
 // 欄の 1 項目：本文と、その下に薄く添える行（訳と気持ち、使い分け、由来）
 export type Item = { text: string; notes: string[] }
 // 開いている欄（書いている間は items が無い）
-export type Opened = { items?: Item[]; isFailed?: boolean }
+export type OpenAspect = { items?: Item[]; isFailed?: boolean }
 // 指示の下に開いている絵。押した順に、押した語ごと（描いている間は card が無い）。その下に開いている欄
-export type Shown = { word: string; card?: Card; isFailed?: boolean; isWide?: boolean; aspects?: Partial<Record<Aspect, Opened>> }
+export type OpenCard = { word: string; card?: Card; isFailed?: boolean; isWide?: boolean; aspects?: Partial<Record<Aspect, OpenAspect>> }
 // 話す練習：お手本とその発音記号、欄に入れた文、そのコーチ（頼んでいる間は null）
-export type Practice = { sample: string; pron?: string; heard?: string; coach?: Translation | null }
+export type Practice = { sample: string; pron?: string; heard?: string; coach?: Answer | null }
 
 declare module 'claude-code' {
   interface PluginState {
-    claudelingo: { translations: Record<string, Translation>; denied: string; draft: { text: string; version: Translation } | null; cards: Record<string, Shown[]>; drawn: Record<string, Card>; replies: Record<string, Translation | null>; paneReply: { text: string; key: string }; sounds: Record<string, string[] | null>; practice: Practice | null }
+    claudelingo: { translations: Record<string, Answer>; denied: string; draft: { text: string; version: Answer } | null; cards: Record<string, OpenCard[]>; drawn: Record<string, Card>; replies: Record<string, Answer | null>; paneReply: { text: string; key: string }; sounds: Record<string, string[] | null>; practice: Practice | null }
   }
 }

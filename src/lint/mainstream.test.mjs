@@ -30,7 +30,7 @@ run('no-delay', [
   "on('ui.render', { component: 'Pane', requestId: 'x' }, async ($, e) => { await $.model.complete(r) })",
 ], [
   "on('prompt.submit', async ($, e, next) => { await $.model.complete(r); return next(e) })",
-  "on('ui.render', { component: 'UserMessage' }, async ($, e, next) => { const v = await Completions.of($.model.complete(r)); return next(e) })",
+  "on('ui.render', { component: 'UserMessage' }, async ($, e, next) => { const v = await Answers.of($.model.complete(r)); return next(e) })",
   "const s = async $ => $.mcp.call('a', 'b'); const t = async $ => { await s($) }; on('prompt.edit', async ($, e, next) => { await t($); return next(e) })",
   "on('prompt.submit', async ($, e, next) => { await $.ui.ask('ok?'); return next(e) })",
 ])

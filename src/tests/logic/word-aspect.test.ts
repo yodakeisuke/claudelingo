@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { Completions } from '../../logic/completion/completion'
+import { Answers } from '../../logic/answer/answer'
 import { WordAspects } from '../../logic/word-aspect/word-aspect'
 
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
-const answered = (text: string) => Completions.of(Promise.resolve({ isAnswered: true as const, text, usage }))
+const answered = (text: string) => Answers.of(Promise.resolve({ isAnswered: true as const, text, usage }))
 
 describe('word-aspect', () => {
   test('文の ** を外し、絵と同じ形の入力で頼む', () => {

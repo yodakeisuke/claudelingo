@@ -1,5 +1,5 @@
-import type { Aspect, Item, Translation } from '../../engine-protocol'
-import { PromptTranslations } from '../prompt-translation/prompt-translation'
+import type { Answer, Aspect, Item } from '../../engine-protocol'
+import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { AspectRequest } from './aspect-request'
 
@@ -7,7 +7,7 @@ import { AspectRequest } from './aspect-request'
 export const WordAspects = {
   all: () => all(),
   request: (settings: Settings, aspect: Aspect, pressed: Pressed) => request(settings, aspect, pressed),
-  of: (version: Translation, aspect: Aspect) => of(version, aspect),
+  of: (answer: Answer, aspect: Aspect) => of(answer, aspect),
 }
 
 // --- I/O
@@ -17,10 +17,10 @@ type Pressed = { word: string; restated: string }
 
 // --- operations
 // 頼むときは、文の直した所の ** を外して渡す
-const request = (settings: Settings, aspect: Aspect, { word, restated }: Pressed) => AspectRequest.of(settings, aspect, { word, sentence: PromptTranslations.plain(restated) })
-// 返事（Completions.of で受けたもの）を項目に分ける。答えがないか、項目が 1 つもなければ書けなかったとする
-const of = (version: Translation, aspect: Aspect) =>
-  Result.given(version).and(text => parse(text, aspect)).either<Item[] | undefined>(items => items, () => undefined)
+const request = (settings: Settings, aspect: Aspect, { word, restated }: Pressed) => AspectRequest.of(settings, aspect, { word, sentence: Restatements.plain(restated) })
+// 答え（Answers.of で受けたもの）を項目に分ける。答えがないか、項目が 1 つもなければ書けなかったとする
+const of = (answer: Answer, aspect: Aspect) =>
+  Result.given(answer).and(text => parse(text, aspect)).either<Item[] | undefined>(items => items, () => undefined)
 
 // --- business rules
 // 欄は例文・類似表現・語源の順に並べる

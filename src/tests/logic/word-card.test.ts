@@ -5,7 +5,7 @@ import { WordCards } from '../../logic/word-card/word-card'
 const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const restated = "I'll **carry on** with the tests."
 const answered = (text: string) => Promise.resolve({ isAnswered: true as const, text, usage })
-const reply = (unit: string) => answered(`UNIT: ${unit}\nCAPTION: 運び続ける\nSVG:\n<svg viewBox="0 0 480 288" width="480" height="288"><rect/></svg>`)
+const reply = (unit: string) => answered(`UNIT: ${unit}\nPRON: /ˈkæri ɒn/\nCAPTION: 運び続ける\nSVG:\n<svg viewBox="0 0 480 288" width="480" height="288"><rect/></svg>`)
 
 describe('word-card', () => {
   test('訳の行の語は、** を外して見せ（中の語には印）、小文字の英字だけで渡す', () => {
@@ -18,7 +18,7 @@ describe('word-card', () => {
     expect(WordCards.request({ native: 'Japanese', target: 'English', level: '', cardModel: 'sonnet' }, 'carry', restated).prompt).toBe(`{"pressed":"carry","sentence":"I'll carry on with the tests."}`)
   })
 
-  test('UNIT / CAPTION / SVG がそろい、句が押した語と関わるときだけ絵にする', async () => {
+  test('UNIT / PRON / CAPTION / SVG がそろい、句が押した語と関わるときだけ絵にする', async () => {
     const carry = { word: 'carry', restated }
     expect((await WordCards.of(reply('carry on'), carry))?.unit).toBe('carry on')
     expect((await WordCards.of(reply('test'), { word: 'tests', restated }))?.unit).toBe('test')

@@ -13,17 +13,24 @@ const denied = atom({ plugin: 'claudelingo', key: 'denied' } as const, '')
 // 設定は mod 自身の保存領域（$.store）に置く。engine の設定行（userConfig）は Desktop のセッションには無く、$.config.set で書けない
 const settingsOf = async ($: EngineInterface) => LingoSettings.of(await $.store.get('settings'))
 
+// /lingo を母語の説明で登録する。同じ名前で登録し直すと置き換わる
+const registerLingo = async ($: EngineInterface) => {
+  await $.command.register({ name: 'lingo', description: LingoSettings.wording((await settingsOf($)).native).openSettings, immediate: true })
+}
+
 // 手順書「言語設定を変える」：保存して、失敗の理由（成功なら空）を残す。パネルはそれを読んで描き直る
 const changeSetting = async ($: EngineInterface, field: string, value: string | boolean) => {
   const reason = (await Result.given($.store.set('settings', { ...(await settingsOf($)), [field]: value }))).either(() => '', error => error)
   await update($, denied, () => reason)
+  // 母語が変わったら /lingo の説明もその言語に
+  await registerLingo($)
   // 帯は設定を $.store から読むので、変えたら描き直させる（オフにした帯をすぐ消す）
   $.ui.invalidate('ui.render')
 }
 
 export const settings = (on: On) => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'lingo', description: 'claudelingo の設定を開く', immediate: true })
+    await registerLingo($)
     return next(e)
   })
 
@@ -33,15 +40,17 @@ export const settings = (on: On) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: SETTINGS_PANE }, async ($, e) => {
+    const settings = await settingsOf($)
+    const w = LingoSettings.wording(settings.native)
     // スマホには入力欄がないので、開く場所を案内する
     if (e.surface === 'mobile') {
       const { Text } = $.ui.resolve(e)
-      return <Text dimColor>設定は Desktop か CLI で開いてください</Text>
+      return <Text dimColor>{w.openElsewhere}</Text>
     }
     const t = $.ui.resolve(e)
     const isTerminal = e.surface === 'terminal'
     // 設定の下に、書いた語の草
-    const grass = grassGraph(t, isTerminal, Grass.of(await $.store.get('words'), Grass.day(await $.clock.now())), e.props.bodyColumns)
-    return settingsPane(t, isTerminal, await settingsOf($), await read($, denied), (field, value) => void changeSetting($, field, value), grass)
+    const grass = grassGraph(t, w, isTerminal, Grass.of(await $.store.get('words'), Grass.day(await $.clock.now())), e.props.bodyColumns)
+    return settingsPane(t, w, isTerminal, settings, await read($, denied), (field, value) => void changeSetting($, field, value), grass)
   })
 }

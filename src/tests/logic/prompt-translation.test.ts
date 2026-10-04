@@ -32,14 +32,16 @@ describe('prompt-translation', () => {
     expect(PromptTranslations.isNeeded([])).toBe(false)
   })
 
-  test('訳せていれば言い直しとアドバイスに分け、訳せなかったら理由を出す', () => {
-    expect(PromptTranslations.line({ ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.', tips: [] })
+  test('訳せていれば言い直しとアドバイスに分け、訳せなかったら理由を母語の UI で出す（辞書のない母語は英語）', () => {
+    expect(PromptTranslations.line('Japanese', { ok: true, value: 'Check the logs.' })).toEqual({ restated: 'Check the logs.', tips: [] })
     const value = 'Fix the failing test.\nThen open a PR.\n💡 「that failing」→「the failing」\n💡 「pls」→「please」'
-    expect(PromptTranslations.line({ ok: true, value }))
+    expect(PromptTranslations.line('Japanese', { ok: true, value }))
       .toEqual({ restated: 'Fix the failing test. Then open a PR.', tips: ['「that failing」→「the failing」', '「pls」→「please」'] })
-    expect(PromptTranslations.line({ ok: true, value: 'Do this:\n- run tests\n💡 自然です' })).toEqual({ restated: 'Do this: - run tests', tips: ['自然です'] })
-    expect(PromptTranslations.line({ ok: false, error: 'empty-reply' })).toEqual({ restated: '訳せませんでした：empty-reply', tips: [] })
-    expect(PromptTranslations.line()).toBeUndefined()
+    expect(PromptTranslations.line('Japanese', { ok: true, value: 'Do this:\n- run tests\n💡 自然です' })).toEqual({ restated: 'Do this: - run tests', tips: ['自然です'] })
+    expect(PromptTranslations.line('Japanese', { ok: false, error: 'empty-reply' })).toEqual({ restated: '訳せませんでした：empty-reply', tips: [] })
+    expect(PromptTranslations.line(' 日本語 ', { ok: false, error: 'x' })?.restated).toBe('訳せませんでした：x')
+    for (const native of ['english', 'Español']) expect(PromptTranslations.line(native, { ok: false, error: 'x' })?.restated).toBe("Couldn't translate: x")
+    expect(PromptTranslations.line('Japanese')).toBeUndefined()
   })
 
   test('貼り付けも含め、文面をそのまま送る', () => {

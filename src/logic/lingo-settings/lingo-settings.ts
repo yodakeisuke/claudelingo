@@ -1,6 +1,10 @@
+import { en } from '../../locales/en'
+import { ja } from '../../locales/ja'
+
 // --- public interface
 export const LingoSettings = {
   of: (saved: unknown): Settings => of(saved),
+  wording: (native: string) => wording(native),
   models: () => models(),
   pause: (text: string, now: string) => pause(text, now),
   step: (now: string, by: 1 | -1) => step(now, by),
@@ -21,3 +25,5 @@ const pause = (text: string, now: string) => {
 }
 // -/+ は 0.1 秒ずつ動かす
 const step = (now: string, by: 1 | -1) => pause(String(Number(now) + by / 10), now)
+// UI の文言は母語の辞書で出す。母語は自由に書けるので、辞書の言語の呼び名と合えばその辞書、合わなければ英語
+const wording = (native: string) => (/^\s*(japanese|日本語)\s*$/i.test(native) ? ja : en)

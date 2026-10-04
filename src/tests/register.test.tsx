@@ -42,6 +42,9 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     return { value }
   })
   on('command.list', () => ({ value: [{ name: 'clear', description: '', source: 'builtin' }] }))
+  // 登録したコマンドの説明（/lingo）
+  const registered: string[] = []
+  on('command.register', (_$, e) => (registered.push(e.description ?? ''), { value: { command: e.name } }))
   on('prompt.submit', (_$, e) => ({ text: e.text }))
   on('ui.render', { component: 'UserMessage' }, ($, e) => {
     const { Text } = $.ui.resolve(e)
@@ -55,7 +58,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     const { Box } = $.ui.resolve(e)
     return <Box />
   })
-  return { clock, asked, models, store, hold }
+  return { clock, asked, models, store, hold, registered }
 }
 
 // 単語の絵の返事：carry と on は carry on、tests は文の別の句（迷子）、ほかはその語
@@ -71,7 +74,7 @@ const row = (text: string, origin: PromptOrigin = composer) =>
 
 const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
 // 返事の訳のパネル
-const replyPane = { plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: REPLY_PANE, props: { ...pane, title: '訳' } } as const
+const replyPane = { plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: REPLY_PANE, props: { ...pane, title: '🌐' } } as const
 
 describe('register', () => {
   test('-p など描く面がないときは訳さない', async ($, on) => {
@@ -211,6 +214,16 @@ describe('register', () => {
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
     await clock.advance(0)
     expect(models).toEqual(['opus'])
+  })
+
+  test('UI の文言は母語の辞書で出し、辞書のない母語なら英語。母語を変えるとすぐ切り替わる（/lingo の説明も）', async ($, on) => {
+    const { registered } = engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    for (const [native, label, description] of [['English', 'Turn off', 'Open claudelingo settings'], ['日本語', 'オフにする', 'claudelingo の設定を開く'], ['Español', 'Turn off', 'Open claudelingo settings']] as const) {
+      await ui.input({ key: 'native', text: native })
+      expect((await ui.find({ type: 'Button', key: 'enabled' }))?.props.label).toBe(label)
+      expect(registered.at(-1)).toBe(description)
+    }
   })
 
   test('設定の保存に失敗したら、選んだ値は示さず、理由を出す', async ($, on) => {

@@ -135,7 +135,7 @@ This is the terminal. Desktop lays things out the same way. `**…**` is bold on
 
 | Case | Behavior |
 |---|---|
-| When the band appears | After you pause for the Delay (0.5 s by default). Typing again cancels that request |
+| When the band appears | After you pause for the Delay (1.5 s by default). Typing again cancels that request |
 | Until a new band appears | Once you type again, the previous band stays, dimmed. While the next one is on its way, a spinner turns at its start |
 | Replace does nothing | You changed the input after the band appeared (you see "Not replaced: the draft changed"). Wait for a new band, then press it |
 | Typing a command | Not proofread (when what follows `/` starts a command name) |
@@ -350,7 +350,7 @@ General
 Translation     ● On   [Turn off]                ← Per-feature switches: After sending
 Live proofread  ● On   [Turn off]                ← While typing
   Model         [haiku] [sonnet] [opus]
-  Delay         Fast [-] 0.5 s [+] Slow          ← How long a pause before proofreading
+  Delay         Fast [-] 1.5 s [+] Slow          ← How long a pause before proofreading
 Word pictures   ● On   [Turn off]
   Model         [haiku] [sonnet] [opus]
 Read aloud
@@ -427,14 +427,14 @@ claudelingo calls Claude at these moments, and each call uses usage.
 | Model | Best for |
 |---|---|
 | haiku | Fast and light on usage. Translations and pictures may be weaker |
-| sonnet | The default. A good balance of speed and quality |
+| sonnet | A good balance of speed and quality |
 | opus | The best quality. Slower and heavier on usage |
 
-| Setting in `/lingo` | Used for |
-|---|---|
-| General › Model | After sending, Reply translation, pronunciation, coaching for Practice speaking, Examples and the rest |
-| Live proofread › Model | While typing |
-| Word pictures › Model | Word pictures |
+| Setting in `/lingo` | Used for | Default |
+|---|---|---|
+| General › Model | After sending, Reply translation, pronunciation, coaching for Practice speaking, Examples and the rest | sonnet |
+| Live proofread › Model | While typing | haiku |
+| Word pictures › Model | Word pictures | opus |
 
 Each one always uses the latest model of that family.
 

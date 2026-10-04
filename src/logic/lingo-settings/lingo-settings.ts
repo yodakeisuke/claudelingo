@@ -15,7 +15,7 @@ export const LingoSettings = {
 type Settings = { enabled: boolean; native: string; target: string; level: string; model: string; afterSend: boolean; live: boolean; liveModel: string; livePause: string; card: boolean; cardModel: string; voice: string }
 
 // --- business rules
-// 言語設定は、保存された値を初期値（有効、日本語→英語、レベルは空欄、基本のモデルは sonnet。送った後の訳も有効。入力中の校正も有効、sonnet、0.5 秒。単語の絵も有効、sonnet。読み上げの声は Samantha）に重ねたもの
+// 言語設定は、保存された値を初期値（有効、日本語→英語、レベルは空欄、基本のモデルは sonnet。送った後の訳も有効。入力中の校正も有効、haiku、1.5 秒。単語の絵も有効、opus。読み上げの声は Samantha）に重ねたもの
 const of = (saved: unknown): Settings => ({ enabled: true, native: 'Japanese', target: 'English', level: '', model: 'sonnet', afterSend: true, live: true, liveModel: 'haiku', livePause: '1.5', card: true, cardModel: 'opus', voice: 'Samantha', ...(saved as Partial<Settings> | undefined) })
 // 翻訳モデルは別名で選ぶ。別名は常にその系統の最新を指す
 const models = () => ['haiku', 'sonnet', 'opus']

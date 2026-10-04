@@ -40,6 +40,7 @@ export const en = {
   writing: 'Writing…',
   writeFailed: "Couldn't write",
   speak: 'Read aloud',
+  speakFailed: (error: string) => `Couldn't read aloud: ${error}`,
   practise: 'Practice speaking',
   writingSymbols: 'Writing the pronunciation…',
   sample: 'Sample',

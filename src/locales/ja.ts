@@ -41,6 +41,7 @@ export const ja: Wording = {
   writing: '書いています…',
   writeFailed: '書けませんでした',
   speak: '読み上げる',
+  speakFailed: error => `読み上げできませんでした：${error}`,
   practise: '話す練習',
   writingSymbols: '発音記号を書いています…',
   sample: 'お手本',

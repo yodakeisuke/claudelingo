@@ -90,11 +90,17 @@ const wordsOf = async ($: EngineInterface, t: Parameters<typeof wordCard>[0], w:
 // 読み上げた文の並び → 文ごとの発音記号（Pronunciations.saving の形）。書いている間は null
 const sounds = atom({ plugin: 'claudelingo', key: 'sounds' } as const, {})
 
-// 手順書「読み上げる」：押したらすぐ設定の声で読ませる。段落は 1 つずつ渡せば順に読まれる。読み終わりは待たず、読めなくても何も出さない
+// 手順書「読み上げる」：押したらすぐ設定の声で読ませる。段落は 1 つずつ渡せば順に読まれる。読み終わりは待たず、読めなければ理由を知らせる
 const say = async ($: EngineInterface, lines: string[]) => {
-  const { voice } = await settingsOf($)
+  const { voice, native } = await settingsOf($)
+  // 知らせるのは押すごとに 1 回（段落がいくつ読めなくても）
+  let isTold = false
+  const tell = (error: string) => {
+    if (!isTold) $.ui.toast(LingoSettings.wording(native).speakFailed(error))
+    isTold = true
+  }
   // 声の欄が空なら渡さず、既定の声で読む。末尾の無音は、Bluetooth の遅れで語尾が切れるのを無音側で受けるため
-  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(`${line} [[slnc 500]]`, { voice: voice.trim() || undefined })))
+  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(`${line} [[slnc 500]]`, { voice: voice.trim() || undefined })).then(said => said.either(() => undefined, tell)))
 }
 
 // 文は読ませながら、発音記号も頼む。書いた記号は残してすぐ出す

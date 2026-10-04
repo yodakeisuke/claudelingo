@@ -417,6 +417,23 @@ describe('register', () => {
     expect(await side.find({ type: 'Text', text: 'EN EN 直した' })).toBeDefined()
   })
 
+  test('読めなければ理由を知らせる。返事の段落がいくつ読めなくても、押すごとに 1 回', async ($, on) => {
+    engine(on)
+    on('ui.open', () => ({ value: { isPlaced: true } }))
+    on('audio.speak', () => ({ deny: 'voice not installed' }))
+    const toasts: string[] = []
+    on('ui.toast', (_$, e) => (toasts.push(e.text), { value: undefined }))
+    const text = '原因はここ。\n\n直した'
+    const reply = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', requestId: text, props: { text, isFirstOfReply: true } })
+    await reply.press({ key: replyKey(text, 'translate') })
+    const side = await $.ui.mount(replyPane)
+    for (const count of [1, 2]) {
+      await side.press({ key: replyKey(text, 'speak') })
+      expect(toasts).toHaveLength(count)
+    }
+    expect(toasts[0]).toMatch(/^読み上げできませんでした：.*voice not installed$/)
+  })
+
   test('🎤 を押すと入力欄の上に練習が開き、声で入れた文をお手本と比べてコーチする。もう一度で入れ直し、押し直すと閉じる', async ($, on) => {
     const { clock, asked } = engine(on, undefined, undefined, { card: false })
     await $.prompt.submit({ text: 'fix **tests**', wait: false, origin: composer })

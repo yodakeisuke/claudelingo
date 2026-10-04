@@ -16,8 +16,7 @@ type Pressed = { word: string; sentence: string }
 const of = (settings: Settings, { word, sentence }: Pressed, withPicture: boolean) => ({
   model: settings.cardModel,
   effort: 'low' as const,
-  maxTokens: 6000,
-  timeoutMs: 90_000,
+  maxTokens: 64000,
   system: system(settings, withPicture),
   prompt: JSON.stringify({ pressed: word, sentence }),
 })

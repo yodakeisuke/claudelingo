@@ -308,7 +308,7 @@ Jun     Jul     Aug       Sep
 · ▒ ▒ · ░ ▒ · ▒ ░ ░ · · ░ ▒ ░ ▒ █
 · · · · ░ · · · · · · · · █ ▒ █ █
 · · · · · ▒ · · · · ▒ ▒ ░ · · ▒ ·
-3,482 words you wrote yourself                  ← Total so far
+Foreign words you wrote yourself: 3,482        ← Total so far
 ```
 
 This is the terminal (on screen, the squares are shades of green). Desktop shows a full year as one picture. Shades: `·` 0 words / `░` 1–99 / `▒` 100–249 / `█` 250 or more
@@ -344,17 +344,17 @@ claudelingo     ● On   [Turn off]                ← Master switch
 General
   Native        English                          ← A language name, e.g. Spanish
   Learning      Spanish
-  Level         e.g. I read technical docs fine; …  ← Your strengths and weak spots, in your words
-  Model         [haiku] [*sonnet*] [opus]        ← Model for translations and more (* = selected)
-After sending   ● On   [Turn off]                ← Per-feature switches
-While typing    ● On   [Turn off]
-  Model         [haiku] [*sonnet*] [opus]
+  Level         e.g. Reads docs fine; trips on…  ← Your strengths and weak spots, in your words
+  Model         [haiku] [sonnet] [opus]          ← Model for translations and more (the selected one is highlighted)
+Translation     ● On   [Turn off]                ← Per-feature switches: After sending
+Live proofread  ● On   [Turn off]                ← While typing
+  Model         [haiku] [sonnet] [opus]
   Delay         Fast [-] 0.5 s [+] Slow          ← How long a pause before proofreading
 Word pictures   ● On   [Turn off]
-  Model         [haiku] [*sonnet*] [opus]
+  Model         [haiku] [sonnet] [opus]
 Read aloud
   Voice         Mónica                           ← A Mac voice name
-(graph) 3,482 words you wrote yourself           ← Writing graph
+(graph) Foreign words you wrote yourself: 3,482  ← Writing graph
 ```
 
 1. Send `/lingo`. It opens even while Claude is working.
@@ -397,8 +397,8 @@ Read aloud
 | Case | Behavior |
 |---|---|
 | claudelingo off | No more calls to Claude and no more counting. Buttons and word pictures are hidden; 🌐, the bands, and the writing graph don't show. **Turn on** brings it all back |
-| After sending off | New prompts aren't translated. 🌐 and the rest still work |
-| While typing off | The band goes away at once and drafts aren't sent |
+| Translation off (After sending) | New prompts aren't translated. 🌐 and the rest still work |
+| Live proofread off (While typing) | The band goes away at once and drafts aren't sent |
 | Word pictures off | Words can't be pressed, and open word pictures are hidden |
 | Automatic updates | Off by default. Turn on with `/plugin` › Marketplaces › claudelingo › Enable auto-update |
 
@@ -419,7 +419,7 @@ claudelingo calls Claude at these moments, and each call uses usage.
 | You press <kbd>Enter</kbd> in practice | The sample and what's in the Try field | Once |
 
 - It goes only to Claude, through the same account as your Claude Code. It doesn't enter your conversation with Claude.
-- To use less: pick haiku; turn While typing off or lengthen the Delay; turn off features you don't use.
+- To use less: pick haiku; turn Live proofread off or lengthen the Delay; turn off features you don't use.
 
 ### Choosing a model
 
@@ -432,7 +432,7 @@ claudelingo calls Claude at these moments, and each call uses usage.
 | Setting in `/lingo` | Used for |
 |---|---|
 | General › Model | After sending, Reply translation, pronunciation, coaching for Practice speaking, Examples and the rest |
-| While typing › Model | While typing |
+| Live proofread › Model | While typing |
 | Word pictures › Model | Word pictures |
 
 Each one always uses the latest model of that family.
@@ -489,7 +489,7 @@ Each one always uses the latest model of that family.
 <summary>Nothing appears under my prompt</summary>
 
 1. Wait about 10 seconds (nothing shows until it's ready).
-2. In `/lingo`, check that claudelingo and After sending are on.
+2. In `/lingo`, check that claudelingo and Translation are on.
 3. Check that it isn't a prompt that's never translated, such as a command or a notification (→ the details under [After sending](#after-sending)).
 4. Check that you aren't somewhere it doesn't show, such as the VS Code chat panel (→ [Where it shows](#where-it-shows)).
 5. If `/lingo` doesn't exist, see the next item.
@@ -517,7 +517,7 @@ Each one always uses the latest model of that family.
 <details>
 <summary>No band above the input</summary>
 
-- While typing is off
+- Live proofread is off
 - You're typing a command
 - You closed it with ✕ and haven't typed since
 - A Claude Code survey is showing

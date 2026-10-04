@@ -130,7 +130,7 @@ const paneReply = atom({ plugin: 'claudelingo', key: 'paneReply' } as const, { t
 // 手順書「返事の訳を横に出す」：押した返事をパネルに出し、頼む時なら訳を頼む。頼めない（mod がオフ）なら、パネルの中身は変えない
 // パネルは最初の await より前に開く（後だと押したことへの応答とみなされず、144 桁未満の端末では置かれない）。題は設定を読む前に要るので、どの母語でも通じる 🌐
 const openReply = async ($: EngineInterface, text: string) => {
-  const opened = $.ui.open({ id: REPLY_PANE, title: '🌐', columns: 100 })
+  const opened = $.ui.open({ id: REPLY_PANE, title: '🌐' })
   const settings = await settingsOf($)
   const request = ReplyTranslations.request(settings, text)
   if (!request) return

@@ -31,7 +31,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
   }
   const onOff = (key: Switch) => (
     <Box alignItems="center" gap={2}>
-      {settings[key] ? <Text color="success">{w.on}</Text> : <Text dimColor>{w.off}</Text>}
+      <Box flexShrink={0}>{settings[key] ? <Text color="success">{w.on}</Text> : <Text dimColor>{w.off}</Text>}</Box>
       <Button key={key} label={settings[key] ? w.turnOff : w.turnOn} variant="secondary" onPress={() => save(key, !settings[key])} />
     </Box>
   )
@@ -49,9 +49,9 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
       <Text>{w.seconds}</Text>{nudge(1, '+')}<Box flexShrink={0}><Text dimColor>{w.slow}</Text></Box>
     </Box>
   )
-  const text = (field: 'native' | 'target' | 'voice', placeholder?: string) => <Box width={28} flexDirection="column"><Input key={field} value={settings[field]} placeholder={placeholder} onSubmit={v => save(field, v)} /></Box>
-  // レベルは自由記述なので残りの幅を使い、書く粒度（できること・苦手なこと）を例で見せる
-  const level = <Box flexGrow={1} flexDirection="column"><Input key="level" value={settings.level} placeholder={w.levelExample} onSubmit={v => save('level', v)} /></Box>
+  const text = (field: 'native' | 'target' | 'voice', placeholder?: string) => <Box width={28} minWidth={0} flexShrink={1} flexDirection="column"><Input key={field} value={settings[field]} placeholder={placeholder} onSubmit={v => save(field, v)} /></Box>
+  // 欄は minWidth 0 で狭い面に合わせて縮む。レベルは自由記述なので残りの幅を使い、書く粒度（できること・苦手なこと）を例で見せる
+  const level = <Box flexGrow={1} minWidth={0} flexDirection="column"><Input key="level" value={settings.level} placeholder={w.levelExample} onSubmit={v => save('level', v)} /></Box>
   return (
     <Box flexDirection="column" gap={room * 2} paddingX={room * 2} paddingY={room}>
       {group('claudelingo', 'enabled')}

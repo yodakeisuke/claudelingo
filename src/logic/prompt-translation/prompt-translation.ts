@@ -8,6 +8,7 @@ import { TranslationRequest } from './translation-request'
 export const PromptTranslations = {
   request: (settings: Settings, sent: Sent, commands: readonly string[]) => request(settings, sent, commands),
   isOwn: (from: string) => isOwn(from),
+  typed: (text: string) => typed(text),
   isCommand: (text: string, commands: readonly string[]) => isCommand(text, commands),
   ownOrigins: () => ownOrigins(),
   isNeeded: (surfaces: readonly string[]) => isNeeded(surfaces),
@@ -31,6 +32,8 @@ const request = (settings: Settings, sent: Sent, commands: readonly string[]) =>
 // --- business rules
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの
 const ownOrigins = () => [{ kind: 'composer' }, { kind: 'sdk' }, { kind: 'bridge' }] as const
+// 打った文：Desktop が会話の最初の指示の前に付ける <system-reminder> を除き、前後の空白も除く（行には打った文だけが出る）
+const typed = (text: string) => text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '').trim()
 // 送り元が自分で打った指示のものか
 const isOwn = (from: string) => ownOrigins().some(origin => origin.kind === from)
 // 外国語版を作るのは、全体と送った後の訳がオンのときに自分で打った指示だけ（実在するスラッシュコマンドは除く）

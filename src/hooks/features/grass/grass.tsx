@@ -16,9 +16,9 @@ const count = async ($: EngineInterface, text: string) => {
 }
 
 export const grass = (on: On) => {
-  // 数えるのは自分で打った指示だけ（送った後の訳と同じく前後の空白を除いて見る）。送信は待たせない
+  // 数えるのは自分で打った指示の打った文だけ（送った後の訳と同じ）。送信は待たせない
   on('prompt.submit', { origin: PromptTranslations.ownOrigins() }, ($, e, next) => {
-    $.clock.after(0, () => void count($, e.text.trim()))
+    $.clock.after(0, () => void count($, PromptTranslations.typed(e.text)))
     return next(e)
   })
 }

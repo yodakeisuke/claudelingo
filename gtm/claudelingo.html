@@ -1,0 +1,1510 @@
+<!doctype html>
+<html lang="ja" data-lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>claudelingo ヘルプ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+/* ヘルプ記事。左にメニュー（狭い画面では上の帯）、右に本文。日英は data-lang で切り替える。入口は 4 部（はじめて・機能・設定と管理・困ったとき）。
+   画面の図は「単語の絵」と同じ紺で描き、説明は図の右に添える（番号と凡例を見比べさせない）。
+   各機能は「札（自動か、何を押すか）→ 図 → 使い方 → 知っておくこと 3 つまで → 細かい決まり（折りたたみ）」の同じ形 */
+:root {
+  --paper: #f5f6f9;
+  --raise: #ffffff;
+  --ink: #1a1f2e;
+  --muted: #586074;
+  --line: #d9dee8;
+  --accent: #0b7564;
+  --warn: #b4410f;
+  --warn-bg: #fdf1e9;
+  --warn-line: #efc3a8;
+  --note-bg: #eaf1fb;
+  --note-line: #b7cbea;
+  --code-bg: #e8ebf2;
+  --scr-bg: #151a2e;
+  --scr-edge: #2c3452;
+  --scr-ink: #e9e7df;
+  --scr-dim: #8d93ad;
+  --scr-label: #b9bed3;
+  --scr-err: #ff7b6b;
+  --scr-mark: #f6c64f;
+  --scr-teal: #4cc2ad;
+  --g0: #2a3150;
+  --g1: #1f5e36;
+  --g2: #2e9150;
+  --g3: #46cf70;
+  --f-body: "BIZ UDPGothic", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+  --f-mono: "BIZ UDGothic", ui-monospace, Menlo, Consolas, "Noto Sans Mono CJK JP", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f131e; --raise: #161b29; --ink: #e3e6ee; --muted: #9ba3b7; --line: #283049;
+    --accent: #4cc2ad; --warn: #ff9a7a; --warn-bg: #2a1a15; --warn-line: #6b3a2a;
+    --note-bg: #152236; --note-line: #2f4a72; --code-bg: #1f2638;
+    --scr-bg: #171d33; --scr-edge: #343d60;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f131e; --raise: #161b29; --ink: #e3e6ee; --muted: #9ba3b7; --line: #283049;
+  --accent: #4cc2ad; --warn: #ff9a7a; --warn-bg: #2a1a15; --warn-line: #6b3a2a;
+  --note-bg: #152236; --note-line: #2f4a72; --code-bg: #1f2638;
+  --scr-bg: #171d33; --scr-edge: #343d60;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding-inline: 16px; background: var(--paper); color: var(--ink); font: 400 16px/1.85 var(--f-body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 60rem; margin-inline: auto; padding-block: 48px 96px; }
+.wrap :is(p, ul, ol, .callout, .pair) { max-width: 47rem; }
+h1, h2, h3, h4 { margin: 0; line-height: 1.4; text-wrap: balance; }
+p { margin: .8rem 0 0; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code, kbd { font-family: var(--f-mono); font-size: .88em; padding: .08em .35em; border-radius: 4px; background: var(--code-bg); overflow-wrap: anywhere; }
+kbd { border: 1px solid var(--line); background: var(--raise); }
+
+/* 冒頭 */
+.eyebrow { margin: 0; font-size: .8rem; font-weight: 700; letter-spacing: .14em; color: var(--accent); }
+h1 { font-family: var(--f-mono); font-size: clamp(2.1rem, 7vw, 2.9rem); letter-spacing: -.01em; }
+.lead { margin: 1rem 0 0; font-size: 1.08rem; }
+.promises { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.1rem 0 0; padding: 0; list-style: none; }
+.promises li { padding: .2rem .8rem; border: 1px solid var(--line); border-radius: 999px; background: var(--raise); font-size: .88rem; }
+.promises li::before { content: "✓"; margin-right: .4rem; font-weight: 700; color: var(--accent); }
+.byline { margin: 1rem 0 0; font-size: .82rem; color: var(--muted); }
+
+
+/* 部と節 */
+.part { margin-top: 4.2rem; }
+.part > h2 { padding-bottom: .5rem; border-bottom: 2px solid var(--ink); font-size: 1.55rem; }
+h3 { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .7rem; margin-top: 2.6rem; font-size: 1.2rem; }
+.part > h3:first-of-type { margin-top: 1.6rem; }
+.when { padding: .05rem .6rem; border: 1px solid var(--line); border-radius: 999px; font-size: .74rem; font-weight: 700; color: var(--muted); }
+.when.auto { border-color: var(--accent); color: var(--accent); }
+h4 { margin-top: 1.4rem; font-size: .82rem; letter-spacing: .08em; color: var(--muted); }
+ul.plain, ol.plain { margin: .5rem 0 0; padding-left: 1.2rem; }
+ul.plain li + li, ol.plain li + li { margin-top: .3rem; }
+ul.check { margin: .8rem 0 0; padding: 0; list-style: none; }
+ul.check li { position: relative; padding-left: 1.6rem; }
+ul.check li + li { margin-top: .3rem; }
+ul.check li::before { content: "✓"; position: absolute; left: .15rem; font-weight: 700; color: var(--accent); }
+
+/* 注意・補足 */
+.callout { margin-top: 1.1rem; padding: .9rem 1.1rem; border: 1px solid var(--note-line); border-radius: 10px; background: var(--note-bg); }
+.callout > :first-child { margin-top: 0; }
+.callout.warn { border-color: var(--warn-line); background: var(--warn-bg); }
+.tag { display: inline-block; margin-right: .5rem; padding: 0 .6rem; border-radius: 999px; font-size: .76rem; font-weight: 700; line-height: 1.7; color: var(--paper); background: var(--muted); }
+.callout.warn .tag { background: var(--warn); }
+
+/* 手順 */
+ol.steps { margin: .6rem 0 0; padding: 0; list-style: none; counter-reset: step; }
+ol.steps > li { position: relative; margin-top: .8rem; padding-left: 2.4rem; counter-increment: step; }
+ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: .2rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--ink); color: var(--paper); font: 700 .82rem/1.6rem var(--f-mono); text-align: center; }
+ol.steps ul { margin: .35rem 0 0; padding-left: 1.1rem; }
+
+/* コマンド */
+.cmd { margin-top: .7rem; border: 1px solid var(--scr-edge); border-radius: 10px; background: var(--scr-bg); color: var(--scr-ink); overflow: hidden; }
+.cmd-head { display: flex; justify-content: space-between; align-items: center; padding: .35rem .5rem .35rem .9rem; border-bottom: 1px solid var(--scr-edge); font-size: .78rem; color: var(--scr-dim); }
+.cmd-head button { padding: .15rem .7rem; border: 1px solid var(--scr-edge); border-radius: 6px; background: transparent; color: var(--scr-ink); font: inherit; cursor: pointer; }
+.cmd-head button:hover { border-color: var(--scr-dim); }
+.cmd pre { margin: 0; padding: .8rem .9rem; overflow-x: auto; font: 14px/1.75 var(--f-mono); }
+
+/* 表 */
+.tw { margin-top: .8rem; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .92rem; line-height: 1.7; }
+th, td { padding: .5rem .7rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+thead th { border-bottom: 1.5px solid var(--muted); font-size: .78rem; color: var(--muted); }
+tbody th { font-weight: 700; white-space: nowrap; }
+td.c, th.c { text-align: center; }
+
+/* 折りたたみ */
+details { margin-top: .9rem; border: 1px solid var(--line); border-radius: 10px; background: var(--raise); }
+summary { display: flex; gap: .6rem; align-items: baseline; padding: .65rem 1rem; cursor: pointer; font-weight: 700; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "＋"; font-family: var(--f-mono); color: var(--accent); }
+details[open] summary::before { content: "－"; }
+details > .tw { margin: 0; padding: 0 1rem 1rem; }
+details > ol, details > ul { margin: 0; padding: 0 1.2rem 1rem 2.6rem; }
+details > p { margin: 0; padding: 0 1.2rem 1rem 2.6rem; }
+details li + li { margin-top: .3rem; }
+.faq details { margin-top: .45rem; }
+.faq summary { font-weight: 400; }
+
+/* 画面の図：左が画面、右がその行の説明 */
+figure { margin: 1.1rem 0 0; }
+.scrwrap { overflow-x: auto; border: 1px solid var(--scr-edge); border-radius: 12px; background: var(--scr-bg); }
+.scr { padding: 16px 18px; color: var(--scr-ink); font: 13.5px/1.85 var(--f-mono); }
+.ann { display: grid; grid-template-columns: max-content minmax(10rem, 1fr); column-gap: 2.2rem; align-items: center; }
+.ann > * { min-width: 0; }
+.ann > .full { grid-column: 1 / -1; }
+.ln { white-space: pre; }
+.nt { font: 400 12.5px/1.5 var(--f-body); color: var(--scr-mark); }
+.nt:not(:empty)::before { content: "← "; }
+a.nt { text-decoration: none; }
+a.nt:hover { text-decoration: underline; }
+.gap { height: .7em; }
+.dim { color: var(--scr-dim); }
+.it { font-style: italic; }
+.scr b { font-weight: 700; color: var(--scr-ink); }
+.scr b.dim { color: var(--scr-dim); }
+.ok { color: var(--scr-teal); }
+.bad { text-decoration: underline 2px var(--scr-err); text-underline-offset: 4px; }
+.k { display: inline-block; padding: 0 .45em; border: 1px solid var(--scr-dim); border-radius: 5px; line-height: 1.5; }
+.k.on { border-color: var(--scr-teal); background: var(--scr-teal); color: var(--scr-bg); }
+.field { display: inline-block; min-width: 22ch; padding: 0 .5em; border-bottom: 1px solid var(--scr-dim); }
+.inbox { padding: 3px 12px; border: 1px solid var(--scr-dim); border-radius: 8px; }
+.bar { margin-left: 2ch; padding-left: 12px; border-left: 2px solid var(--scr-edge); }
+.pic svg { width: 228px; height: auto; display: block; margin: 4px 0; }
+figcaption { margin-top: .45rem; font-size: .84rem; color: var(--muted); }
+.scrwrap { container-type: inline-size; }
+@container (max-width: 820px) {
+  .ann { grid-template-columns: minmax(0, 1fr); }
+  .nt { padding: 0 0 .5rem 2ch; }
+  .nt:empty { display: none; }
+  .nt:not(:empty)::before { content: "↑ "; }
+}
+
+/* 草 */
+.months { position: relative; height: 16px; font-size: 11px; line-height: 16px; color: var(--scr-dim); }
+.months span { position: absolute; top: 0; white-space: nowrap; }
+.grass { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); grid-auto-columns: 13px; gap: 3px; margin: 2px 0 6px; }
+.grass i { display: block; border-radius: 2px; }
+.l0 { background: var(--g0); } .l1 { background: var(--g1); } .l2 { background: var(--g2); } .l3 { background: var(--g3); }
+.sw { display: inline-block; width: .8em; height: .8em; margin-right: .3em; border-radius: 2px; vertical-align: -.05em; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .4rem 1.6rem; }
+.pair h4 { margin-top: 1rem; }
+
+/* 単語の絵の動く図解（見本） */
+.mover { animation: carry 7s ease-in-out infinite; }
+@keyframes carry {
+  0% { transform: translate(0, 0); }
+  30% { transform: translate(112px, 0); }
+  45% { transform: translate(146px, -46px); }
+  58% { transform: translate(182px, 0); }
+  86%, 100% { transform: translate(300px, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .mover { animation: none; } }
+
+/* 日英の切り替え */
+:root:not([data-lang="en"]) .l-en, :root[data-lang="en"] .l-ja { display: none !important; }
+
+/* 左のメニュー（狭い画面では上に貼りつく帯） */
+.layout { max-width: 72rem; margin-inline: auto; }
+.side { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; margin-inline: -16px; padding-inline: 16px; border-bottom: 1px solid var(--line); background: var(--paper); }
+.side-head { display: flex; align-items: center; gap: .6rem; padding-block: .55rem; }
+.brand { margin-right: auto; font: 700 1rem var(--f-mono); }
+.langs { display: inline-flex; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--raise); }
+.langs button { padding: .12rem .7rem; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: .8rem; cursor: pointer; }
+.langs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.menu-btn { padding: .2rem .7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--raise); color: var(--ink); font: inherit; font-size: .85rem; cursor: pointer; }
+.side-nav { display: none; max-height: 65vh; overflow-y: auto; padding-bottom: .8rem; }
+.side.open .side-nav { display: block; }
+.side-nav ul { margin: 0; padding: 0; list-style: none; }
+.side-nav a { display: block; padding: .16rem .6rem; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: .9rem; line-height: 1.65; }
+.side-nav a.group { margin-top: .9rem; font-size: .74rem; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
+.side-nav a:hover { background: var(--code-bg); }
+.side-nav a[aria-current="true"] { background: var(--code-bg); color: var(--accent); font-weight: 700; }
+[id] { scroll-margin-top: 4.5rem; }
+@media (min-width: 1000px) {
+  .layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); column-gap: 3rem; }
+  .side { top: 0; align-self: start; height: 100vh; margin-inline: 0; padding: 1.5rem 1rem 2rem 0; overflow-y: auto; border-bottom: 0; border-right: 1px solid var(--line); background: transparent; }
+  .side-head { flex-wrap: wrap; }
+  .side-nav { display: block; max-height: none; overflow: visible; }
+  .menu-btn { display: none; }
+  .wrap { margin-inline: 0; }
+  [id] { scroll-margin-top: 1rem; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="side">
+  <div class="side-head">
+    <span class="brand">claudelingo</span>
+    <div class="langs" role="group" aria-label="言語 / Language">
+      <button type="button" data-lang="ja" aria-pressed="true">日本語</button>
+      <button type="button" data-lang="en" aria-pressed="false">English</button>
+    </div>
+    <button type="button" class="menu-btn" aria-expanded="false" aria-controls="side-nav"><span class="l-ja">目次</span><span class="l-en">Contents</span></button>
+  </div>
+  <div class="side-nav" id="side-nav">
+  <nav class="l-ja" aria-label="目次"><ul>
+    <li><a class="group" href="#ja-start">はじめて使う</a></li>
+    <li><a href="#ja-before">必要なもの</a></li>
+    <li><a href="#ja-install">導入する</a></li>
+    <li><a href="#ja-map">画面のどこに何が出るか</a></li>
+    <li><a class="group" href="#ja-use">機能の使い方</a></li>
+    <li><a href="#ja-after-send">送った後の訳</a></li>
+    <li><a href="#ja-live">入力中の校正</a></li>
+    <li><a href="#ja-reply">返事の訳</a></li>
+    <li><a href="#ja-card">単語の絵</a></li>
+    <li><a href="#ja-voice">読み上げ</a></li>
+    <li><a href="#ja-practice">話す練習</a></li>
+    <li><a href="#ja-grass">草</a></li>
+    <li><a class="group" href="#ja-admin">設定と管理</a></li>
+    <li><a href="#ja-settings">設定を変える</a></li>
+    <li><a href="#ja-manage">止める・外す・更新する</a></li>
+    <li><a href="#ja-sent">Claude に送るもの</a></li>
+    <li><a href="#ja-model">モデルの選び方</a></li>
+    <li><a href="#ja-where">表示される場所</a></li>
+    <li><a href="#ja-keep">残るもの・消えるもの</a></li>
+    <li><a class="group" href="#ja-trouble">困ったとき</a></li>
+    <li><a href="#ja-symptoms">症状から探す</a></li>
+    <li><a href="#ja-messages">表示から探す</a></li>
+    <li><a href="#ja-contact">解決しないとき</a></li>
+  </ul></nav>
+  <nav class="l-en" aria-label="Contents"><ul>
+    <li><a class="group" href="#en-start">Getting started</a></li>
+    <li><a href="#en-before">What you need</a></li>
+    <li><a href="#en-install">Install</a></li>
+    <li><a href="#en-map">What shows up where</a></li>
+    <li><a class="group" href="#en-use">Features</a></li>
+    <li><a href="#en-after-send">After sending</a></li>
+    <li><a href="#en-live">While typing</a></li>
+    <li><a href="#en-reply">Reply translation</a></li>
+    <li><a href="#en-card">Word pictures</a></li>
+    <li><a href="#en-voice">Read aloud</a></li>
+    <li><a href="#en-practice">Practice speaking</a></li>
+    <li><a href="#en-grass">Writing graph</a></li>
+    <li><a class="group" href="#en-admin">Settings and management</a></li>
+    <li><a href="#en-settings">Change settings</a></li>
+    <li><a href="#en-manage">Turn off, update, uninstall</a></li>
+    <li><a href="#en-sent">What is sent to Claude</a></li>
+    <li><a href="#en-model">Choosing a model</a></li>
+    <li><a href="#en-where">Where it shows</a></li>
+    <li><a href="#en-keep">What is kept</a></li>
+    <li><a class="group" href="#en-trouble">Troubleshooting</a></li>
+    <li><a href="#en-symptoms">By symptom</a></li>
+    <li><a href="#en-messages">By message</a></li>
+    <li><a href="#en-contact">Still stuck</a></li>
+  </ul></nav>
+  </div>
+</aside>
+<main class="wrap">
+<article class="l-ja" lang="ja">
+<header>
+  <p class="eyebrow">ヘルプ</p>
+  <h1>claudelingo</h1>
+  <p class="lead">Claude Code にいつも通り指示を送るだけで、その指示の外国語版がすぐ下に出ます（初期設定は日本語 → 英語）。打ちながらの校正、返事の訳、単語のコアイメージの直感的な図解、読み上げと話す練習も、作業を止めずにその場で使えます。</p>
+  <ul class="promises">
+    <li>指示も返事も一文字も変わらない</li>
+    <li>送信を待たせない</li>
+    <li>定額プランなら追加料金なし（プランの範囲内）</li>
+  </ul>
+  <p class="byline">最終更新：2026年10月4日</p>
+</header>
+
+
+<!-- ───────────── はじめて使う ───────────── -->
+<section class="part" id="ja-start">
+  <h2>はじめて使う</h2>
+
+  <h3 id="ja-before">必要なもの</h3>
+  <ul class="check">
+    <li>Claude Code v2.1.287 以降（確かめ方：<code>claude --version</code>）</li>
+    <li>ターミナルの <code>claude</code>、または Desktop アプリの Code タブ</li>
+    <li>読み上げを使うなら Mac</li>
+  </ul>
+  <div class="callout warn" role="note">
+    <p><span class="tag">注意</span><strong>本体とは別に、プランの使用量を使います</strong>（API キーなら料金）。使うモデルは <code>/lingo</code> で変えられます。→ <a href="#ja-sent">Claude に送るもの</a>・<a href="#ja-model">モデルの選び方</a></p>
+  </div>
+
+  <h3 id="ja-install">導入する</h3>
+  <ol class="steps">
+    <li>ターミナルで次の 2 行を実行します。
+      <div class="cmd">
+        <div class="cmd-head"><span>ターミナル</span><button type="button" data-copy="ja-cmd-install">コピー</button></div>
+        <pre id="ja-cmd-install">claude plugin marketplace add yodakeisuke/claudelingo
+claude plugin install claudelingo@claudelingo</pre>
+      </div>
+      <p><code>Successfully installed plugin: claudelingo@claudelingo (scope: user)</code> と出れば完了です。ターミナルにも Desktop にも入ります。</p>
+    </li>
+    <li>Claude Code を起動し直します（開いているセッションなら <code>/reload-plugins</code> でも可。Desktop は新しいセッションを始めます）。</li>
+    <li>何か指示を送ります。数秒〜10 秒で、すぐ下に英語が出れば使えています。</li>
+  </ol>
+  <div class="callout" role="note">
+    <p><span class="tag">ヒント</span>英語以外を学ぶなら、<code>/lingo</code> で「学ぶ言語」を変えます（→ <a href="#ja-settings">設定を変える</a>）。</p>
+  </div>
+
+  <h3 id="ja-map">画面のどこに何が出るか</h3>
+  <p>右の説明を押すと、その機能の使い方へ移ります。</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln">&gt; test が fail してる原因を見て、直ったら refactor を続けて</div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Look into why the </span><b>tests are failing</b><span class="dim">, …</span>  🔊 🎤</div><a class="nt" href="#ja-after-send">送った後の訳（自動）</a>
+      <div class="ln bar"><b>carry on</b>  <span class="dim">/ˌkæri ˈɒn/  動く図解 …</span></div><a class="nt" href="#ja-card">単語の絵（語を押す）</a>
+      <div class="gap full"></div>
+      <div class="ln">● CI の Node のバージョンが古いのが原因です。</div><div class="nt"></div>
+      <div class="ln">  🌐</div><a class="nt" href="#ja-reply">返事の訳（🌐 を押す）</a>
+      <div class="gap full"></div>
+      <div class="ln"><b class="dim">お手本</b>   carry on              <span class="dim">✕</span></div><a class="nt" href="#ja-practice">話す練習（🎤 を押す）</a>
+      <div class="ln"><span class="k">置換</span> <span class="dim">Check why the test </span><b>is failing</b><span class="dim">, …</span>  <span class="dim">✕</span></div><a class="nt" href="#ja-live">入力中の校正（自動）</a>
+      <div class="inbox"><div class="ln">&gt; check why the test is fail, 直ったら …</div></div><div class="nt">入力欄</div>
+    </div></div>
+    <figcaption>ターミナルでの見え方。Desktop でも並びは同じです。</figcaption>
+  </figure>
+  <ul class="plain">
+    <li>自動で出るのは「送った後の訳」と「入力中の校正」だけです。ほかは押したときだけ動きます。</li>
+    <li>🔊 は、押すとその文を読み上げます（→ <a href="#ja-voice">読み上げ</a>）。設定と草は <code>/lingo</code> で開きます。</li>
+    <li>ターミナルでボタンをクリックできるのは、全画面表示（<code>/tui fullscreen</code>）のときだけです（→ <a href="#ja-where">表示される場所</a>）。</li>
+  </ul>
+</section>
+
+<!-- ───────────── 機能の使い方 ───────────── -->
+<section class="part" id="ja-use">
+  <h2>機能の使い方</h2>
+
+  <h3 id="ja-after-send">送った後の訳 <span class="when auto">自動</span></h3>
+  <p>送った指示のすぐ下に、外国語での言い方と学びが出ます。</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln">&gt; test が fail してる原因を見て、直ったら refactor を続けて</div><div class="nt">あなたの指示（そのまま送られる）</div>
+      <div class="ln">  <span class="dim">Look into why the </span><b>tests are failing</b><span class="dim">, and once they pass,</span>  🔊 🎤</div><div class="nt">外国語版。太字は直した所。右端の 🔊 で読み上げ、🎤 で話す練習</div>
+      <div class="ln">  <span class="dim">carry on with the refactor.</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim it">/lʊk ˈɪntu waɪ ðə tɛsts ɑr ˈfeɪlɪŋ …/</span></div><div class="nt">発音記号（🔊 を押すと出る）</div>
+      <div class="gap full"></div>
+      <div class="ln">  <b class="dim">💡 ヒント</b></div><div class="nt">次に使える学び（母語で 1〜2 点）</div>
+      <div class="ln">  <span class="dim">•  進行中の「落ちてる」は are failing。複数なら tests</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">•  「直ったら〜を続けて」は once …, carry on with …</span></div><div class="nt"></div>
+    </div></div>
+  </figure>
+  <h4>知っておくこと</h4>
+  <ul class="plain">
+    <li>母語の部分は訳され、外国語で書いた部分は自然な形に直されます。</li>
+    <li>出るまで数秒〜10 秒かかります。それまでは何も表示されません。</li>
+    <li>外国語版の語を押すと、単語の絵が開きます。</li>
+  </ul>
+  <details>
+    <summary>細かい決まり</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>訳す指示</th><td>自分で送った指示（ターミナル・Desktop・Remote Control）。<code>/tmp を見て</code> のように <code>/</code> で始まっても、コマンドでなければ訳す</td></tr>
+      <tr><th>訳さない</th><td><code>/clear</code> などのコマンド、通知、ほかのエージェントやセッションからのメッセージ、オフの間に送った指示</td></tr>
+      <tr><th>長い指示</th><td>数十秒かかることがある（opus も同じ）</td></tr>
+      <tr><th>貼り付け・コード</th><td>訳では <code>[...]</code> になる</td></tr>
+      <tr><th>改行</th><td>なくなり、ひと続きで出る</td></tr>
+      <tr><th>失敗したとき</th><td>「訳せませんでした：理由」が出る。やり直しはできない（→ <a href="#ja-messages">表示から探す</a>）</td></tr>
+      <tr><th>同じ指示をもう一度送る</th><td>今の設定で訳し直す</td></tr>
+      <tr><th>消す・コピーする</th><td>出ている訳だけは消せない。Desktop では文字を選べない</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="ja-live">入力中の校正 <span class="when auto">自動</span></h3>
+  <p>送る前に、入力欄の上で外国語の言い方を確かめて直せます。言えない所は母語のまま打てば、訳して埋めます。</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln"><span class="k">置換</span> <span class="dim">Check why the test </span><b>is failing</b><span class="dim">, and once it passes,</span>   <span class="dim">✕</span></div><div class="nt">校正した文。太字は直した所</div>
+      <div class="ln">     <span class="dim">carry on </span><b>with</b><span class="dim"> the refactor.</span></div><div class="nt">日本語の所（直ったら）は訳して埋める</div>
+      <div class="ln">     <span class="dim">💡 進行中は is failing。is fail とは言わない</span></div><div class="nt">いちばん大事な指摘</div>
+      <div class="inbox"><div class="ln">&gt; check why the test <span class="bad">is fail</span>, 直ったら carry on the refactor</div></div><div class="nt">誤りに赤い下線（前から 1 つずつ）</div>
+    </div></div>
+  </figure>
+  <h4>使い方</h4>
+  <ol class="steps">
+    <li>入力欄に打って、手を止めます。数秒で入力欄の上に帯が出ます。</li>
+    <li>直すなら、次のどちらかです。
+      <ul>
+        <li>赤い下線の語を自分で直す（身に付く）。直すと次の誤りに下線が移ります。</li>
+        <li>［置換］を押す（速い）。入力欄が帯の文に丸ごと入れ替わります。元に戻すボタンはありません。</li>
+      </ul>
+    </li>
+    <li><kbd>Enter</kbd> で送ります。帯は消えます。帯だけ消すなら ✕ を押します。</li>
+  </ol>
+  <details>
+    <summary>細かい決まり</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>帯が出るまで</th><td>打つ手が「反応の速さ」（初期 1.5 秒）止まったら頼む。また打つと、その依頼は取り消す</td></tr>
+      <tr><th>新しい帯が出るまで</th><td>前の帯が残る</td></tr>
+      <tr><th>［置換］が効かない</th><td>帯の後に入力欄を変えたとき。新しい帯を待ってから押す</td></tr>
+      <tr><th>コマンドを打っている間</th><td>校正しない（<code>/</code> の後がコマンド名の書き出しのとき）</td></tr>
+      <tr><th>入力欄を空にした</th><td>帯が消える</td></tr>
+      <tr><th>通知などで送られた</th><td>帯は残る（自分で送ると消える）</td></tr>
+      <tr><th>アンケートが出ている</th><td>校正の帯も練習の帯も出ない</td></tr>
+      <tr><th>練習の帯もあるとき</th><td>練習の帯の下に出る</td></tr>
+      <tr><th>失敗したとき</th><td>帯に「訳せませんでした：理由」。また打つと頼み直す</td></tr>
+      <tr><th>ターミナルのキー</th><td><kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>tab</kbd> で帯へ、<kbd>Tab</kbd> で選んで <kbd>Enter</kbd>。たたむのは <kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>ctrl</kbd>+<kbd>a</kbd> か <code>[-]</code></td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="ja-reply">返事の訳 <span class="when">🌐 を押す</span></h3>
+  <p>Claude の返事を段落ごとに訳して、訳のパネルに出します。返事そのものは変わりません。</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln">● CI の Node のバージョンが古いのが原因です。</div><div class="nt"></div>
+      <div class="ln dim">  ```yaml</div><div class="nt"></div>
+      <div class="ln dim">  node-version: 18</div><div class="nt"></div>
+      <div class="ln dim">  ```</div><div class="nt"></div>
+      <div class="ln">  20 に上げて、もう一度実行してください。</div><div class="nt"></div>
+      <div class="ln">  🌐</div><div class="nt">押すと訳のパネルが開く</div>
+      <div class="gap full"></div>
+      <div class="ln bar dim">CI の Node のバージョンが古いのが…</div><div class="nt">訳のパネル。最初の行はどの返事の訳か</div>
+      <div class="ln bar dim">The cause is the old Node version on CI.</div><div class="nt">段落ごとの訳（コードは訳さない）</div>
+      <div class="ln bar dim">Update it to 20 and run it again.</div><div class="nt"></div>
+      <div class="ln bar">🔊</div><div class="nt">外国語の側を段落の順に読む</div>
+    </div></div>
+  </figure>
+  <h4>使い方</h4>
+  <ol class="steps">
+    <li>返事の下の 🌐 を押します。</li>
+    <li>「訳しています…」の後、数秒〜数十秒で訳が出ます。</li>
+    <li>閉じるときは、パネルの ✕ を押します（ターミナルは <kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>x</kbd> でも）。</li>
+  </ol>
+  <details>
+    <summary>細かい決まり</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>訳す向き</th><td>主に母語の返事は外国語へ、主に外国語の返事は母語へ（自動）</td></tr>
+      <tr><th>同じ返事をもう一度</th><td>訳し直さず、すぐ出す。失敗していたら訳し直す</td></tr>
+      <tr><th>言語を変えた後</th><td>押すと、新しい言語で訳し直す</td></tr>
+      <tr><th>ほかの返事の 🌐</th><td>パネルの中身が入れ替わる（一度に 1 つ）</td></tr>
+      <tr><th>🌐 が無いまとまり</th><td>コードだけのまとまり</td></tr>
+      <tr><th>語を押せるとき</th><td>外国語への訳で、単語の絵がオンのとき</td></tr>
+      <tr><th>パネルの位置</th><td>ターミナルは、全画面表示で幅 110 桁以上なら右、それ以外は入力欄の上</td></tr>
+      <tr><th><code>/clear</code> などの後</th><td>パネルは開いたまま「返事の 🌐 を押すと、ここに訳が出ます」に戻る</td></tr>
+      <tr><th>失敗したとき</th><td>「訳せませんでした：理由」。🌐 を押し直すと訳し直す</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="ja-card">単語の絵 <span class="when">語を押す</span></h3>
+  <p>訳の中の語を押すと、その語のコアイメージを動く図解で直感的に見られます。例文・類似表現・語源も開けます。</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln">  <span class="dim">… once they pass, </span>carry on<span class="dim"> with the refactor.</span></div><div class="nt">carry を押す</div>
+      <div class="ln bar"><b>carry on</b>  <span class="dim">/ˌkæri ˈɒn/</span>  🔊 🎤  <span class="k">拡大</span></div><div class="nt">押した語を含む句と、その発音記号</div>
+      <div class="bar pic">
+        <svg viewBox="0 0 480 288" aria-hidden="true">
+          <rect x="1" y="1" width="478" height="286" rx="14" fill="#151a2e" stroke="#343c5c" stroke-width="2"/>
+          <path d="M60 196 H420" stroke="#7d84a3" stroke-width="2" stroke-dasharray="4 8" stroke-linecap="round"/>
+          <rect x="226" y="154" width="10" height="42" rx="3" fill="#7d84a3" opacity=".75"/>
+          <path d="M404 196 h18 m-8 -8 l8 8 l-8 8" stroke="#f6c64f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <g class="mover">
+            <circle cx="84" cy="176" r="32" fill="#4cc2ad" opacity=".22"/>
+            <circle cx="84" cy="176" r="19" fill="#e9e7df"/>
+          </g>
+          <text x="48" y="108" font-size="19" font-weight="500" fill="#b9bed3" font-family="-apple-system, 'Hiragino Sans', sans-serif">carry・運ぶ</text>
+          <text x="300" y="250" font-size="19" font-weight="500" fill="#b9bed3" font-family="-apple-system, 'Hiragino Sans', sans-serif">on・その先へ</text>
+        </svg>
+      </div><div class="nt">コアイメージの動く図解（Desktop）</div>
+      <div class="ln bar dim">点がじゃまを越えて、そのまま前へ進んでいく</div><div class="nt">図解が示すこと（母語）</div>
+      <div class="ln bar"><span class="k on">例文</span> <span class="k">類似表現</span> <span class="k">語源</span></div><div class="nt">押すと下に開く</div>
+      <div class="ln bar">Let's carry on after lunch.  🔊</div><div class="nt">例文と、その訳・使う気持ち</div>
+      <div class="ln bar dim">  お昼のあとも、そのまま続けよう。</div><div class="nt"></div>
+      <div class="ln bar dim">  区切りが入っても、流れは止めない</div><div class="nt"></div>
+    </div></div>
+    <figcaption>Desktop での見え方（図解は一例）。ターミナルでは図解の代わりに 1 行で出ます。</figcaption>
+  </figure>
+  <h4>使い方</h4>
+  <ol class="steps">
+    <li>訳の中の語を押します。押せる語は薄い字で出ています。</li>
+    <li>「コアイメージを描画中…」の後、20〜60 秒ほどで出ます。待つ間も 🔊・🎤・［例文］などは押せます。</li>
+    <li>閉じるときは、同じ語をもう一度押します。</li>
+  </ol>
+  <details>
+    <summary>細かい決まり</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>句になるとき</th><td>句の一部なら句で出る（carry → carry on）。句のどの語を押しても閉じる</td></tr>
+      <tr><th>押せる語</th><td>送った後の訳と、外国語への返事の訳。記号だけの所は押せない。濃い字は直した語と、開いている語</td></tr>
+      <tr><th>いくつも押す</th><td>押した順に下へ並ぶ</td></tr>
+      <tr><th>もう一度開く</th><td>同じ文の同じ語なら、描き直さずすぐ出る（このセッションの間）</td></tr>
+      <tr><th>同じ文面の指示が 2 つ</th><td>押した方の下にだけ出る</td></tr>
+      <tr><th>ターミナル</th><td>図解の代わりに 1 行（句・発音記号・一文・🔊 🎤）。［拡大］はない</td></tr>
+      <tr><th>［拡大］</th><td>図解を大きくする。［縮小］で戻す（Desktop のみ）</td></tr>
+      <tr><th>［例文］</th><td>場面の違う例文 3 つ。それぞれ訳と、なぜこの語かの一言つき。例文の 🔊 で発音記号も出る</td></tr>
+      <tr><th>［類似表現］</th><td>言い換え 2〜3 個と、それを選ぶ場面</td></tr>
+      <tr><th>［語源］</th><td>部品の元の意味と、今の意味へのつながり。定説がなければ、そう書く</td></tr>
+      <tr><th>［例文］などの開閉</th><td>「書いています…」の後、長くて 60 秒で出る。もう一度押すと閉じ、開き直すと書き直す（使用量も使う）</td></tr>
+      <tr><th>単語の絵を閉じる</th><td>開いていた［例文］なども閉じる</td></tr>
+      <tr><th>失敗したとき</th><td>「描けませんでした：carry」「書けませんでした」（→ <a href="#ja-messages">表示から探す</a>）</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="ja-voice">読み上げ <span class="when">🔊 を押す</span></h3>
+  <p>押した所の文を、Mac の声で読み上げます。</p>
+  <div class="tw"><table>
+    <thead><tr><th>🔊 の場所</th><th>読むもの</th><th>発音記号</th></tr></thead>
+    <tbody>
+      <tr><td>送った後の訳の横</td><td>訳の文</td><td>訳の下に出る</td></tr>
+      <tr><td>訳のパネルの下</td><td>外国語の段落を順に</td><td>段落ごとに出る</td></tr>
+      <tr><td>単語の絵</td><td>句</td><td>もとからある</td></tr>
+      <tr><td>例文</td><td>その例文</td><td>例文の下に出る</td></tr>
+      <tr><td>練習の帯の［🔊 お手本］</td><td>お手本</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <h4>知っておくこと</h4>
+  <ul class="plain">
+    <li>声は <code>/lingo</code> の「声」で選びます（初期は Samantha）。英語以外なら、その言語の Mac の声の名前を入れます。</li>
+    <li>続けて押すと順番に読みます。途中では止められません。</li>
+    <li>読めないときは「読み上げできませんでした：理由」と出ます。</li>
+  </ul>
+  <details>
+    <summary>細かい決まり</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>声の名前</th><td>システム設定 › アクセシビリティ › リーダーと読み上げ（macOS 15 以前は「読み上げコンテンツ」）で確かめ、追加できる。空にすると既定の声</td></tr>
+      <tr><th>発音記号</th><td>最初の 1 回だけ書く（「発音記号を書いています…」）。書けなければ消え、次に押すと書き直す</td></tr>
+      <tr><th>音の出る所</th><td>Claude Code を動かしている Mac</td></tr>
+      <tr><th>長さ</th><td>1 段落 4,096 字まで</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="ja-practice">話す練習 <span class="when">🎤 を押す</span></h3>
+  <p>お手本を声に出して言うと、伝わらなかった音と直し方をコーチが教えます。</p>
+  <div class="callout" role="note">
+    <p><span class="tag">準備</span>Mac の音声入力をオンにし、言語に学ぶ言語を加えます（システム設定 › キーボード › 音声入力）。マイクの音は claudelingo に届かず、使うのは書き起こした文字だけです。</p>
+  </div>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln"><b class="dim">お手本</b>   carry on  <span class="dim it">/ˌkæri ˈɒn/</span>      <span class="dim">✕</span></div><div class="nt">練習する文</div>
+      <div class="ln"><b class="dim">練習</b>     <span class="field">Kerry on</span> <span class="dim">?</span></div><div class="nt">音声入力で話して Enter</div>
+      <div class="ln"><b class="dim">聞き取り</b> <span class="bad">Kerry</span> on</div><div class="nt">伝わらなかった語に赤い下線</div>
+      <div class="ln dim">💡 carry の a は「ア」寄り。「ケ」だと Kerry に聞こえる</div><div class="nt">直し方（母語で 1〜3 点）</div>
+      <div class="ln dim">💡 on は弱く短く、carry と一息で</div><div class="nt"></div>
+      <div class="ln"><span class="k">🔊 お手本</span> <span class="k">もう一度</span></div><div class="nt">お手本を読む／言い直す</div>
+      <div class="inbox"><div class="ln">&gt; </div></div><div class="nt">入力欄（帯はこの上）</div>
+    </div></div>
+  </figure>
+  <h4>使い方</h4>
+  <ol class="steps">
+    <li>送った後の訳か単語の絵の 🎤 を押します。入力欄の上に練習の帯が開きます。</li>
+    <li>練習の欄へ移ります（Desktop は最初から。ターミナルは <kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>tab</kbd>）。</li>
+    <li>音声入力を始め、お手本を声に出して言います。</li>
+    <li><kbd>Enter</kbd> を押します。数秒で、聞き取りと 💡 が出ます。</li>
+  </ol>
+  <details>
+    <summary>細かい決まり</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>音声入力の始め方</th><td>システム設定 › キーボード › 音声入力 にあるショートカット（fn キー 2 回など）</td></tr>
+      <tr><th>欄が空で <kbd>Enter</kbd></th><td>何も起きない</td></tr>
+      <tr><th>キーボードで打った</th><td>打った文をお手本と比べる</td></tr>
+      <tr><th>閉じる</th><td>✕、または同じ 🎤 をもう一度</td></tr>
+      <tr><th>別の 🎤</th><td>帯の中身が入れ替わる。届く前のコーチは捨てる</td></tr>
+      <tr><th>欄の文の行き先</th><td>会話には入らない。コーチのため Claude に送る</td></tr>
+      <tr><th>claudelingo をオフ</th><td>帯が消える</td></tr>
+      <tr><th>失敗したとき</th><td>「コーチできませんでした：理由」。もう一度 <kbd>Enter</kbd></td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="ja-grass">草 <span class="when">/lingo の下</span></h3>
+  <p>自分で書いた外国語の語数が、1 日 1 マスで並びます。GitHub の草と同じ見方です。</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div><div class="months"><span style="left:0px">6月</span><span style="left:64px">7月</span><span style="left:128px">8月</span><span style="left:208px">9月</span></div><div class="grass" aria-hidden="true"><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l0"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l1"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l2"></i><i class="l2"></i><i class="l0"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l3"></i><i class="l1"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l3"></i><i class="l3"></i><i class="l3"></i><i class="l2"></i><i class="l0"></i><i class="l2"></i><i class="l2"></i><i class="l0"></i><i class="l2"></i><i class="l3"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l2"></i><i class="l1"></i><i class="l0"></i><i class="l3"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l3"></i><i class="l3"></i><i class="l1"></i><i class="l1"></i><i class="l0"></i><i class="l3"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l1"></i><i class="l0"></i><i class="l3"></i><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l1"></i><i class="l1"></i><i class="l2"></i><i class="l2"></i><i class="l0"></i></div></div><div class="nt">1 日 1 マス。右端の列が今週</div>
+      <div class="ln dim">自分で書いた外国語 3,482 語</div><div class="nt">これまでの合計</div>
+    </div></div>
+    <figcaption>ターミナルでの見え方。Desktop では 1 年分が 1 枚の絵で出ます。</figcaption>
+  </figure>
+  <p><span class="sw l0"></span>0 語　<span class="sw l1"></span>1〜99 語　<span class="sw l2"></span>100〜249 語　<span class="sw l3"></span>250 語以上</p>
+  <div class="pair">
+    <div><h4>数えるもの</h4><ul class="plain">
+      <li>claudelingo がオンの間に、自分で送った指示</li>
+      <li>その中のラテン文字の語（don't は 1 語）</li>
+      <li>ファイル名や URL の英字も</li>
+    </ul></div>
+    <div><h4>数えないもの</h4><ul class="plain">
+      <li><code>`</code> で囲んだ所・コードブロック・貼り付け</li>
+      <li><code>/clear</code> などのコマンド</li>
+      <li>日本語など、ラテン文字以外</li>
+    </ul></div>
+  </div>
+  <div class="callout" role="note">
+    <p><span class="tag">補足</span>学ぶ言語がラテン文字以外（中国語・韓国語・ロシア語など）なら、その言語で書いた語は数えません。草に出るのは、ラテン文字の語だけです。</p>
+  </div>
+  <details>
+    <summary>細かい決まり</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>1 マスの日付</th><td>その PC の日付。縦は日曜〜土曜</td></tr>
+      <tr><th>並ぶ期間</th><td>ターミナルは幅に入るだけの週、Desktop は 1 年分</td></tr>
+      <tr><th>記録</th><td>PC に残り、すべてのセッションの分を足す（ほぼ同時に送った分は、片方が数えられないことがある）。画面から消す方法はない（→ <a href="#ja-keep">残るもの・消えるもの</a>）</td></tr>
+    </tbody></table></div>
+  </details>
+</section>
+
+<!-- ───────────── 設定と管理 ───────────── -->
+<section class="part" id="ja-admin">
+  <h2>設定と管理</h2>
+
+  <h3 id="ja-settings">設定を変える <span class="when">/lingo</span></h3>
+  <p>初期設定（日本語 → 英語）のままでも使えます。</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln"><b>claudelingo</b>   <span class="ok">● オン</span>  <span class="k">オフにする</span></div><div class="nt">全体のオン・オフ</div>
+      <div class="ln"><b>基本</b></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">母語</span>        Japanese</div><div class="nt">言語名（例：Spanish）</div>
+      <div class="ln">  <span class="dim">学ぶ言語</span>    English</div><div class="nt"></div>
+      <div class="ln">  <span class="dim">今のレベル</span>  <span class="dim">例: 技術文書は読める。書くと…</span></div><div class="nt">得意・苦手を自由に</div>
+      <div class="ln">  <span class="dim">モデル</span>      <span class="k">haiku</span> <span class="k on">sonnet</span> <span class="k">opus</span></div><div class="nt">訳などに使うモデル</div>
+      <div class="ln"><b>送った後の訳</b>  <span class="ok">● オン</span>  <span class="k">オフにする</span></div><div class="nt">機能ごとのオン・オフ</div>
+      <div class="ln"><b>入力中の校正</b>  <span class="ok">● オン</span>  <span class="k">オフにする</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">モデル</span>      <span class="k on">haiku</span> <span class="k">sonnet</span> <span class="k">opus</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">反応の速さ</span>  <span class="dim">速い</span> <span class="k">-</span> 1.5 秒 <span class="k">+</span> <span class="dim">遅い</span></div><div class="nt">何秒止まったら校正するか</div>
+      <div class="ln"><b>単語の絵</b>      <span class="ok">● オン</span>  <span class="k">オフにする</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">モデル</span>      <span class="k">haiku</span> <span class="k">sonnet</span> <span class="k on">opus</span></div><div class="nt"></div>
+      <div class="ln"><b>読み上げ</b></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">声</span>          Samantha</div><div class="nt">Mac の声の名前</div>
+      <div class="gap full"></div>
+      <div class="ln dim">（草）自分で書いた外国語 3,482 語</div><a class="nt" href="#ja-grass">草</a>
+    </div></div>
+  </figure>
+  <h4>使い方</h4>
+  <ol class="steps">
+    <li><code>/lingo</code> を送ります。Claude が作業中でも開けます。</li>
+    <li>変えます。ボタンは押すと、文字の項目は <kbd>Enter</kbd> で保存されます。</li>
+    <li><kbd>Esc</kbd> で閉じます。</li>
+  </ol>
+  <h4>知っておくこと</h4>
+  <ul class="plain">
+    <li>次の訳から効きます。出ている訳は変わりません。</li>
+    <li>この PC のすべてのセッション・プロジェクトで共通です。</li>
+    <li>保存できないと赤字で「保存できませんでした：理由」と出て、値は変わりません。</li>
+  </ul>
+  <details>
+    <summary>項目ごとの決まり</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>母語・学ぶ言語</th><td>空のまま <kbd>Enter</kbd> しても変わらない</td></tr>
+      <tr><th>画面の言葉</th><td>母語が Japanese か 日本語 なら日本語。ほかの言語名にすると英語になる</td></tr>
+      <tr><th>今のレベル</th><td>訳・ヒント・図解・コーチの難しさがこれに合う。空欄なら伝えない</td></tr>
+      <tr><th>基本のモデル</th><td>送った後の訳・返事の訳・発音記号・コーチ・例文などに使う（→ <a href="#ja-model">モデルの選び方</a>）</td></tr>
+      <tr><th>反応の速さ</th><td>0.3〜2 秒。［-］［+］で 0.1 秒ずつ。範囲外は端に丸め、数でない入力は無視</td></tr>
+      <tr><th>声</th><td>空にすると Mac の既定の声</td></tr>
+      <tr><th>オフにしたまとまり</th><td>見出しだけになる。claudelingo をオフにすると、下の項目と草が隠れる</td></tr>
+      <tr><th>文字の項目</th><td><kbd>Enter</kbd> を押さずに離れると保存されない</td></tr>
+      <tr><th>ターミナルのキー</th><td><kbd>Tab</kbd> で項目を移り、<kbd>Enter</kbd> で押す・確定</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="ja-manage">止める・外す・更新する</h3>
+  <div class="tw"><table>
+    <thead><tr><th>したいこと</th><th>すること</th><th>結果</th></tr></thead>
+    <tbody>
+      <tr><th>全部止める</th><td><code>/lingo</code> › claudelingo［オフにする］</td><td>すぐ止まる。出ている訳は残る</td></tr>
+      <tr><th>一部だけ止める</th><td>その機能の［オフにする］</td><td>その機能だけ止まる</td></tr>
+      <tr><th>新しい版にする</th><td><code>claude plugin update claudelingo@claudelingo</code> → 起動し直す</td><td>新しい版で動く</td></tr>
+      <tr><th>外す</th><td><code>claude plugin uninstall claudelingo@claudelingo</code> → 起動し直す</td><td>設定と草の記録は PC に残る</td></tr>
+    </tbody>
+  </table></div>
+  <details>
+    <summary>止めたときの細かい動き</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>claudelingo をオフ</th><td>Claude を呼ぶのも語を数えるのも止まる。ボタンと単語の絵は隠れ、🌐・帯・草も出ない。［オンにする］で戻る</td></tr>
+      <tr><th>送った後の訳をオフ</th><td>新しい指示を訳さない。🌐 などは使える</td></tr>
+      <tr><th>入力中の校正をオフ</th><td>帯がすぐ消え、下書きを送らない</td></tr>
+      <tr><th>単語の絵をオフ</th><td>語が押せなくなり、開いている単語の絵も隠れる</td></tr>
+      <tr><th>自動で更新する</th><td>初期は自動更新されない。<code>/plugin</code> › Marketplaces › claudelingo › Enable auto-update で自動になる</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="ja-sent">Claude に送るもの</h3>
+  <p>次のときに Claude を呼び、そのたびに使用量を使います。</p>
+  <div class="tw"><table>
+    <thead><tr><th>きっかけ</th><th>送る文面</th><th>回数</th></tr></thead>
+    <tbody>
+      <tr><td>指示を送る</td><td>その指示</td><td>1 回</td></tr>
+      <tr><td>打つ手が止まる</td><td>入力欄の下書き（消した文も）</td><td>止まるたび</td></tr>
+      <tr><td>🌐 を押す</td><td>その返事（コードだけの段落は除く）</td><td>返事ごとに 1 回</td></tr>
+      <tr><td>語を押す</td><td>その語と、ある文</td><td>新しい語ごとに 1 回（重め）</td></tr>
+      <tr><td>［例文］などを開く</td><td>その語と、ある文</td><td>開くたび</td></tr>
+      <tr><td>🔊 を押す</td><td>読む文（発音記号のため）</td><td>文ごとに初回だけ</td></tr>
+      <tr><td>練習で <kbd>Enter</kbd></td><td>お手本と練習の欄の文</td><td>1 回</td></tr>
+    </tbody>
+  </table></div>
+  <h4>知っておくこと</h4>
+  <ul class="plain">
+    <li>送り先は、あなたの Claude Code と同じアカウントの Claude だけです。Claude との会話には入りません。</li>
+    <li>減らすには：モデルを haiku に／入力中の校正をオフ、または反応の速さを遅く／使わない機能をオフに。</li>
+  </ul>
+
+  <h3 id="ja-model">モデルの選び方</h3>
+  <div class="tw"><table>
+    <thead><tr><th>モデル</th><th>向き</th></tr></thead>
+    <tbody>
+      <tr><th>haiku</th><td>速く、使用量が少ない。訳や図解の質は下がることがある</td></tr>
+      <tr><th>sonnet</th><td>速さと質の釣り合いがよい</td></tr>
+      <tr><th>opus</th><td>質が最も高い。遅く、使用量も多い</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tw"><table>
+    <thead><tr><th><code>/lingo</code> の設定</th><th>使うところ</th><th>初期</th></tr></thead>
+    <tbody>
+      <tr><th>基本 › モデル</th><td>送った後の訳・返事の訳・発音記号・話す練習のコーチ・例文など</td><td>sonnet</td></tr>
+      <tr><th>入力中の校正 › モデル</th><td>入力中の校正</td><td>haiku</td></tr>
+      <tr><th>単語の絵 › モデル</th><td>単語の絵</td><td>opus</td></tr>
+    </tbody>
+  </table></div>
+  <p>どれも、その系統の最新版を使います。</p>
+
+  <h3 id="ja-where">表示される場所</h3>
+  <div class="tw"><table>
+    <thead><tr><th></th><th class="c">ターミナル<br>全画面表示</th><th class="c">ターミナル<br>クラシック表示</th><th class="c">Desktop</th></tr></thead>
+    <tbody>
+      <tr><td>訳・帯・パネル</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
+      <tr><td>訳と返事の下のボタン（🔊 🎤 🌐・語）</td><td class="c">クリック</td><td class="c">押せない</td><td class="c">クリック</td></tr>
+      <tr><td>帯とパネルの操作</td><td class="c">クリック・キー</td><td class="c">キー</td><td class="c">クリック</td></tr>
+      <tr><td>コアイメージの図解・草の絵</td><td class="c">文字</td><td class="c">文字</td><td class="c">✓</td></tr>
+      <tr><td>ボタンの説明（ポインタを重ねる）</td><td class="c">✓</td><td class="c">—</td><td class="c">✓</td></tr>
+    </tbody>
+  </table></div>
+  <h4>知っておくこと</h4>
+  <ul class="plain">
+    <li>全画面表示は、入力欄が画面の下に固定される表示です。<code>/tui</code> で確かめ、<code>/tui fullscreen</code> で切り替えます（会話はそのまま）。</li>
+    <li>表示されない所：VS Code 拡張のチャット画面、<code>claude -p</code>、クラウドのセッション、Desktop の WSL セッション。VS Code の統合ターミナルなら使えます。</li>
+    <li>Remote Control（スマホ・ブラウザ）から送った指示も訳され、PC 側の画面に出ます。</li>
+  </ul>
+  <details>
+    <summary>キーでの操作</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>帯やパネルへ移る</th><td><kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>tab</kbd></td></tr>
+      <tr><th>選ぶ・押す</th><td><kbd>Tab</kbd> で選んで <kbd>Enter</kbd></td></tr>
+      <tr><th>入力欄へ戻る</th><td><kbd>Esc</kbd></td></tr>
+      <tr><th>パネルを閉じる</th><td><kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>x</kbd></td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="ja-keep">残るもの・消えるもの</h3>
+  <div class="tw"><table>
+    <thead><tr><th>もの</th><th>残る期間</th></tr></thead>
+    <tbody>
+      <tr><th>設定と草の記録</th><td>PC に保存。すべてのセッション・プロジェクトで共通。claudelingo の入った Claude Code を 30 日以上起動しないと消える</td></tr>
+      <tr><th>訳・単語の絵・発音記号・<br>返事の訳・練習</th><td>セッションの間だけ。<code>/clear</code>・<code>/resume</code>・<code>/branch</code>・起動し直しで消え、戻せない</td></tr>
+    </tbody>
+  </table></div>
+  <details>
+    <summary>細かい決まり</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>30 日の根拠</th><td>Claude Code の <code>cleanupPeriodDays</code>（初期値 30 日）</td></tr>
+      <tr><th>いくつものセッションで使う</th><td>設定は最後に変えたものがすべてに効く。草はすべての分を足す（ほぼ同時に送った分は、片方が数えられないことがある）</td></tr>
+      <tr><th>会話の記録</th><td>訳や図解は Claude との会話の記録に入らない</td></tr>
+    </tbody></table></div>
+  </details>
+</section>
+
+<!-- ───────────── 困ったとき ───────────── -->
+<section class="part" id="ja-trouble">
+  <h2>困ったとき</h2>
+
+  <h3 id="ja-symptoms">症状から探す</h3>
+  <div class="faq">
+    <details><summary>指示の下に何も出ない</summary><ol>
+      <li>10 秒ほど待つ（出るまでは何も表示されません）。</li>
+      <li><code>/lingo</code> で claudelingo と「送った後の訳」がオンか確かめる。</li>
+      <li>コマンドや通知など、訳さない指示でないか確かめる（→ <a href="#ja-after-send">送った後の訳</a>の細かい決まり）。</li>
+      <li>VS Code のチャット画面など、表示されない所でないか確かめる（→ <a href="#ja-where">表示される場所</a>）。</li>
+      <li><code>/lingo</code> が無ければ、次の「<code>/lingo</code> が無い」へ。</li>
+    </ol></details>
+    <details><summary><code>/lingo</code> が無い</summary><ol>
+      <li><code>claude --version</code> が 2.1.287 以上か確かめる。</li>
+      <li>導入の後、Claude Code を起動し直したか確かめる。</li>
+      <li><code>/plugin</code> を開き、mod active の行に claudelingo があるか確かめる。</li>
+    </ol></details>
+    <details><summary>ターミナルでボタンを押しても何も起きない</summary><ol>
+      <li><code>/tui fullscreen</code> で全画面表示にする（クラシック表示ではクリックできません）。</li>
+      <li>tmux なら <code>set -g mouse on</code>、iTerm2 なら Enable mouse reporting をオンにする。</li>
+      <li><code>CLAUDE_CODE_DISABLE_MOUSE</code> か <code>CLAUDE_CODE_DISABLE_MOUSE_CLICKS</code> を設定していたら外す。</li>
+    </ol></details>
+    <details><summary>入力欄の上に帯が出ない</summary><ul>
+      <li>入力中の校正がオフ</li>
+      <li>コマンドを打っている</li>
+      <li>✕ で消した後、まだ打っていない</li>
+      <li>Claude Code のアンケートが出ている</li>
+    </ul></details>
+    <details><summary>［置換］を押しても変わらない</summary><p>帯が出た後に入力欄を変えたためです。手を止めて、新しい帯が出てから押します。</p></details>
+    <details><summary>🌐 が無い</summary><ul>
+      <li>claudelingo がオフ</li>
+      <li>コードだけのまとまり（訳す文が無い）</li>
+    </ul></details>
+    <details><summary>訳の語が押せない</summary><ul>
+      <li>単語の絵がオフ</li>
+      <li>母語への訳（押せるのは外国語への訳だけ）</li>
+      <li>記号だけの所</li>
+    </ul></details>
+    <details><summary>🔊 を押しても聞こえない</summary><ul>
+      <li>「読み上げできませんでした」と出たら → <a href="#ja-messages">表示から探す</a></li>
+      <li>何も出なければ、Mac の音量と出力先（Bluetooth など）を確かめる</li>
+    </ul></details>
+    <details><summary>音声入力が日本語で書き起こされる</summary><p>音声入力の言語を、学ぶ言語にします（システム設定 › キーボード › 音声入力）。</p></details>
+    <details><summary>訳や図解が消えた</summary><p><code>/clear</code>・<code>/resume</code>・<code>/branch</code>・起動し直しの後は消えます。戻せません。</p></details>
+    <details><summary>草が増えない・多すぎる</summary><ul>
+      <li>増えない：学ぶ言語がラテン文字以外（その言語の語は数えない）、または claudelingo がオフ</li>
+      <li>多すぎる：ファイル名や URL の英字も数えます。<code>`</code> で囲むと数えません</li>
+    </ul></details>
+    <details><summary>使用量の減りが早い</summary><p>主に入力中の校正です（打つ手が止まるたびに 1 回）。モデルを haiku にする、反応の速さを遅くする、またはオフにします。</p></details>
+    <details><summary>設定が初期値に戻った</summary><p>claudelingo を 30 日以上使わないと消えます（→ <a href="#ja-keep">残るもの・消えるもの</a>）。</p></details>
+  </div>
+
+  <h3 id="ja-messages">表示から探す</h3>
+  <div class="tw"><table>
+    <thead><tr><th>表示</th><th>原因</th><th>すること</th></tr></thead>
+    <tbody>
+      <tr><td>訳せませんでした：api-error（rate_limit）</td><td>使用量の上限</td><td>枠が戻るまで待つ</td></tr>
+      <tr><td>訳せませんでした：api-error（overloaded）／（server_error）</td><td>Claude 側の混雑・障害</td><td>少し待ってやり直す</td></tr>
+      <tr><td>訳せませんでした：api-error（authentication_failed）など</td><td>ログイン・契約</td><td>本体で指示が通るか確かめ、だめなら <code>/login</code></td></tr>
+      <tr><td>訳せませんでした：api-error（model_not_found）／（invalid_request）</td><td>そのモデルが使えない</td><td><code>/lingo</code> でモデルを変える</td></tr>
+      <tr><td>訳せませんでした：api-error（max_output_tokens）</td><td>長すぎる</td><td>短く分ける</td></tr>
+      <tr><td>訳せませんでした：empty-reply／aborted／format／api-error（unknown）</td><td>一時的な失敗</td><td>やり直す（下）</td></tr>
+      <tr><td>訳せませんでした：（上のどれでもない文）</td><td>依頼が受け付けられなかった（組織の制限など）</td><td><code>/lingo</code> でモデルを変える</td></tr>
+      <tr><td>描けませんでした：〈語〉</td><td>90 秒で描けない、上の原因、関係ない句や安全でない図解が返った</td><td>その語を 2 回押す（閉じて開く）</td></tr>
+      <tr><td>書けませんでした</td><td>60 秒で書けない、上の原因</td><td>そのボタンを 2 回押す</td></tr>
+      <tr><td>コーチできませんでした：〈理由〉</td><td>「訳せませんでした」と同じ</td><td>もう一度 <kbd>Enter</kbd></td></tr>
+      <tr><td>読み上げできませんでした：〈理由〉</td><td>声の名前違い、その声が無い、Mac 以外、1 段落 4,096 字超</td><td>「声」を確かめる。空にすると既定の声</td></tr>
+      <tr><td>保存できませんでした：〈理由〉</td><td>設定をディスクに書けない</td><td>空き容量と <code>~/.claude</code> の権限を確かめる</td></tr>
+    </tbody>
+  </table></div>
+  <h4>やり直し方</h4>
+  <ul class="plain">
+    <li>送った後の訳：やり直せません。次に送る指示から訳します。</li>
+    <li>入力中の校正：また打って、手を止めます。</li>
+    <li>返事の訳：🌐 をもう一度押します。</li>
+    <li>発音記号：🔊 をもう一度押します。</li>
+  </ul>
+
+  <h3 id="ja-contact">解決しないとき</h3>
+  <p><a href="https://github.com/yodakeisuke/claudelingo/issues">GitHub の Issues</a> に、表示された文言、<code>claude --version</code> の結果、ターミナルか Desktop か、を書いて送ってください。</p>
+</section>
+</article>
+
+<article class="l-en" lang="en">
+
+<header>
+  <p class="eyebrow">Help</p>
+  <h1>claudelingo</h1>
+  <p class="lead">Keep using Claude Code as usual, and the version of each prompt in the language you're learning appears right below it. Proofreading while you type, reply translations, intuitive diagrams of a word's core image, read-aloud, and speaking practice are there too, without stopping your work.</p>
+  <ul class="promises">
+    <li>Your prompts and Claude's replies stay exactly as they are</li>
+    <li>Sending is never delayed</li>
+    <li>No extra cost on a subscription plan (within your plan's usage)</li>
+  </ul>
+  <p class="byline">Last updated: October 4, 2026</p>
+</header>
+
+<!-- ───────────── Getting started ───────────── -->
+<section class="part" id="en-start">
+  <h2>Getting started</h2>
+
+  <h3 id="en-before">What you need</h3>
+  <ul class="check">
+    <li>Claude Code v2.1.287 or later (check with <code>claude --version</code>)</li>
+    <li><code>claude</code> in a terminal, or the Code tab of the Desktop app</li>
+    <li>A Mac, if you want read-aloud</li>
+  </ul>
+  <div class="callout warn" role="note">
+    <p><span class="tag">Heads-up</span><strong>It uses your plan's usage, on top of your main work</strong> (or per-token charges with an API key). You can change the model in <code>/lingo</code>. → <a href="#en-sent">What is sent to Claude</a> · <a href="#en-model">Choosing a model</a></p>
+  </div>
+
+  <h3 id="en-install">Install</h3>
+  <ol class="steps">
+    <li>Run these two lines in your terminal.
+      <div class="cmd">
+        <div class="cmd-head"><span>Terminal</span><button type="button" data-copy="en-cmd-install">Copy</button></div>
+        <pre id="en-cmd-install">claude plugin marketplace add yodakeisuke/claudelingo
+claude plugin install claudelingo@claudelingo</pre>
+      </div>
+      <p>You're done when you see <code>Successfully installed plugin: claudelingo@claudelingo (scope: user)</code>. It's installed for both the terminal and Desktop.</p>
+    </li>
+    <li>Restart Claude Code (in an open terminal session, <code>/reload-plugins</code> also works; in Desktop, start a new session).</li>
+    <li>Set your languages before your first prompt. Send <code>/lingo</code>. The defaults are Japanese → English, so the panel first appears in Japanese. In the first field, <strong>母語</strong> (Native), type your language, for example <code>English</code>, and press <kbd>Enter</kbd>: the panel switches to English. Then set <strong>Learning</strong>, for example <code>Spanish</code>.</li>
+    <li>Send any prompt. If its version in your learning language appears right below it within a few seconds to 10 seconds, it works.</li>
+  </ol>
+
+  <h3 id="en-map">What shows up where</h3>
+  <p>The examples on this page are from a native English speaker learning Spanish. Press a label on the right to jump to that feature.</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln">&gt; find out why los tests está fallando, and once they pass, sigue el refactor</div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Averigua por qué los tests </span><b>están</b><span class="dim"> fallando y, …</span>  🔊 🎤</div><a class="nt" href="#en-after-send">After sending (automatic)</a>
+      <div class="ln bar"><b>seguir con</b>  <span class="dim">/seˈɣiɾ kon/  animated picture …</span></div><a class="nt" href="#en-card">Word pictures (press a word)</a>
+      <div class="gap full"></div>
+      <div class="ln">● The cause is the old Node version on CI.</div><div class="nt"></div>
+      <div class="ln">  🌐</div><a class="nt" href="#en-reply">Reply translation (press 🌐)</a>
+      <div class="gap full"></div>
+      <div class="ln"><b class="dim">Sample</b>   seguir con              <span class="dim">✕</span></div><a class="nt" href="#en-practice">Practice speaking (press 🎤)</a>
+      <div class="ln"><span class="k">Replace</span> <span class="dim">Averigua por qué los tests </span><b>están</b><span class="dim"> fallando, …</span>  <span class="dim">✕</span></div><a class="nt" href="#en-live">While typing (automatic)</a>
+      <div class="inbox"><div class="ln">&gt; averigua por qué los tests está fallando, and once …</div></div><div class="nt">Prompt input</div>
+    </div></div>
+    <figcaption>This is the terminal. Desktop lays things out the same way.</figcaption>
+  </figure>
+  <ul class="plain">
+    <li>Only After sending and While typing run on their own. Everything else runs only when you press it.</li>
+    <li>🔊 reads that text aloud (→ <a href="#en-voice">Read aloud</a>). Settings and the writing graph open with <code>/lingo</code>.</li>
+    <li>In the terminal, buttons can be clicked only in fullscreen rendering (<code>/tui fullscreen</code>) (→ <a href="#en-where">Where it shows</a>).</li>
+  </ul>
+</section>
+
+<!-- ───────────── Features ───────────── -->
+<section class="part" id="en-use">
+  <h2>Features</h2>
+
+  <h3 id="en-after-send">After sending <span class="when auto">Automatic</span></h3>
+  <p>Right below each prompt you send, you get how to say it in your learning language, plus takeaways.</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln">&gt; find out why los tests está fallando, and once they pass, sigue el refactor</div><div class="nt">Your prompt (sent as typed)</div>
+      <div class="ln">  <span class="dim">Averigua por qué los tests </span><b>están</b><span class="dim"> fallando y, cuando pasen,</span>  🔊 🎤</div><div class="nt">Learning-language version. Bold is what was corrected. 🔊 reads it, 🎤 practices it</div>
+      <div class="ln">  <b>sigue con</b><span class="dim"> el refactor.</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim it">/aβeˈɾiɣwa poɾ ˈke los tests esˈtan faˈʝando …/</span></div><div class="nt">Pronunciation (after you press 🔊)</div>
+      <div class="gap full"></div>
+      <div class="ln">  <b class="dim">💡 Tips</b></div><div class="nt">Takeaways in your native language (1–2)</div>
+      <div class="ln">  <span class="dim">•  Plural subject, plural verb: los tests están, not está</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">•  "Keep going with" is seguir con; seguir el refactor means "follow" it</span></div><div class="nt"></div>
+    </div></div>
+  </figure>
+  <h4>Good to know</h4>
+  <ul class="plain">
+    <li>Parts in your native language are translated. Parts you wrote in your learning language are made natural.</li>
+    <li>It takes a few seconds to 10 seconds. Nothing shows until then.</li>
+    <li>Press a word in the translation to open its word picture.</li>
+  </ul>
+  <details>
+    <summary>Details</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>Translated</th><td>Prompts you send yourself (terminal, Desktop, Remote Control). A prompt starting with <code>/</code> is translated unless it's a command, like <code>/tmp is full</code></td></tr>
+      <tr><th>Not translated</th><td>Commands such as <code>/clear</code>, notifications, messages from other agents or sessions, prompts sent while it was off</td></tr>
+      <tr><th>Long prompts</th><td>Can take tens of seconds (opus too)</td></tr>
+      <tr><th>Pastes and code</th><td>Shown as <code>[...]</code> in the translation</td></tr>
+      <tr><th>Line breaks</th><td>Removed; the text runs on</td></tr>
+      <tr><th>If it fails</th><td>Shows "Couldn't translate: reason". It can't be retried (→ <a href="#en-messages">By message</a>)</td></tr>
+      <tr><th>Same prompt again</th><td>Translated again with the current settings</td></tr>
+      <tr><th>Removing or copying</th><td>A translation can't be removed on its own. In Desktop, its text can't be selected</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="en-live">While typing <span class="when auto">Automatic</span></h3>
+  <p>Before you send, check and fix how to say it, right above the prompt input. Type what you can't say yet in your native language, and it's filled in.</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln"><span class="k">Replace</span> <span class="dim">Averigua por qué los tests </span><b>están</b><span class="dim"> fallando y, cuando pasen,</span>  <span class="dim">✕</span></div><div class="nt">Proofread version. Bold is what was corrected</div>
+      <div class="ln">          <span class="dim">sigue con el refactor.</span></div><div class="nt">Your English part (once they pass) is translated in</div>
+      <div class="ln">          <span class="dim">💡 Plural subject, plural verb: los tests están</span></div><div class="nt">The one thing to fix first</div>
+      <div class="inbox"><div class="ln">&gt; averigua por qué los tests <span class="bad">está</span> fallando, and once they pass sigue con el refactor</div></div><div class="nt">A mistake gets a red underline (one at a time, from the start)</div>
+    </div></div>
+  </figure>
+  <h4>How to use</h4>
+  <ol class="steps">
+    <li>Type in the prompt input and pause. Within a few seconds, a band appears above the input.</li>
+    <li>To fix it, do one of these.
+      <ul>
+        <li>Fix the underlined word yourself (it sticks better). The underline moves to the next mistake.</li>
+        <li>Press <strong>Replace</strong> (faster). The whole input is replaced with the band's text. There's no undo button.</li>
+      </ul>
+    </li>
+    <li>Press <kbd>Enter</kbd> to send. The band goes away. To hide only the band, press ✕.</li>
+  </ol>
+  <details>
+    <summary>Details</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>When the band appears</th><td>After you pause for the Delay (1.5 s by default). Typing again cancels that request</td></tr>
+      <tr><th>Until a new band appears</th><td>The previous band stays</td></tr>
+      <tr><th>Replace does nothing</th><td>You changed the input after the band appeared. Wait for a new band, then press it</td></tr>
+      <tr><th>Typing a command</th><td>Not proofread (when what follows <code>/</code> starts a command name)</td></tr>
+      <tr><th>Input cleared</th><td>The band goes away</td></tr>
+      <tr><th>Sent by a notification</th><td>The band stays (sending it yourself hides it)</td></tr>
+      <tr><th>A survey is showing</th><td>Neither the proofreading band nor the practice band appears</td></tr>
+      <tr><th>Practice band also open</th><td>Shown below the practice band</td></tr>
+      <tr><th>If it fails</th><td>The band shows "Couldn't translate: reason". Typing again retries</td></tr>
+      <tr><th>Terminal keys</th><td><kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>tab</kbd> moves to the band, <kbd>Tab</kbd> selects, <kbd>Enter</kbd> presses. Collapse it with <kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>ctrl</kbd>+<kbd>a</kbd> or <code>[-]</code></td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="en-reply">Reply translation <span class="when">Press 🌐</span></h3>
+  <p>Translates Claude's reply paragraph by paragraph into the translation pane. The reply itself doesn't change.</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln">● The cause is the old Node version on CI.</div><div class="nt"></div>
+      <div class="ln dim">  ```yaml</div><div class="nt"></div>
+      <div class="ln dim">  node-version: 18</div><div class="nt"></div>
+      <div class="ln dim">  ```</div><div class="nt"></div>
+      <div class="ln">  Bump it to 20 and run it again.</div><div class="nt"></div>
+      <div class="ln">  🌐</div><div class="nt">Opens the translation pane</div>
+      <div class="gap full"></div>
+      <div class="ln bar dim">The cause is the old Node version on CI.</div><div class="nt">The pane. Its first line shows which reply</div>
+      <div class="ln bar dim">La causa es la versión antigua de Node en CI.</div><div class="nt">Paragraph by paragraph (code isn't translated)</div>
+      <div class="ln bar dim">Súbela a 20 y vuelve a ejecutarlo.</div><div class="nt"></div>
+      <div class="ln bar">🔊</div><div class="nt">Reads the learning-language side in order</div>
+    </div></div>
+  </figure>
+  <h4>How to use</h4>
+  <ol class="steps">
+    <li>Press 🌐 under the reply.</li>
+    <li>After "Translating…", the translation appears in a few seconds to tens of seconds.</li>
+    <li>To close it, press the pane's ✕ (or <kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>x</kbd> in the terminal).</li>
+  </ol>
+  <details>
+    <summary>Details</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>Direction</th><td>A reply mostly in your native language goes into your learning language, and the other way round (automatic)</td></tr>
+      <tr><th>The same reply again</th><td>Shown right away, not translated again. Retried if it had failed</td></tr>
+      <tr><th>After changing languages</th><td>Pressing it translates into the new languages</td></tr>
+      <tr><th>🌐 on another reply</th><td>Replaces what the pane shows (one reply at a time)</td></tr>
+      <tr><th>No 🌐</th><td>The block is code only</td></tr>
+      <tr><th>Words you can press</th><td>When translating into your learning language and Word pictures is on</td></tr>
+      <tr><th>Where the pane opens</th><td>In the terminal: on the right in fullscreen rendering at 110 columns or wider, otherwise above the input</td></tr>
+      <tr><th>After <code>/clear</code> and the like</th><td>The pane stays open and shows "Press 🌐 under a reply to see its translation here"</td></tr>
+      <tr><th>If it fails</th><td>"Couldn't translate: reason". Press 🌐 again to retry</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="en-card">Word pictures <span class="when">Press a word</span></h3>
+  <p>Press a word in a translation to see its core image as an intuitive, animated diagram. Examples, similar expressions, and its origin are a press away.</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln">  <span class="dim">… y, cuando pasen, </span>sigue con<span class="dim"> el refactor.</span></div><div class="nt">Press "sigue"</div>
+      <div class="ln bar"><b>seguir con</b>  <span class="dim">/seˈɣiɾ kon/</span>  🔊 🎤  <span class="k">Enlarge</span></div><div class="nt">The phrase your word belongs to, with pronunciation</div>
+      <div class="bar pic">
+        <svg viewBox="0 0 480 288" aria-hidden="true">
+          <rect x="1" y="1" width="478" height="286" rx="14" fill="#151a2e" stroke="#343c5c" stroke-width="2"/>
+          <path d="M60 196 H420" stroke="#7d84a3" stroke-width="2" stroke-dasharray="4 8" stroke-linecap="round"/>
+          <rect x="226" y="154" width="10" height="42" rx="3" fill="#7d84a3" opacity=".75"/>
+          <path d="M404 196 h18 m-8 -8 l8 8 l-8 8" stroke="#f6c64f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <g class="mover">
+            <circle cx="84" cy="176" r="32" fill="#4cc2ad" opacity=".22"/>
+            <circle cx="84" cy="176" r="19" fill="#e9e7df"/>
+          </g>
+          <text x="48" y="108" font-size="19" font-weight="500" fill="#b9bed3" font-family="-apple-system, 'Hiragino Sans', sans-serif">seguir・keep going</text>
+          <text x="300" y="250" font-size="19" font-weight="500" fill="#b9bed3" font-family="-apple-system, 'Hiragino Sans', sans-serif">con・with</text>
+        </svg>
+      </div><div class="nt">The core image, animated (Desktop)</div>
+      <div class="ln bar dim">The dot clears the bump and keeps going</div><div class="nt">What the picture shows (native language)</div>
+      <div class="ln bar"><span class="k on">Examples</span> <span class="k">Similar</span> <span class="k">Origin</span></div><div class="nt">Opens below</div>
+      <div class="ln bar">Sigamos con esto después de comer.  🔊</div><div class="nt">An example, its translation, and why this word</div>
+      <div class="ln bar dim">  Let's keep going with this after lunch.</div><div class="nt"></div>
+      <div class="ln bar dim">  A break doesn't stop the flow</div><div class="nt"></div>
+    </div></div>
+    <figcaption>This is Desktop (the picture is an example). The terminal shows one line instead of the picture.</figcaption>
+  </figure>
+  <h4>How to use</h4>
+  <ol class="steps">
+    <li>Press a word in a translation. Words you can press are shown in dim text.</li>
+    <li>After "Drawing the core image…", it appears in about 20 to 60 seconds. Meanwhile 🔊, 🎤, and Examples already work.</li>
+    <li>To close it, press the same word again.</li>
+  </ol>
+  <details>
+    <summary>Details</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>Phrases</th><td>If the word is part of a phrase, the phrase is shown (sigue → seguir con). Pressing any word of the phrase closes it</td></tr>
+      <tr><th>Words you can press</th><td>In After sending, and in reply translations into your learning language. Symbols alone can't be pressed. Corrected words and open words show in full color</td></tr>
+      <tr><th>Pressing several</th><td>They stack below in the order you pressed them</td></tr>
+      <tr><th>Opening again</th><td>The same word in the same sentence shows right away, without redrawing (for this session)</td></tr>
+      <tr><th>Two prompts with the same text</th><td>Shown only under the one you pressed</td></tr>
+      <tr><th>Terminal</th><td>One line instead of the picture (phrase, pronunciation, sentence, 🔊 🎤). No Enlarge</td></tr>
+      <tr><th>Enlarge</th><td>Makes the picture bigger. Shrink puts it back (Desktop only)</td></tr>
+      <tr><th>Examples</th><td>Three examples in different scenes, each with a translation and a line on why this word fits. 🔊 on an example also shows its pronunciation</td></tr>
+      <tr><th>Similar</th><td>Two or three alternatives and when to pick each</td></tr>
+      <tr><th>Origin</th><td>The original meaning of its parts and how they lead to today's meaning. Says so when there's no established account</td></tr>
+      <tr><th>Opening and closing</th><td>Examples and the rest appear after "Writing…", within 60 seconds. Press again to close; opening again writes them anew (and uses usage)</td></tr>
+      <tr><th>Closing the word picture</th><td>Also closes its Examples and the rest</td></tr>
+      <tr><th>If it fails</th><td>"Couldn't draw: sigue" or "Couldn't write" (→ <a href="#en-messages">By message</a>)</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="en-voice">Read aloud <span class="when">Press 🔊</span></h3>
+  <p>Reads the text there aloud in a Mac voice.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Where 🔊 is</th><th>What it reads</th><th>Pronunciation</th></tr></thead>
+    <tbody>
+      <tr><td>Next to After sending</td><td>The translation</td><td>Shown below it</td></tr>
+      <tr><td>Bottom of the translation pane</td><td>Learning-language paragraphs in order</td><td>Shown for each paragraph</td></tr>
+      <tr><td>Word picture</td><td>The phrase</td><td>Already there</td></tr>
+      <tr><td>Example</td><td>That example</td><td>Shown below it</td></tr>
+      <tr><td><strong>🔊 Sample</strong> in the practice band</td><td>The sample</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <h4>Good to know</h4>
+  <ul class="plain">
+    <li>Pick the voice in <strong>Voice</strong> in <code>/lingo</code> (Samantha by default). For a language other than English, enter a Mac voice for that language, for example <code>Mónica</code> for Spanish.</li>
+    <li>Pressing again queues it after the current one. It can't be stopped midway.</li>
+    <li>If it can't read, you see "Couldn't read aloud: reason".</li>
+  </ul>
+  <details>
+    <summary>Details</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>Voice names</th><td>Find and add them in System Settings › Accessibility › Spoken Content (Read &amp; Speak on macOS 26). Leave the field empty for the default voice</td></tr>
+      <tr><th>Pronunciation</th><td>Written only the first time ("Writing the pronunciation…"). If it fails it disappears, and the next press writes it again</td></tr>
+      <tr><th>Where the sound plays</th><td>The Mac running Claude Code</td></tr>
+      <tr><th>Length</th><td>Up to 4,096 characters per paragraph</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="en-practice">Practice speaking <span class="when">Press 🎤</span></h3>
+  <p>Say the sample out loud, and a coach tells you which sounds didn't come across and how to fix them.</p>
+  <div class="callout" role="note">
+    <p><span class="tag">Before you start</span>Turn on Dictation on your Mac and add your learning language (System Settings › Keyboard › Dictation). claudelingo never hears your microphone; it only uses the text Dictation types.</p>
+  </div>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln"><b class="dim">Sample</b>   seguir con  <span class="dim it">/seˈɣiɾ kon/</span>      <span class="dim">✕</span></div><div class="nt">What to say</div>
+      <div class="ln"><b class="dim">Try</b>      <span class="field">según con</span> <span class="dim">?</span></div><div class="nt">Speak with Dictation, then Enter</div>
+      <div class="ln"><b class="dim">Heard</b>    <span class="bad">según</span> con</div><div class="nt">Words that didn't come across are underlined in red</div>
+      <div class="ln dim">💡 The r in seguir is one quick tap of the tongue, not an English r</div><div class="nt">How to fix it (1–3 tips in your native language)</div>
+      <div class="ln dim">💡 Stress the last syllable: se-GUIR</div><div class="nt"></div>
+      <div class="ln"><span class="k">🔊 Sample</span> <span class="k">Again</span></div><div class="nt">Hear the sample / try again</div>
+      <div class="inbox"><div class="ln">&gt; </div></div><div class="nt">Prompt input (the band sits above it)</div>
+    </div></div>
+  </figure>
+  <h4>How to use</h4>
+  <ol class="steps">
+    <li>Press 🎤 in After sending or on a word picture. The practice band opens above the input.</li>
+    <li>Move to the <strong>Try</strong> field (Desktop starts there; in the terminal press <kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>tab</kbd>).</li>
+    <li>Start Dictation and say the sample out loud.</li>
+    <li>Press <kbd>Enter</kbd>. In a few seconds, <strong>Heard</strong> and the 💡 tips appear.</li>
+  </ol>
+  <details>
+    <summary>Details</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>Starting Dictation</th><td>The shortcut in System Settings › Keyboard › Dictation (for example, press fn twice)</td></tr>
+      <tr><th><kbd>Enter</kbd> with an empty field</th><td>Nothing happens</td></tr>
+      <tr><th>Typed with the keyboard</th><td>What you typed is compared with the sample</td></tr>
+      <tr><th>Closing</th><td>✕, or press the same 🎤 again</td></tr>
+      <tr><th>Another 🎤</th><td>Replaces the band. Coaching still on its way is dropped</td></tr>
+      <tr><th>Where the text goes</th><td>Not into the conversation. It's sent to Claude for coaching</td></tr>
+      <tr><th>claudelingo turned off</th><td>The band goes away</td></tr>
+      <tr><th>If it fails</th><td>"Couldn't coach: reason". Press <kbd>Enter</kbd> again</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="en-grass">Writing graph <span class="when">Below /lingo</span></h3>
+  <p>How many words you wrote yourself, one square per day, read like GitHub's contribution graph.</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div><div class="months"><span style="left:0px">Jun</span><span style="left:64px">Jul</span><span style="left:128px">Aug</span><span style="left:208px">Sep</span></div><div class="grass" aria-hidden="true"><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l0"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l1"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l2"></i><i class="l2"></i><i class="l0"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l3"></i><i class="l1"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l1"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l3"></i><i class="l3"></i><i class="l3"></i><i class="l2"></i><i class="l0"></i><i class="l2"></i><i class="l2"></i><i class="l0"></i><i class="l2"></i><i class="l3"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l2"></i><i class="l1"></i><i class="l0"></i><i class="l3"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l0"></i><i class="l3"></i><i class="l3"></i><i class="l1"></i><i class="l1"></i><i class="l0"></i><i class="l3"></i><i class="l2"></i><i class="l0"></i><i class="l0"></i><i class="l1"></i><i class="l1"></i><i class="l0"></i><i class="l3"></i><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l1"></i><i class="l1"></i><i class="l2"></i><i class="l2"></i><i class="l0"></i></div></div><div class="nt">One square a day. The rightmost column is this week</div>
+      <div class="ln dim">3,482 words you wrote yourself</div><div class="nt">Total so far</div>
+    </div></div>
+    <figcaption>This is the terminal. Desktop shows a full year as one picture.</figcaption>
+  </figure>
+  <p><span class="sw l0"></span>0 words　<span class="sw l1"></span>1–99　<span class="sw l2"></span>100–249　<span class="sw l3"></span>250 or more</p>
+  <div class="pair">
+    <div><h4>Counted</h4><ul class="plain">
+      <li>Prompts you send yourself while claudelingo is on</li>
+      <li>Words in Latin letters in them (don't is one word)</li>
+      <li>File names and URLs too</li>
+    </ul></div>
+    <div><h4>Not counted</h4><ul class="plain">
+      <li>Text in <code>`</code>, code blocks, pastes</li>
+      <li>Commands such as <code>/clear</code></li>
+      <li>Anything not in Latin letters</li>
+    </ul></div>
+  </div>
+  <div class="callout" role="note">
+    <p><span class="tag">Note</span>It counts every word in Latin letters, so if your native language uses them too, your native-language words count as well. If your learning language isn't written in Latin letters (Chinese, Korean, Russian, and so on), words you write in it aren't counted; only words in Latin letters are.</p>
+  </div>
+  <details>
+    <summary>Details</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>Which day a square is</th><td>Your computer's date. Rows run Sunday to Saturday</td></tr>
+      <tr><th>How far back</th><td>As many weeks as fit in the terminal; a full year in Desktop</td></tr>
+      <tr><th>Record</th><td>Kept on your computer, adding up every session (if two sessions send at almost the same moment, one may not be counted). There's no way to clear it from the screen (→ <a href="#en-keep">What is kept</a>)</td></tr>
+    </tbody></table></div>
+  </details>
+</section>
+
+<!-- ───────────── Settings and management ───────────── -->
+<section class="part" id="en-admin">
+  <h2>Settings and management</h2>
+
+  <h3 id="en-settings">Change settings <span class="when">/lingo</span></h3>
+  <p>The defaults are Japanese → English. Until you set <strong>Native</strong> to something other than Japanese, the panel is in Japanese.</p>
+  <figure>
+    <div class="scrwrap"><div class="scr ann">
+      <div class="ln"><b>claudelingo</b>     <span class="ok">● On</span>  <span class="k">Turn off</span></div><div class="nt">Master switch</div>
+      <div class="ln"><b>General</b></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Native</span>        English</div><div class="nt">A language name, e.g. Spanish</div>
+      <div class="ln">  <span class="dim">Learning</span>      Spanish</div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Level</span>         <span class="dim">e.g. I read technical docs fine; …</span></div><div class="nt">Your strengths and weak spots, in your words</div>
+      <div class="ln">  <span class="dim">Model</span>         <span class="k">haiku</span> <span class="k on">sonnet</span> <span class="k">opus</span></div><div class="nt">Model for translations and more</div>
+      <div class="ln"><b>After sending</b>   <span class="ok">● On</span>  <span class="k">Turn off</span></div><div class="nt">Per-feature switches</div>
+      <div class="ln"><b>While typing</b>    <span class="ok">● On</span>  <span class="k">Turn off</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Model</span>         <span class="k on">haiku</span> <span class="k">sonnet</span> <span class="k">opus</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Delay</span>         <span class="dim">Fast</span> <span class="k">-</span> 1.5 s <span class="k">+</span> <span class="dim">Slow</span></div><div class="nt">How long a pause before proofreading</div>
+      <div class="ln"><b>Word pictures</b>   <span class="ok">● On</span>  <span class="k">Turn off</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Model</span>         <span class="k">haiku</span> <span class="k">sonnet</span> <span class="k on">opus</span></div><div class="nt"></div>
+      <div class="ln"><b>Read aloud</b></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Voice</span>         Mónica</div><div class="nt">A Mac voice name</div>
+      <div class="gap full"></div>
+      <div class="ln dim">(graph) 3,482 words you wrote yourself</div><a class="nt" href="#en-grass">Writing graph</a>
+    </div></div>
+  </figure>
+  <h4>How to use</h4>
+  <ol class="steps">
+    <li>Send <code>/lingo</code>. It opens even while Claude is working.</li>
+    <li>Change things. Buttons save when you press them; text fields save on <kbd>Enter</kbd>.</li>
+    <li>Close it with <kbd>Esc</kbd>.</li>
+  </ol>
+  <h4>Good to know</h4>
+  <ul class="plain">
+    <li>Changes apply from the next translation. Translations already shown don't change.</li>
+    <li>Settings are shared by every session and project on your computer.</li>
+    <li>If saving fails, you see "Couldn't save: reason" in red and the value doesn't change.</li>
+  </ul>
+  <details>
+    <summary>Field details</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>Native, Learning</th><td>Pressing <kbd>Enter</kbd> on an empty field changes nothing</td></tr>
+      <tr><th>Screen language</th><td>Japanese while Native is Japanese or 日本語; any other language name switches it to English</td></tr>
+      <tr><th>Level</th><td>Translations, tips, pictures, and coaching are pitched to it. Left empty, nothing is passed on</td></tr>
+      <tr><th>General › Model</th><td>Used for After sending, Reply translation, pronunciation, coaching, Examples and the rest (→ <a href="#en-model">Choosing a model</a>)</td></tr>
+      <tr><th>Delay</th><td>0.3 to 2 seconds. [-] and [+] move it by 0.1 s. Out-of-range numbers are clamped; anything that isn't a number is ignored</td></tr>
+      <tr><th>Voice</th><td>Empty means the Mac's default voice</td></tr>
+      <tr><th>A group turned off</th><td>Shows only its heading. Turning claudelingo off hides everything below it, including the writing graph</td></tr>
+      <tr><th>Text fields</th><td>Leaving without pressing <kbd>Enter</kbd> doesn't save</td></tr>
+      <tr><th>Terminal keys</th><td><kbd>Tab</kbd> moves between fields; <kbd>Enter</kbd> presses or confirms</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="en-manage">Turn off, update, uninstall</h3>
+  <div class="tw"><table>
+    <thead><tr><th>To</th><th>Do this</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><th>Stop everything</th><td><code>/lingo</code> › claudelingo <strong>Turn off</strong></td><td>Stops right away. Translations already shown stay</td></tr>
+      <tr><th>Stop one feature</th><td>That feature's <strong>Turn off</strong></td><td>Only that feature stops</td></tr>
+      <tr><th>Update</th><td><code>claude plugin update claudelingo@claudelingo</code>, then restart</td><td>Runs the new version</td></tr>
+      <tr><th>Uninstall</th><td><code>claude plugin uninstall claudelingo@claudelingo</code>, then restart</td><td>Settings and the writing graph stay on your computer</td></tr>
+    </tbody>
+  </table></div>
+  <details>
+    <summary>What turning off does</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>claudelingo off</th><td>No more calls to Claude and no more counting. Buttons and word pictures are hidden; 🌐, the bands, and the writing graph don't show. <strong>Turn on</strong> brings it all back</td></tr>
+      <tr><th>After sending off</th><td>New prompts aren't translated. 🌐 and the rest still work</td></tr>
+      <tr><th>While typing off</th><td>The band goes away at once and drafts aren't sent</td></tr>
+      <tr><th>Word pictures off</th><td>Words can't be pressed, and open word pictures are hidden</td></tr>
+      <tr><th>Automatic updates</th><td>Off by default. Turn on with <code>/plugin</code> › Marketplaces › claudelingo › Enable auto-update</td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="en-sent">What is sent to Claude</h3>
+  <p>claudelingo calls Claude at these moments, and each call uses usage.</p>
+  <div class="tw"><table>
+    <thead><tr><th>When</th><th>What is sent</th><th>How often</th></tr></thead>
+    <tbody>
+      <tr><td>You send a prompt</td><td>That prompt</td><td>Once</td></tr>
+      <tr><td>You pause while typing</td><td>Your draft (including text you later delete)</td><td>Every pause</td></tr>
+      <tr><td>You press 🌐</td><td>That reply (except paragraphs that are only code)</td><td>Once per reply</td></tr>
+      <tr><td>You press a word</td><td>That word and its sentence</td><td>Once per new word (heavier)</td></tr>
+      <tr><td>You open Examples and the rest</td><td>That word and its sentence</td><td>Every time you open one</td></tr>
+      <tr><td>You press 🔊</td><td>The text to read (for its pronunciation)</td><td>First time per text</td></tr>
+      <tr><td>You press <kbd>Enter</kbd> in practice</td><td>The sample and what's in the Try field</td><td>Once</td></tr>
+    </tbody>
+  </table></div>
+  <h4>Good to know</h4>
+  <ul class="plain">
+    <li>It goes only to Claude, through the same account as your Claude Code. It doesn't enter your conversation with Claude.</li>
+    <li>To use less: pick haiku; turn While typing off or lengthen the Delay; turn off features you don't use.</li>
+  </ul>
+
+  <h3 id="en-model">Choosing a model</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Model</th><th>Best for</th></tr></thead>
+    <tbody>
+      <tr><th>haiku</th><td>Fast and light on usage. Translations and pictures may be weaker</td></tr>
+      <tr><th>sonnet</th><td>A good balance of speed and quality</td></tr>
+      <tr><th>opus</th><td>The best quality. Slower and heavier on usage</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tw"><table>
+    <thead><tr><th>Setting in <code>/lingo</code></th><th>Used for</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><th>General › Model</th><td>After sending, Reply translation, pronunciation, coaching for Practice speaking, Examples and the rest</td><td>sonnet</td></tr>
+      <tr><th>Live proofread › Model</th><td>While typing</td><td>haiku</td></tr>
+      <tr><th>Word pictures › Model</th><td>Word pictures</td><td>opus</td></tr>
+    </tbody>
+  </table></div>
+  <p>Each one always uses the latest model of that family.</p>
+
+  <h3 id="en-where">Where it shows</h3>
+  <div class="tw"><table>
+    <thead><tr><th></th><th class="c">Terminal<br>fullscreen</th><th class="c">Terminal<br>classic</th><th class="c">Desktop</th></tr></thead>
+    <tbody>
+      <tr><td>Translations, bands, panes</td><td class="c">✓</td><td class="c">✓</td><td class="c">✓</td></tr>
+      <tr><td>Buttons under prompts and replies (🔊 🎤 🌐, words)</td><td class="c">Click</td><td class="c">Can't press</td><td class="c">Click</td></tr>
+      <tr><td>Bands and panes</td><td class="c">Click, keys</td><td class="c">Keys</td><td class="c">Click</td></tr>
+      <tr><td>Core-image pictures, the graph picture</td><td class="c">Text</td><td class="c">Text</td><td class="c">✓</td></tr>
+      <tr><td>Button hints on hover</td><td class="c">✓</td><td class="c">—</td><td class="c">✓</td></tr>
+    </tbody>
+  </table></div>
+  <h4>Good to know</h4>
+  <ul class="plain">
+    <li>Fullscreen rendering keeps the prompt input fixed at the bottom of the screen. Check with <code>/tui</code> and switch with <code>/tui fullscreen</code> (your conversation is kept).</li>
+    <li>Not shown in: the VS Code extension's chat panel, <code>claude -p</code>, cloud sessions, WSL sessions in Desktop. In VS Code, run <code>claude</code> in the integrated terminal instead.</li>
+    <li>Prompts sent over Remote Control (phone or browser) are translated too, and shown on your computer.</li>
+  </ul>
+  <details>
+    <summary>Keyboard</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>Move to a band or pane</th><td><kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>tab</kbd></td></tr>
+      <tr><th>Select and press</th><td><kbd>Tab</kbd>, then <kbd>Enter</kbd></td></tr>
+      <tr><th>Back to the input</th><td><kbd>Esc</kbd></td></tr>
+      <tr><th>Close a pane</th><td><kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>x</kbd></td></tr>
+    </tbody></table></div>
+  </details>
+
+  <h3 id="en-keep">What is kept</h3>
+  <div class="tw"><table>
+    <thead><tr><th>What</th><th>How long</th></tr></thead>
+    <tbody>
+      <tr><th>Settings and the writing graph</th><td>Saved on your computer, shared by every session and project. Deleted if you don't start Claude Code with claudelingo for 30 days</td></tr>
+      <tr><th>Translations, word pictures,<br>pronunciation, reply translations, practice</th><td>This session only. Gone after <code>/clear</code>, <code>/resume</code>, <code>/branch</code>, or a restart, and can't be brought back</td></tr>
+    </tbody>
+  </table></div>
+  <details>
+    <summary>Details</summary>
+    <div class="tw"><table><tbody>
+      <tr><th>Where 30 days comes from</th><td>Claude Code's <code>cleanupPeriodDays</code> (30 by default)</td></tr>
+      <tr><th>Several sessions at once</th><td>The last settings change applies everywhere. The writing graph adds up every session (if two send at almost the same moment, one may not be counted)</td></tr>
+      <tr><th>Conversation record</th><td>Translations and pictures don't enter your conversation record with Claude</td></tr>
+    </tbody></table></div>
+  </details>
+</section>
+
+<!-- ───────────── Troubleshooting ───────────── -->
+<section class="part" id="en-trouble">
+  <h2>Troubleshooting</h2>
+
+  <h3 id="en-symptoms">By symptom</h3>
+  <div class="faq">
+    <details><summary>Nothing appears under my prompt</summary><ol>
+      <li>Wait about 10 seconds (nothing shows until it's ready).</li>
+      <li>In <code>/lingo</code>, check that claudelingo and After sending are on.</li>
+      <li>Check that it isn't a prompt that's never translated, such as a command or a notification (→ the details under <a href="#en-after-send">After sending</a>).</li>
+      <li>Check that you aren't somewhere it doesn't show, such as the VS Code chat panel (→ <a href="#en-where">Where it shows</a>).</li>
+      <li>If <code>/lingo</code> doesn't exist, see the next item.</li>
+    </ol></details>
+    <details><summary>There's no <code>/lingo</code></summary><ol>
+      <li>Check that <code>claude --version</code> is 2.1.287 or later.</li>
+      <li>Check that you restarted Claude Code after installing.</li>
+      <li>Open <code>/plugin</code> and check that claudelingo is on its "mod active" line.</li>
+    </ol></details>
+    <details><summary>Clicking buttons in the terminal does nothing</summary><ol>
+      <li>Switch to fullscreen rendering with <code>/tui fullscreen</code> (classic rendering can't click).</li>
+      <li>In tmux, set <code>set -g mouse on</code>; in iTerm2, turn on Enable mouse reporting.</li>
+      <li>Unset <code>CLAUDE_CODE_DISABLE_MOUSE</code> or <code>CLAUDE_CODE_DISABLE_MOUSE_CLICKS</code> if you set them.</li>
+    </ol></details>
+    <details><summary>No band above the input</summary><ul>
+      <li>While typing is off</li>
+      <li>You're typing a command</li>
+      <li>You closed it with ✕ and haven't typed since</li>
+      <li>A Claude Code survey is showing</li>
+    </ul></details>
+    <details><summary>Replace does nothing</summary><p>You changed the input after the band appeared. Pause, wait for a new band, then press it.</p></details>
+    <details><summary>There's no 🌐</summary><ul>
+      <li>claudelingo is off</li>
+      <li>The block is code only (nothing to translate)</li>
+    </ul></details>
+    <details><summary>I can't press words in a translation</summary><ul>
+      <li>Word pictures is off</li>
+      <li>It's a translation into your native language (only translations into your learning language can be pressed)</li>
+      <li>It's only symbols</li>
+    </ul></details>
+    <details><summary>I hear nothing when I press 🔊</summary><ul>
+      <li>If "Couldn't read aloud" appears → <a href="#en-messages">By message</a></li>
+      <li>If nothing appears, check your Mac's volume and output (Bluetooth and so on)</li>
+    </ul></details>
+    <details><summary>Dictation types in my native language</summary><p>Set Dictation's language to your learning language (System Settings › Keyboard › Dictation).</p></details>
+    <details><summary>Translations or pictures disappeared</summary><p>They're gone after <code>/clear</code>, <code>/resume</code>, <code>/branch</code>, or a restart, and can't be brought back.</p></details>
+    <details><summary>The writing graph doesn't grow, or grows too much</summary><ul>
+      <li>Doesn't grow: your learning language isn't written in Latin letters (words in it aren't counted), or claudelingo is off</li>
+      <li>Too much: file names, URLs, and native-language words in Latin letters count too. Text in <code>`</code> doesn't count</li>
+    </ul></details>
+    <details><summary>Usage goes down fast</summary><p>Mostly While typing (one call every time you pause). Pick haiku, lengthen the Delay, or turn it off.</p></details>
+    <details><summary>My settings went back to the defaults</summary><p>They're deleted if you don't use claudelingo for 30 days (→ <a href="#en-keep">What is kept</a>).</p></details>
+  </div>
+
+  <h3 id="en-messages">By message</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Message</th><th>Cause</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>Couldn't translate: api-error（rate_limit）</td><td>Usage limit reached</td><td>Wait until your limit resets</td></tr>
+      <tr><td>Couldn't translate: api-error（overloaded） / （server_error）</td><td>Claude is busy or having trouble</td><td>Wait a little and retry</td></tr>
+      <tr><td>Couldn't translate: api-error（authentication_failed） and other sign-in or account errors</td><td>Sign-in or account</td><td>Check that Claude Code itself responds; if not, <code>/login</code></td></tr>
+      <tr><td>Couldn't translate: api-error（model_not_found） / （invalid_request）</td><td>That model isn't available to you</td><td>Change the model in <code>/lingo</code></td></tr>
+      <tr><td>Couldn't translate: api-error（max_output_tokens）</td><td>Too long</td><td>Split it up</td></tr>
+      <tr><td>Couldn't translate: empty-reply / aborted / format / api-error（unknown）</td><td>A temporary failure</td><td>Retry (below)</td></tr>
+      <tr><td>Couldn't translate: (any other text)</td><td>The request was refused (for example, by your organization)</td><td>Change the model in <code>/lingo</code></td></tr>
+      <tr><td>Couldn't draw: ‹word›</td><td>Not drawn within 90 seconds, a cause above, or an unrelated phrase or unsafe picture came back</td><td>Press the word twice (close, then open)</td></tr>
+      <tr><td>Couldn't write</td><td>Not written within 60 seconds, or a cause above</td><td>Press that button twice</td></tr>
+      <tr><td>Couldn't coach: ‹reason›</td><td>Same as Couldn't translate</td><td>Press <kbd>Enter</kbd> again</td></tr>
+      <tr><td>Couldn't read aloud: ‹reason›</td><td>Wrong voice name, voice not installed, not a Mac, or a paragraph over 4,096 characters</td><td>Check <strong>Voice</strong>. Empty means the default voice</td></tr>
+      <tr><td>Couldn't save: ‹reason›</td><td>Settings can't be written to disk</td><td>Check free space and write access to <code>~/.claude</code></td></tr>
+    </tbody>
+  </table></div>
+  <h4>How to retry</h4>
+  <ul class="plain">
+    <li>After sending: can't be retried. The next prompt you send is translated.</li>
+    <li>While typing: type again and pause.</li>
+    <li>Reply translation: press 🌐 again.</li>
+    <li>Pronunciation: press 🔊 again.</li>
+  </ul>
+
+  <h3 id="en-contact">Still stuck</h3>
+  <p>Open an issue at <a href="https://github.com/yodakeisuke/claudelingo/issues">GitHub Issues</a> with the exact message you saw, the output of <code>claude --version</code>, and whether you use the terminal or Desktop.</p>
+</section>
+
+</article>
+
+</main>
+</div>
+<script>
+// コピー：押した側の言語で知らせる
+document.querySelectorAll('[data-copy]').forEach(button => {
+  button.addEventListener('click', async () => {
+    const isEn = button.closest('[lang]')?.lang === 'en'
+    const target = document.getElementById(button.dataset.copy)
+    try {
+      await navigator.clipboard.writeText(target.textContent.trim())
+      button.textContent = isEn ? 'Copied' : 'コピーしました'
+    } catch {
+      const range = document.createRange()
+      range.selectNodeContents(target)
+      const selection = window.getSelection()
+      selection.removeAllRanges()
+      selection.addRange(range)
+      button.textContent = isEn ? 'Selected' : '選択しました'
+    }
+    setTimeout(() => { button.textContent = isEn ? 'Copy' : 'コピー' }, 2000)
+  })
+})
+
+// 日英：リンクの #ja・#en（#ja-節 なども）＞ 前に選んだ方 ＞ ブラウザの言語。切り替えても、読んでいた節に留まる
+const root = document.documentElement
+const side = document.querySelector('.side')
+const titles = { ja: 'claudelingo ヘルプ', en: 'claudelingo Help' }
+let reading = null
+let observer
+const watch = lang => {
+  observer?.disconnect()
+  observer = new IntersectionObserver(entries => {
+    const hit = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
+    if (!hit) return
+    reading = hit.target.id.slice(3)
+    side.querySelectorAll('.side-nav a').forEach(a => (a.getAttribute('href') === `#${hit.target.id}` ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')))
+  }, { rootMargin: '0px 0px -75% 0px' })
+  document.querySelectorAll(`.l-${lang} h3[id]`).forEach(h => observer.observe(h))
+}
+const setLang = lang => {
+  root.dataset.lang = lang
+  root.lang = lang
+  document.title = titles[lang]
+  document.querySelectorAll('.langs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)))
+  try { localStorage.setItem('claudelingo-help-lang', lang) } catch {}
+  watch(lang)
+}
+const firstLang = () => {
+  const hash = location.hash.slice(1)
+  if (/^(ja|en)(-|$)/.test(hash)) return hash.slice(0, 2)
+  try {
+    const saved = localStorage.getItem('claudelingo-help-lang')
+    if (saved === 'ja' || saved === 'en') return saved
+  } catch {}
+  return /^ja\b/i.test(navigator.language || '') ? 'ja' : 'en'
+}
+setLang(firstLang())
+if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView()
+document.querySelectorAll('.langs button').forEach(b => b.addEventListener('click', () => {
+  const at = reading
+  setLang(b.dataset.lang)
+  if (at) document.getElementById(`${b.dataset.lang}-${at}`)?.scrollIntoView()
+}))
+
+// 狭い画面のメニュー：開け閉め。選んだら閉じる
+const menuButton = document.querySelector('.menu-btn')
+const closeMenu = () => { side.classList.remove('open'); menuButton.setAttribute('aria-expanded', 'false') }
+menuButton.addEventListener('click', () => menuButton.setAttribute('aria-expanded', String(side.classList.toggle('open'))))
+side.querySelectorAll('.side-nav a').forEach(a => a.addEventListener('click', closeMenu))
+</script>
+</body>
+</html>

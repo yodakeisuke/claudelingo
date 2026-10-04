@@ -1,6 +1,6 @@
 # claudelingo
 
-日本語 | [English](README.md) | [図つきの Web 版](https://claude.ai/artifact/JXNfv689sKeCfKoUmqm1Me#ja-start)
+日本語 | [English](README.md) | [図つきの Web 版](https://claude.ai/artifact/JXNfv689sKeCfKoUmqm1Me#ja)
 
 Claude Code にいつも通り指示を送るだけで、その指示の外国語版がすぐ下に出ます（初期設定は日本語 → 英語）。打ちながらの校正、返事の訳、単語のコアイメージの直感的な図解、読み上げと話す練習も、作業を止めずにその場で使えます。
 

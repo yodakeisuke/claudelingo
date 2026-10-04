@@ -1,6 +1,6 @@
 # claudelingo
 
-[日本語](README.ja.md) | English
+[日本語](README.ja.md) | English | [Illustrated web version](https://claude.ai/artifact/JXNfv689sKeCfKoUmqm1Me#en-start)
 
 Keep using Claude Code as usual, and the version of each prompt in the language you're learning appears right below it. Proofreading while you type, reply translations, intuitive diagrams of a word's core image, read-aloud, and speaking practice are there too, without stopping your work.
 

@@ -59,11 +59,11 @@ const isAstray = (unit: string, word: string, restated: string) => {
   const others = new Set(words(restated).map(w => w.word).filter(w => w && w !== word))
   return parts(unit).every(u => others.has(u) && !word.startsWith(u))
 }
-// 絵の幅は 380px、拡大で 560px。大きさは SVG にも書き、左に寄せる（Desktop は両方そろって初めて大きさを変える）。出るときは 0.4 秒で浮かび上がる
+// 絵の幅は 380px、拡大で 560px。大きさは SVG にも書き、左に寄せる（Desktop は両方そろって初めて大きさを変える）
 const picture = (svg: string, isWide?: boolean) => {
   const width = isWide ? 560 : 380
   const height = width * 0.6
-  const source = svg.replace(/<svg\b[^>]*>/, root => `${root.replace(/\s(?:width|height|preserveAspectRatio)="[^"]*"/g, '').slice(0, -1)} width="${width}" height="${height}" preserveAspectRatio="xMinYMid meet"><animate attributeName="opacity" from="0" to="1" dur="0.4s"/>`)
+  const source = svg.replace(/<svg\b[^>]*>/, root => `${root.replace(/\s(?:width|height|preserveAspectRatio)="[^"]*"/g, '').slice(0, -1)} width="${width}" height="${height}" preserveAspectRatio="xMinYMid meet">`)
   return { source, width, height }
 }
 // 描いている間は、同じ大きさの地で場所を取る（届いても、下のボタンと欄が動かない）。地の真ん中で輪を描き続け、止まっていないと分かるように

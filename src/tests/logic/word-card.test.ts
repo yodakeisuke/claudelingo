@@ -54,7 +54,7 @@ describe('word-card', () => {
     const all = WordCards.saving({}, card, { word: 'carry', restated })
     expect(WordCards.saved(all, { word: 'on', restated })).toBe(card)
     expect(WordCards.saved(all, { word: 'on', restated: 'go on' })).toBeUndefined()
-    expect(WordCards.picture(card.svg).source).toBe('<svg viewBox="0 0 480 288" width="380" height="228" preserveAspectRatio="xMinYMid meet"><animate attributeName="opacity" from="0" to="1" dur="0.4s"/><rect/></svg>')
+    expect(WordCards.picture(card.svg).source).toBe('<svg viewBox="0 0 480 288" width="380" height="228" preserveAspectRatio="xMinYMid meet"><rect/></svg>')
     expect(WordCards.picture(card.svg, true)).toMatchObject({ width: 560, height: 336 })
   })
 })

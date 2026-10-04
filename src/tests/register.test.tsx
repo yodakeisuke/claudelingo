@@ -101,6 +101,16 @@ describe('register', () => {
     }
   })
 
+  test('Desktop が最初の指示の前に付ける <system-reminder> は訳さず、数えず、打った文の下に訳が出る', async ($, on) => {
+    const { clock, store, asked } = engine(on, undefined, undefined, { card: false })
+    await $.prompt.submit({ text: '<system-reminder>\nThe user started this session without a folder.\n</system-reminder>\n\n\nログ見て please', wait: false, origin: { kind: 'sdk' } })
+    await clock.advance(0)
+    expect(asked.join('')).not.toContain('system-reminder')
+    expect(Object.values(store.get('words') as object)).toEqual([1])
+    const ui = await $.ui.mount({ ...row('ログ見て please', { kind: 'sdk' }), surface: 'desktop' })
+    expect(await ui.find({ type: 'Text', text: /^EN: ログ見て please$/ })).toBeDefined()
+  })
+
   test('送信は訳を待たない', async ($, on) => {
     const { asked } = engine(on)
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })

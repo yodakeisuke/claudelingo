@@ -270,7 +270,7 @@ const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0
 export const learning = (on: On) => {
   on('prompt.submit', ($, e, next) => {
     // 送信は待たせない。訳は自分の dispatch で走らせる
-    $.clock.after(0, () => void showTranslation($, e.origin.kind, e.text.trim()))
+    $.clock.after(0, () => void showTranslation($, e.origin.kind, PromptTranslations.typed(e.text)))
     // 自分で送ったら下書きは空になる。通知などの送信では、打ちかけの帯を残す
     if (PromptTranslations.isOwn(e.origin.kind)) $.clock.after(0, () => void hideDraftTranslation($))
     return next(e)

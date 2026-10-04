@@ -20,10 +20,10 @@ export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, { ind
 }
 
 // 押せる語を折り返して並べる。記号だけの語（? や —）は押せない文字のまま。語の後ろに空白を挟む。Desktop はボタンの余白のぶん空きすぎるので、右を 1 マス詰める（左を詰めると、折り返した行の頭の語が欠ける）
-// 押せないなら 1 つの文として印の横で折り返す（空白の無い日本語の行も印の横に収まる）
+// 押せないなら 1 つの文として印の横で折り返す（空白の無い日本語の行も印の横に収まる）。印は頭の行に（Desktop は既定で縦の中央にそろえる）
 const wrapped = (t: Elements[keyof Elements], isTerminal: boolean, words: Line['words'], opened: Map<string, string>, press: ((word: string) => void) | undefined, id: string, lead?: RenderElement) => {
   const { Box, Button, Text } = t
-  if (!press) return <Box>{lead}<Text>{words.map((w, i) => <Text bold={w.isFixed}>{i ? ' ' : ''}{w.label}</Text>)}</Text></Box>
+  if (!press) return <Box alignItems="flex-start">{lead}<Text>{words.map((w, i) => <Text bold={w.isFixed}>{i ? ' ' : ''}{w.label}</Text>)}</Text></Box>
   return (
     <Box flexWrap="wrap">
       {lead}

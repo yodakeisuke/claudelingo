@@ -266,6 +266,13 @@ describe('register', () => {
     expect(await terminal.find({ type: 'Text', text: /自分で書いた外国語/ })).toBeUndefined()
   })
 
+  test('コマンドは数えず、/tmp を見て のようにコマンドでない指示は数える', async ($, on) => {
+    const { clock, store } = engine(on)
+    for (const text of ['/clear', '/tmp を見て']) await $.prompt.submit({ text, wait: false, origin: composer })
+    await clock.advance(0)
+    expect(Object.values(store.get('words') as object)).toEqual([1])
+  })
+
   test('保存してある翻訳モデルで訳す', async ($, on) => {
     const { clock, models } = engine(on, undefined, undefined, { model: 'haiku' })
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })

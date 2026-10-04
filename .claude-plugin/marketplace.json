@@ -1,0 +1,6 @@
+{
+  "name": "claudelingo",
+  "owner": { "name": "Keisuke Yoda" },
+  "description": "Pick up a foreign language while you work with Claude",
+  "plugins": [{ "name": "claudelingo", "source": "./src" }]
+}

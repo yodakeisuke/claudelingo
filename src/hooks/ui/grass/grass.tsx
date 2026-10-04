@@ -14,17 +14,16 @@ export const grassGraph = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: Wo
   const shown = weeks.slice(-Math.floor(columns / 2))
   // 色はテーマの鍵。灰と、ライトでもダークでも多いほど目立つ 3 つの緑（diff の緑と success）
   const square = (level?: number) => level !== undefined && <Text color={['subtle', 'diffAdded', 'diffAddedWord', 'success'][level]}>■ </Text>
+  // 月の名は、その週の列に置く（字の幅を数えないので、どの言語の名でもずれない）。最後の週の名は草の幅に収まらないので書かない
+  const months = shown.slice(0, -1).map(({ month }, i) => month && <Box position="absolute" left={i * 2}><Text dimColor>{w.month(month)}</Text></Box>)
   return (
     <Box flexDirection="column" marginTop={1}>
-      <Text dimColor>{months(w, shown)}</Text>
+      <Box height={1}>{months}</Box>
       {[0, 1, 2, 3, 4, 5, 6].map(d => <Text>{shown.map(({ levels }) => square(levels[d]))}</Text>)}
       <Box marginTop={1}>{sum}</Box>
     </Box>
   )
 }
-
-// 月の名の行：その週の列から書く（「月」は 1 字で 2 マス）。最後の週の名は草の幅に収まらないので書かない
-const months = (w: Wording, weeks: Year['weeks']) => weeks.slice(0, -1).reduce((row, { month }, i) => (month ? `${row.padEnd(i * 2 - (row.match(/月/g)?.length ?? 0))}${w.month(month)}` : row), '')
 
 // Desktop の絵：緑の濃さは不透明度で出す（地がライトでもダークでも読める）。月の名は上に
 const picture = (w: Wording, weeks: Year['weeks']) => {

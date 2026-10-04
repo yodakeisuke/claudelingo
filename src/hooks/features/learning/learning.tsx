@@ -217,9 +217,8 @@ const hideDraftTranslation = async ($: EngineInterface) => {
 }
 
 // 打ちかけの校正の帯。校正がなければ undefined
-const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0], isTerminal: boolean) => {
+const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0], isTerminal: boolean, settings: Parameters<typeof DraftTranslations.band>[0]) => {
   const shown = await read($, draft)
-  const settings = await settingsOf($)
   const band = DraftTranslations.band(settings, shown)
   if (!shown || !band) return undefined
   const { line, replacement } = band
@@ -253,9 +252,9 @@ export const learning = (on: On) => {
     if (e.props.hasSurvey) return next(e)
     // 入力欄の上の帯は端末と Desktop にしかない
     const t = $.ui.resolve(e) as Parameters<typeof practiceBand>[0]
-    const band = await draftBandOf($, t, e.surface === 'terminal')
-    const opened = await read($, practice)
     const settings = await settingsOf($)
+    const band = await draftBandOf($, t, e.surface === 'terminal', settings)
+    const opened = await read($, practice)
     if (!opened || !settings.enabled) return band ?? next(e)
     // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
     const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: (text: string) => $.ui.toast(text, { timeoutMs: 15000 }), close: () => void showPractice($, () => null) }
@@ -269,6 +268,8 @@ export const learning = (on: On) => {
     const all = await read($, translations)
     // 文面が constructor などでも、引き継いだ値は拾わない
     const version = Object.hasOwn(all, key) ? all[key] : undefined
+    // 訳のない行は、設定を読まずにそのまま（本体の描画を重くしない）
+    if (!version) return row
     const settings = await settingsOf($)
     const line = PromptTranslations.line(settings.native, version)
     if (!line) return row

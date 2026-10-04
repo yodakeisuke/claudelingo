@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "oxlint -c src/.oxlintrc.json --deny-warnings --no-error-on-unmatched-pattern src/logic src/hooks && npm run lint:disable -- src/logic src/hooks && node --test src/lint/*.test.mjs",
+    "lint": "oxlint -c src/.oxlintrc.json --deny-warnings --no-error-on-unmatched-pattern src/logic src/hooks src/locales && npm run lint:disable -- src/logic src/hooks src/locales && node --test src/lint/*.test.mjs",
     "lint:disable": "! grep -rnE '(oxlint|eslint)-disable'",
     "typecheck": "tsc --noEmit -p src"
   },

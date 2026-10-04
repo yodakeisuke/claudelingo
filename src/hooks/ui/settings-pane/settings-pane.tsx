@@ -31,7 +31,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
   }
   const onOff = (key: Switch) => (
     <Box alignItems="center" gap={2}>
-      <Box flexShrink={0}>{settings[key] ? <Text color="success">{w.on}</Text> : <Text dimColor>{w.off}</Text>}</Box>
+      <Box flexShrink={0}>{settings[key] ? <Text color="success">{`● ${w.on}`}</Text> : <Text dimColor>{`○ ${w.off}`}</Text>}</Box>
       <Button key={key} label={settings[key] ? w.turnOff : w.turnOn} variant="secondary" onPress={() => save(key, !settings[key])} />
     </Box>
   )

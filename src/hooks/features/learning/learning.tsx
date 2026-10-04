@@ -306,7 +306,7 @@ export const userMessage: MatchedHook<'ui.render', { component: 'UserMessage' }>
   // 訳のない行は、設定を読まずにそのまま（本体の描画を重くしない）
   if (version === undefined) return row
   const settings = await settingsOf($)
-  if (version === null) return pendingTranslation($.ui.resolve(e), LingoSettings.wording(settings.native), ElementKeys.of('line', e.requestId), row)
+  if (version === null) return pendingTranslation($.ui.resolve(e), LingoSettings.wording(settings.native), e.surface === 'terminal', ElementKeys.of('line', e.requestId), row)
   const line = PromptTranslations.line(settings.native, version)
   if (!line) return row
   const t = $.ui.resolve(e)
@@ -343,19 +343,19 @@ export const replyPaneDrawn: MatchedHook<'ui.render', { component: 'Pane'; reque
   const settings = await settingsOf($)
   const w = LingoSettings.wording(settings.native)
   // /clear で状態が空になっても、パネルは開いたまま残る
-  if (!text) return replyPane(t, w, id, head, [], w.replyHint)
-  if (!version) return replyPane(t, w, id, head, [], ticker(t, `${id}-translating`, 'wait', w.translating))
+  if (!text) return replyPane(t, w, isTerminal, id, head, [], w.replyHint)
+  if (!version) return replyPane(t, w, isTerminal, id, head, [], ticker(t, isTerminal, `${id}-translating`, 'wait', w.translating))
   const voice = await voiceOf($)
   const words = await wordsOf($, t, w, isTerminal, voice)
   const said = await read($, sounds)
   return Result.given(version).either(value => {
     const { translated, spoken, withCards } = ReplyTranslations.shown(settings, text, value)
     const translations = translated.map(({ restated, at }, n) => {
-      const symbol = symbolLine(t, w, `${id}-symbols-${at}`, Pronunciations.symbol(said, spoken, n))
+      const symbol = symbolLine(t, w, isTerminal, `${id}-symbols-${at}`, Pronunciations.symbol(said, spoken, n))
       const key = `${reply}#${at}`
       const lines = WordLines.all(restated).map((line, j) => (withCards ? words.line(key, restated, line, `${id}-word-${at}-${j}`) : wordLine(t, isTerminal, line, new Map())))
       return paragraphTranslation(t, symbol, lines, withCards ? words.cards(key, restated, `${id}-word-${at}-`) : [])
     })
-    return replyPane(t, w, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined, voice.speaking(spoken.join('\n')))
-  }, error => replyPane(t, w, id, head, [], w.translateFailed(error)))
+    return replyPane(t, w, isTerminal, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined, voice.speaking(spoken.join('\n')))
+  }, error => replyPane(t, w, isTerminal, id, head, [], w.translateFailed(error)))
 }

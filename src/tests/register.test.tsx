@@ -125,21 +125,22 @@ describe('register', () => {
     expect(asked).toHaveLength(0)
   })
 
-  test('訳が届くまで、指示の下で「訳しています」が回り、届くと訳に替わる（どの面でも）', async ($, on) => {
+  test('訳が届くまで、指示の下に「訳しています」（端末では回る）が出て、届くと訳に替わる（どの面でも）', async ($, on) => {
     const { clock, hold } = engine(on, undefined, undefined, { card: false })
     const release = hold()
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
     await clock.advance(0)
     const key = lineKey('ログ見て', 'translating')
-    const uis = await Promise.all((['terminal', 'desktop'] as const).map(surface => $.ui.mount({ ...row('ログ見て'), surface })))
-    for (const ui of uis) {
-      expect(await ui.find({ type: 'Text', text: '⠋ 訳しています…', in: key })).toBeDefined()
-      await ui.advance(300)
-      expect(await ui.find({ type: 'Text', text: '⠸ 訳しています…', in: key })).toBeDefined()
-    }
+    const terminal = await $.ui.mount({ ...row('ログ見て'), surface: 'terminal' })
+    const desktop = await $.ui.mount({ ...row('ログ見て'), surface: 'desktop' })
+    expect(await terminal.find({ type: 'Text', text: '⠋ 訳しています…', in: key })).toBeDefined()
+    await terminal.advance(300)
+    expect(await terminal.find({ type: 'Text', text: '⠸ 訳しています…', in: key })).toBeDefined()
+    // Desktop は Client を読み込めないので止まった文字
+    expect(await desktop.find({ type: 'Text', text: '訳しています…' })).toBeDefined()
     release()
     await clock.advance(0)
-    for (const ui of uis) {
+    for (const ui of [terminal, desktop]) {
       expect(await ui.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
       expect(await ui.find({ type: 'Client' })).toBeUndefined()
     }
@@ -380,21 +381,23 @@ describe('register', () => {
     expect(await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'word-0') })).toBeUndefined()
   })
 
-  test('絵を描いている間は、印が回って経過秒が進み、地の真ん中で輪を描く', async ($, on) => {
-    const { clock, hold } = engine(on)
+  test('絵を描いている間は、端末では印が回って経過秒が進み、Desktop では地の真ん中で輪を描く', async ($, on) => {
+    const { clock, hold } = engine(on, undefined, ['terminal', 'desktop'])
     await $.prompt.submit({ text: 'fix the tests and carry on', wait: false, origin: composer })
     await clock.advance(0)
-    const ui = await $.ui.mount({ ...row('fix the tests and carry on'), surface: 'desktop' })
+    const ui = await $.ui.mount({ ...row('fix the tests and carry on'), surface: 'terminal' })
     const release = hold()
     await ui.press({ key: lineKey('fix the tests and carry on', 'word-5') })
     const key = lineKey('fix the tests and carry on', 'drawing-carry')
     await ui.advance(12000)
     expect(await ui.find({ type: 'Text', text: /^. コアイメージを描画中… carry 12秒$/, in: key })).toBeDefined()
-    expect((await ui.find({ type: 'Svg' }))?.props.source).toContain('attributeName="stroke-dashoffset"')
+    const desktop = await $.ui.mount({ ...row('fix the tests and carry on'), surface: 'desktop' })
+    expect(await desktop.find({ type: 'Text', text: 'コアイメージを描画中… carry' })).toBeDefined()
+    expect((await desktop.find({ type: 'Svg' }))?.props.source).toContain('attributeName="stroke-dashoffset"')
     // 描き直しで枠が作り直されても、秒は押してからの数で続く
     await clock.advance(30000)
     await ui.unmount()
-    const again = await $.ui.mount({ ...row('fix the tests and carry on'), surface: 'desktop' })
+    const again = await $.ui.mount({ ...row('fix the tests and carry on'), surface: 'terminal' })
     expect(await again.find({ type: 'Text', text: /^. コアイメージを描画中… carry 30秒$/, in: key })).toBeDefined()
     release()
     await clock.advance(0)

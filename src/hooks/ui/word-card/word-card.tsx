@@ -44,7 +44,7 @@ export const wordCard = (t: Elements[keyof Elements], w: Wording, isTerminal: bo
   const { word, card, aspects } = shown
   // 絵なしで届いた絵（端末だけのときに頼んだ）は、端末と同じ 1 行で
   const Svg = !isTerminal && 'Svg' in t && card?.svg !== '' ? t.Svg : undefined
-  const status = shown.isFailed ? <Text dimColor>{w.drawFailed(word)}</Text> : ticker(t, `${prefix}drawing-${word}`, 'wait', w.drawing(word), { from: Math.floor((now - (shown.since ?? now)) / 1000), unit: w.seconds })
+  const status = shown.isFailed ? <Text dimColor>{w.drawFailed(word)}</Text> : ticker(t, isTerminal, `${prefix}drawing-${word}`, 'wait', w.drawing(word), { from: Math.floor((now - (shown.since ?? now)) / 1000), unit: w.seconds })
   const unit = card?.unit ?? word
   const voiceButtons = !shown.isFailed && speakerAndMicrophone(t, w, isTerminal, { speak: `${prefix}speak-${word}`, practise: `${prefix}practise-${word}` }, () => voice.say(unit), () => voice.practise(unit, card?.pron), voice.speaking(unit))
   const head = !card ? <Box gap={2} alignItems="center">{status}{voiceButtons}</Box> : Svg ? (
@@ -68,14 +68,14 @@ export const wordCard = (t: Elements[keyof Elements], w: Wording, isTerminal: bo
       <Box gap={1} flexWrap="wrap">
         {WordAspects.all().map(a => <Button key={`${prefix}aspect-${word}-${a}`} label={w.aspects[a]} dimColor={!aspects?.[a]} onPress={() => open(a)} />)}
       </Box>
-      {WordAspects.all().map(a => aspects?.[a] && aspect(t, w, w.aspects[a], aspects[a], `${prefix}writing-${word}-${a}`, a === 'examples' ? { voice, key: `${prefix}speak-${word}-ex` } : undefined))}
+      {WordAspects.all().map(a => aspects?.[a] && aspect(t, w, isTerminal, w.aspects[a], aspects[a], `${prefix}writing-${word}-${a}`, a === 'examples' ? { voice, key: `${prefix}speak-${word}-ex` } : undefined))}
     </Box>
   )
 }
 
 // 開いた欄：見出し（薄い太字）の下に少し空けて、項目の本文と、その下に一段下げて添える行（薄く）。書いている間（回る一言）と失敗は 1 行
 // 例文は本文の横に読み上げ。押すと本文の下に発音記号
-const aspect = (t: Elements[keyof Elements], w: Wording, label: string, opened: OpenAspect, key: string, read?: { voice: Voice; key: string }) => {
+const aspect = (t: Elements[keyof Elements], w: Wording, isTerminal: boolean, label: string, opened: OpenAspect, key: string, read?: { voice: Voice; key: string }) => {
   const { Box, Text } = t
   return (
     <Box flexDirection="column" gap={0.5}>
@@ -83,11 +83,11 @@ const aspect = (t: Elements[keyof Elements], w: Wording, label: string, opened: 
       <Box flexDirection="column">
         {opened.items?.slice(0, opened.shown).map((item, i) => (
           <Box flexDirection="column">
-            <Box gap={1}><Text>{item.text}</Text>{read && speaker(t, w, `${read.key}-${i}`, () => read.voice.sayWithSymbols(item.text), false, read.voice.speaking(item.text))}</Box>
-            {read && symbolLine(t, w, `${read.key}-${i}-symbols`, read.voice.symbols(item.text))}
+            <Box gap={1}><Text>{item.text}</Text>{read && speaker(t, w, isTerminal, `${read.key}-${i}`, () => read.voice.sayWithSymbols(item.text), false, read.voice.speaking(item.text))}</Box>
+            {read && symbolLine(t, w, isTerminal, `${read.key}-${i}-symbols`, read.voice.symbols(item.text))}
             {item.notes.map(note => <Box paddingLeft={2}><Text dimColor>{note}</Text></Box>)}
           </Box>
-        )) ?? (opened.isFailed ? <Text dimColor>{w.writeFailed}</Text> : ticker(t, key, 'wait', w.writing))}
+        )) ?? (opened.isFailed ? <Text dimColor>{w.writeFailed}</Text> : ticker(t, isTerminal, key, 'wait', w.writing))}
       </Box>
     </Box>
   )

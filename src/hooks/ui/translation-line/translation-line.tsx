@@ -38,7 +38,7 @@ export const withTranslation = (t: Elements[keyof Elements], w: Wording, isTermi
       {voice && symbolLine(t, w, voice.symbols(line.restated))}
       {line.tips.length > 0 && (
         <Box flexDirection="column" marginTop={1} gap={0.5}>
-          <Text dimColor bold>{w.tips}</Text>
+          <Text dimColor bold>{`💡 ${w.tips}`}</Text>
           <Box flexDirection="column" gap={0.5}>
             {line.tips.map(tip => (
               <Box gap={1} alignItems="flex-start">

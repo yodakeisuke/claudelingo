@@ -7,6 +7,7 @@ import { TranslationRequest } from './translation-request'
 export const PromptTranslations = {
   request: (settings: Settings, sent: Sent, commands: readonly string[]) => request(settings, sent, commands),
   isOwn: (from: string) => isOwn(from),
+  ownOrigins: () => ownOrigins(),
   isNeeded: (surfaces: readonly string[]) => isNeeded(surfaces),
   key: (text: string) => key(text),
   line: (version?: Answer, shown?: (value: string) => string) => line(version, shown),
@@ -27,7 +28,9 @@ const request = (settings: Settings, sent: Sent, commands: readonly string[]) =>
 
 // --- business rules
 // 自分で打った指示とみなすのは、端末・Desktop（SDK 経由）・Remote Control から来たもの
-const isOwn = (from: string) => ['composer', 'sdk', 'bridge'].includes(from)
+const ownOrigins = () => [{ kind: 'composer' }, { kind: 'sdk' }, { kind: 'bridge' }] as const
+// 送り元が自分で打った指示のものか
+const isOwn = (from: string) => ownOrigins().some(origin => origin.kind === from)
 // 外国語版を作るのは、全体と送った後の訳がオンのときに自分で打った指示だけ（実在するスラッシュコマンドは除く）
 const wanted = (settings: Settings, sent: Sent, commands: readonly string[]) =>
   settings.enabled && settings.afterSend && isOwn(sent.from) && !isCommand(sent.text, commands) ? sent.text : Result.fail('unwanted')

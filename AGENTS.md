@@ -12,4 +12,4 @@
 
 mods の仕様は https://code.claude.com/docs/en/plugins/mods/reference と、engine が生成する型定義（src/.claude-plugin/types/）を正とする。記憶で書かない。
 
-ユーザーのディスクに残してよいのは設定だけ。キャッシュなどそれ以外はセッションの間だけ atom に持つ（lint: persistence/settings-only）。
+ユーザーのディスクに残してよいのは設定と、草の日ごとの語数だけ。キャッシュなどそれ以外はセッションの間だけ atom に持つ（lint: persistence/settings-only）。

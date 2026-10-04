@@ -221,6 +221,23 @@ describe('register', () => {
     expect((await ui.find({ type: 'Button', key: 'model-opus' }))?.props.variant).toBe('secondary')
   })
 
+  test('自分で送った指示の語数をその日の分に足し、設定パネルの下に草と合計を出す。mod がオフなら数えず、草も出さない', async ($, on) => {
+    const { clock, store } = engine(on)
+    const desktop = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    for (const origin of [composer, { kind: 'task-notification' }] as const) await $.prompt.submit({ text: 'fix the tests', wait: false, origin })
+    await clock.advance(0)
+    expect(Object.values(store.get('words') as object)).toEqual([3])
+    expect(await desktop.find({ type: 'Svg' })).toBeDefined()
+    const terminal = await $.ui.mount({ plugin: 'claudelingo', surface: 'terminal', component: 'Pane', requestId: 'claudelingo', props: pane })
+    await terminal.drawn()
+    for (const ui of [desktop, terminal]) expect(await ui.find({ type: 'Text', text: '自分で書いた外国語 3 語' })).toBeDefined()
+    await terminal.press({ key: 'enabled' })
+    await $.prompt.submit({ text: 'fix the tests', wait: false, origin: composer })
+    await clock.advance(0)
+    expect(Object.values(store.get('words') as object)).toEqual([3])
+    expect(await terminal.find({ type: 'Text', text: /自分で書いた外国語/ })).toBeUndefined()
+  })
+
   test('保存してある翻訳モデルで訳す', async ($, on) => {
     const { clock, models } = engine(on, undefined, undefined, { model: 'haiku' })
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })

@@ -320,7 +320,7 @@ This is the terminal (on screen, the squares are shades of green). Desktop shows
 | File names and URLs too | Anything not in Latin letters |
 
 > [!NOTE]
-> It counts every word in Latin letters, so if your native language uses them too, your native-language words count as well. If your learning language isn't written in Latin letters (Chinese, Korean, Russian, and so on), the graph doesn't grow.
+> It counts every word in Latin letters, so if your native language uses them too, your native-language words count as well. If your learning language isn't written in Latin letters (Chinese, Korean, Russian, and so on), words you write in it aren't counted; only words in Latin letters are.
 
 <details>
 <summary>Details</summary>
@@ -329,7 +329,7 @@ This is the terminal (on screen, the squares are shades of green). Desktop shows
 |---|---|
 | Which day a square is | Your computer's date. Rows run Sunday to Saturday; the rightmost column is this week |
 | How far back | As many weeks as fit in the terminal; a full year in Desktop |
-| Record | Kept on your computer, adding up every session. There's no way to clear it from the screen (→ [What is kept](#what-is-kept)) |
+| Record | Kept on your computer, adding up every session (if two sessions send at almost the same moment, one may not be counted). There's no way to clear it from the screen (→ [What is kept](#what-is-kept)) |
 
 </details>
 
@@ -412,7 +412,7 @@ claudelingo calls Claude at these moments, and each call uses usage.
 |---|---|---|
 | You send a prompt | That prompt | Once |
 | You pause while typing | Your draft (including text you later delete) | Every pause |
-| You press 🌐 | That reply (without code) | Once per reply |
+| You press 🌐 | That reply (except paragraphs that are only code) | Once per reply |
 | You press a word | That word and its sentence | Once per new word (heavier) |
 | You open Examples and the rest | That word and its sentence | Every time you open one |
 | You press 🔊 | The text to read (for its pronunciation) | First time per text |
@@ -476,7 +476,7 @@ Each one always uses the latest model of that family.
 | Case | Behavior |
 |---|---|
 | Where 30 days comes from | Claude Code's `cleanupPeriodDays` (30 by default) |
-| Several sessions at once | The last settings change applies everywhere. The writing graph adds up every session |
+| Several sessions at once | The last settings change applies everywhere. The writing graph adds up every session (if two send at almost the same moment, one may not be counted) |
 | Conversation record | Translations and pictures don't enter your conversation record with Claude |
 
 </details>
@@ -573,7 +573,7 @@ They're gone after `/clear`, `/resume`, `/branch`, or a restart, and can't be br
 <details>
 <summary>The writing graph doesn't grow, or grows too much</summary>
 
-- Doesn't grow: your learning language isn't written in Latin letters, or claudelingo is off
+- Doesn't grow: your learning language isn't written in Latin letters (words in it aren't counted), or claudelingo is off
 - Too much: file names, URLs, and native-language words in Latin letters count too. Text in `` ` `` doesn't count
 
 </details>

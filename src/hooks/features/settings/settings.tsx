@@ -41,11 +41,6 @@ export const started: Hook<'session.start'> = async ($, e, next) => {
   return next(e)
 }
 
-export const lingoRun: MatchedHook<'command.run', { command: 'lingo' }> = async $ => {
-  await $.ui.open({ id: SETTINGS_PANE, title: 'claudelingo', focus: true, closeOnEscape: true, holdToasts: true, rows: 20, columns: 100 })
-  return {}
-}
-
 export const settingsPaneDrawn: MatchedHook<'ui.render', { component: 'Pane'; requestId: typeof SETTINGS_PANE }> = async ($, e) => {
   const settings = await settingsOf($)
   const w = LingoSettings.wording(settings.native)

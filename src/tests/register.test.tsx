@@ -173,6 +173,13 @@ describe('register', () => {
     }
   })
 
+  test('母語・学ぶ言語は空（空白だけ）で確定しても変えない。声は空にできる', async ($, on) => {
+    const { store } = engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    for (const [key, text] of [['native', ''], ['target', '  '], ['voice', '']] as const) await ui.input({ key, text })
+    expect(store.get('settings')).toMatchObject({ native: 'Japanese', target: 'English', voice: '' })
+  })
+
   test('オフにしたまとまりは見出しと切り替えだけになり、オンに戻すと下の設定がまた出る。mod ごとオフなら他のまとまりも出ない', async ($, on) => {
     engine(on)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })

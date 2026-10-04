@@ -6,6 +6,7 @@ export const LingoSettings = {
   of: (saved: unknown): Settings => of(saved),
   wording: (native: string) => wording(native),
   models: () => models(),
+  entered: (field: keyof Settings, text: string, now: string) => entered(field, text, now),
   pause: (text: string, now: string) => pause(text, now),
   step: (now: string, by: 1 | -1) => step(now, by),
 }
@@ -18,6 +19,8 @@ type Settings = { enabled: boolean; native: string; target: string; level: strin
 const of = (saved: unknown): Settings => ({ enabled: true, native: 'Japanese', target: 'English', level: '', model: 'sonnet', afterSend: true, live: true, liveModel: 'sonnet', livePause: '0.5', card: true, cardModel: 'sonnet', voice: 'Samantha', ...(saved as Partial<Settings> | undefined) })
 // 翻訳モデルは別名で選ぶ。別名は常にその系統の最新を指す
 const models = () => ['haiku', 'sonnet', 'opus']
+// 母語・学ぶ言語は、空（空白だけ）で確定しても今のまま。レベルと声は空にも意味がある（伝えない・既定の声）
+const entered = (field: keyof Settings, text: string, now: string) => (['native', 'target'].includes(field) && !text.trim() ? now : text)
 // 入力中の校正は、打つ手がこの秒数止まったら頼む。全角も読み、0.1 秒刻みで 0.3〜2 秒に収め、数で始まらなければ今のまま
 const pause = (text: string, now: string) => {
   const seconds = Math.round(parseFloat(text.normalize('NFKC')) * 10) / 10

@@ -18,15 +18,15 @@ export const replyBlock = (t: Elements[keyof Elements], w: Wording, key: string,
   )
 }
 
-// 訳のパネル：どの返事の訳か分かるよう頭に返事の書き出し（薄く、パネルの幅で 1 行に切る）、段落ごとの訳を少し空けて並べ、最後に読み上げ。訳している間などは訳の代わりに一言
-export const replyPane = (t: Elements[keyof Elements], w: Wording, key: string, head: string, translations: RenderElement[], note?: string, speak?: () => void) => {
+// 訳のパネル：どの返事の訳か分かるよう頭に返事の書き出し（薄く、パネルの幅で 1 行に切る）、段落ごとの訳を少し空けて並べ、最後に読み上げ。訳している間などは訳の代わりに一言（文か、回る一言）
+export const replyPane = (t: Elements[keyof Elements], w: Wording, key: string, head: string, translations: RenderElement[], note?: string | RenderElement, speak?: () => void, playing = 0) => {
   const { Box, Text } = t
   return (
     <Box flexDirection="column" gap={1}>
       {head && <Text dimColor wrap="truncate-end">{head}</Text>}
       {translations}
-      {note && <Text dimColor>{note}</Text>}
-      {speak && <Box>{speaker(t, w, `${key}-speak`, speak, true)}</Box>}
+      {typeof note === 'string' ? <Text dimColor>{note}</Text> : note}
+      {speak && <Box>{speaker(t, w, `${key}-speak`, speak, true, playing)}</Box>}
     </Box>
   )
 }

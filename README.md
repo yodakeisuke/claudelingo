@@ -91,7 +91,7 @@ This is the terminal. Desktop lays things out the same way. `**…**` is bold on
 ```
 
 - Parts in your native language are translated. Parts you wrote in your learning language are made natural.
-- It takes a few seconds to 10 seconds. Nothing shows until then.
+- It takes a few seconds to 10 seconds. Until then, a spinner shows "Translating…".
 - 🔊 on the right reads it aloud and 🎤 starts speaking practice. Press a word to open its word picture.
 
 <details>
@@ -136,8 +136,8 @@ This is the terminal. Desktop lays things out the same way. `**…**` is bold on
 | Case | Behavior |
 |---|---|
 | When the band appears | After you pause for the Delay (0.5 s by default). Typing again cancels that request |
-| Until a new band appears | The previous band stays |
-| Replace does nothing | You changed the input after the band appeared. Wait for a new band, then press it |
+| Until a new band appears | Once you type again, the previous band stays, dimmed. While the next one is on its way, a spinner turns at its start |
+| Replace does nothing | You changed the input after the band appeared (you see "Not replaced: the draft changed"). Wait for a new band, then press it |
 | Typing a command | Not proofread (when what follows `/` starts a command name) |
 | Input cleared | The band goes away |
 | Sent by a notification | The band stays (sending it yourself hides it) |
@@ -203,7 +203,7 @@ This is the terminal. Desktop lays things out the same way. `**…**` is bold on
 This is Desktop (the picture is an example). The terminal shows one line instead of the picture.
 
 1. Press a word in a translation. Words you can press are shown in dim text.
-2. After "Drawing the core image…", it appears in about 20 to 60 seconds. Meanwhile 🔊, 🎤, and Examples already work.
+2. After "Drawing the core image…" (with the seconds counting up), it appears in about 20 to 60 seconds. Meanwhile 🔊, 🎤, and Examples already work.
 3. To close it, press the same word again.
 
 <details>
@@ -211,7 +211,7 @@ This is Desktop (the picture is an example). The terminal shows one line instead
 
 | Case | Behavior |
 |---|---|
-| Phrases | If the word is part of a phrase, the phrase is shown (sigue → seguir con). Pressing any word of the phrase closes it |
+| Phrases | If the word is part of a phrase, the phrase is shown (sigue → seguir con). Pressing any word of the phrase closes it. Pointing at it underlines the phrase's words and the picture's heading together |
 | Words you can press | In After sending, and in reply translations into your learning language. Symbols alone can't be pressed. Corrected words and open words show in full color |
 | Pressing several | They stack below in the order you pressed them |
 | Opening again | The same word in the same sentence shows right away, without redrawing (for this session) |
@@ -249,6 +249,7 @@ This is Desktop (the picture is an example). The terminal shows one line instead
 | Case | Behavior |
 |---|---|
 | Voice names | Find and add them in System Settings › Accessibility › Spoken Content (Read & Speak on macOS 26). Leave the field empty for the default voice |
+| While reading | Sound bars move next to 🔊. Pressing again shows how many are waiting, like ×2 |
 | Pronunciation | Written only the first time ("Writing the pronunciation…"). If it fails it disappears, and the next press writes it again |
 | Where the sound plays | The Mac running Claude Code |
 | Length | Up to 4,096 characters per paragraph |
@@ -363,7 +364,7 @@ Read aloud
 
 - Changes apply from the next translation. Translations already shown don't change.
 - Settings are shared by every session and project on your computer.
-- If saving fails, you see "Couldn't save: reason" in red and the value doesn't change.
+- When a setting saves, a ✓ shows next to it for a moment. If saving fails, you see "Couldn't save: reason" in red and the value doesn't change.
 
 <details>
 <summary>Field details</summary>
@@ -445,7 +446,7 @@ Each one always uses the latest model of that family.
 | Buttons under prompts and replies (🔊 🎤 🌐, words) | Click | Can't press | Click |
 | Bands and panes | Click, keys | Keys | Click |
 | Core-image pictures, the graph picture | Text | Text | ✓ |
-| Button hints on hover | ✓ | — | ✓ |
+| Hover effects (button hints, phrase underlines) | ✓ | — | ✓ |
 
 - Fullscreen rendering keeps the prompt input fixed at the bottom of the screen. Check with `/tui` and switch with `/tui fullscreen` (your conversation is kept).
 - Not shown in: the VS Code extension's chat panel, `claude -p`, cloud sessions, WSL sessions in Desktop. In VS Code, run `claude` in the integrated terminal instead.
@@ -488,7 +489,7 @@ Each one always uses the latest model of that family.
 <details>
 <summary>Nothing appears under my prompt</summary>
 
-1. Wait about 10 seconds (nothing shows until it's ready).
+1. Wait about 10 seconds (a spinner shows "Translating…" until it's ready).
 2. In `/lingo`, check that claudelingo and After sending are on.
 3. Check that it isn't a prompt that's never translated, such as a command or a notification (→ the details under [After sending](#after-sending)).
 4. Check that you aren't somewhere it doesn't show, such as the VS Code chat panel (→ [Where it shows](#where-it-shows)).
@@ -527,7 +528,7 @@ Each one always uses the latest model of that family.
 <details>
 <summary>Replace does nothing</summary>
 
-You changed the input after the band appeared. Pause, wait for a new band, then press it.
+You changed the input after the band appeared (you see "Not replaced: the draft changed"). Pause, wait for a new band, then press it.
 
 </details>
 

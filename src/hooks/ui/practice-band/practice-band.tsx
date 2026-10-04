@@ -28,7 +28,7 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
         {/* 声は手元の音声入力で欄に入れる（mods にマイクはない）。その案内は ? のホバーと押下で出す */}
         {glyph(t, 'practice-help', '?', w.voiceHelp, () => hands.help(w.voiceHelp))}
       </Box>
-      {typeof coached === 'string' && (practice.coach === null ? ticker(t, 'practice-listening', 'wait', coached) : <Text dimColor>{coached}</Text>)}
+      {typeof coached === 'string' && (practice.coach === null ? ticker(t, isTerminal, 'practice-listening', 'wait', coached) : <Text dimColor>{coached}</Text>)}
       {typeof coached === 'object' && (
         <Box flexDirection="column">
           <Box gap={1}>
@@ -40,7 +40,7 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
       )}
       <Box gap={1}>
         <Button key="practice-speak" label={`🔊 ${w.sample}`} onPress={hands.say} />
-        {playing > 0 && ticker(t, 'practice-sound', 'sound', playing > 1 ? `×${playing}` : '')}
+        {playing > 0 && ticker(t, isTerminal, 'practice-sound', 'sound', playing > 1 ? `×${playing}` : '')}
         <Button key="practice-again" label={w.again} onPress={hands.again} />
       </Box>
     </Box>

@@ -36,7 +36,7 @@ export const withTranslation = (t: Elements[keyof Elements], w: Wording, isTermi
         <Box flexShrink={1}>{words ?? restated(t, line.restated)}</Box>
         {voice && speakerAndMicrophone(t, w, isTerminal, { speak: `${id}-speak`, practise: `${id}-practise` }, () => voice.sayWithSymbols(line.restated), () => voice.practise(line.restated), voice.speaking(line.restated))}
       </Box>
-      {voice && symbolLine(t, w, `${id}-symbols`, voice.symbols(line.restated))}
+      {voice && symbolLine(t, w, isTerminal, `${id}-symbols`, voice.symbols(line.restated))}
       {line.tips.length > 0 && (
         <Box flexDirection="column" marginTop={1} gap={0.5}>
           <Text dimColor bold>{`💡 ${w.tips}`}</Text>
@@ -56,7 +56,7 @@ export const withTranslation = (t: Elements[keyof Elements], w: Wording, isTermi
 }
 
 // 訳している間は、指示の行の下に回る印と「訳しています」
-export const pendingTranslation = (t: Elements[keyof Elements], w: Wording, id: string, row: RenderElement) => {
+export const pendingTranslation = (t: Elements[keyof Elements], w: Wording, isTerminal: boolean, id: string, row: RenderElement) => {
   const { Box } = t
-  return <Box flexDirection="column">{row}{ticker(t, `${id}-translating`, 'wait', w.translating)}</Box>
+  return <Box flexDirection="column">{row}{ticker(t, isTerminal, `${id}-translating`, 'wait', w.translating)}</Box>
 }

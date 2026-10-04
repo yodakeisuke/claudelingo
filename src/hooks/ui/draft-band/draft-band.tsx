@@ -10,7 +10,7 @@ export const draftBand = (t: Elements[keyof Elements], w: Wording, isTerminal: b
   const { Box, Button } = t
   return (
     <Box flexDirection="row" gap={1} paddingRight={isTerminal ? 4 : 0}>
-      {isAsking && <Box flexShrink={0}>{ticker(t, 'draft-asking', 'wait', '')}</Box>}
+      {isAsking && <Box flexShrink={0}>{ticker(t, isTerminal, 'draft-asking', 'wait', '')}</Box>}
       {replace && <Box flexShrink={0}><Button key="replace" label={w.replace} dimColor={isStale} onPress={replace} /></Box>}
       <Box flexGrow={1} flexShrink={1}>{translationLine(t, line, isStale)}</Box>
       <Box flexShrink={0} alignSelf="flex-start"><Button key="draft-close" label="✕" plain dimColor role="dismiss" onPress={close} /></Box>

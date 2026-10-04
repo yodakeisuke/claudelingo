@@ -1,4 +1,5 @@
 import type { Answer } from '../../engine-protocol'
+import { LingoSettings } from '../lingo-settings/lingo-settings'
 import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { TranslationRequest } from './translation-request'
@@ -7,10 +8,11 @@ import { TranslationRequest } from './translation-request'
 export const PromptTranslations = {
   request: (settings: Settings, sent: Sent, commands: readonly string[]) => request(settings, sent, commands),
   isOwn: (from: string) => isOwn(from),
+  isCommand: (text: string, commands: readonly string[]) => isCommand(text, commands),
   ownOrigins: () => ownOrigins(),
   isNeeded: (surfaces: readonly string[]) => isNeeded(surfaces),
   key: (text: string) => key(text),
-  line: (version?: Answer, shown?: (value: string) => string) => line(version, shown),
+  line: (native: string, version?: Answer, shown?: (value: string) => string) => line(native, version, shown),
 }
 
 // --- I/O
@@ -40,7 +42,8 @@ const isCommand = (text: string, commands: readonly string[]) => commands.includ
 const key = (text: string) => text.replace(/<\/?pasted_content[^>]*>|\s/g, '')
 // 訳を頼むのは、描く面があるときだけ（-p は誰も見ない）
 const isNeeded = (surfaces: readonly string[]) => surfaces.length > 0
-// 訳せていれば、shown で整えてから言い直しとアドバイスに分けて出す。訳せなかったら、その理由を出す（訳がまだなら何も出さない）
-const line = (version?: Answer, shown = (value: string) => value) => version && Result.given(version).and(shown).either(Restatements.of, error => ({ restated: `訳せませんでした：${error}`, tips: [] }))
+// 訳せていれば、shown で整えてから言い直しとアドバイスに分けて出す。訳せなかったら、その理由を母語の UI で出す（訳がまだなら何も出さない）
+const line = (native: string, version?: Answer, shown = (value: string) => value) =>
+  version && Result.given(version).and(shown).either(Restatements.of, error => ({ restated: LingoSettings.wording(native).translateFailed(error), tips: [] }))
 // 送った後の訳だけ、貼り付けやコードを写させない（帯では置換で貼り付けが消えるため）
 const withoutCopies = (asked: { model: string; system: string; prompt: string }) => ({ ...asked, system: `${asked.system}\n\nDo not copy pasted content or code blocks; write [...] in their place.` })

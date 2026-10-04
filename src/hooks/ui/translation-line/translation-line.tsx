@@ -1,5 +1,7 @@
 import type { Elements, RenderElement } from 'claude-code'
 
+import type { Wording } from '../../../locales/en'
+
 import { Restatements } from '../../../logic/restatement/restatement'
 import { speakerAndMicrophone, symbolLine } from '../read-aloud/read-aloud'
 import type { Voice } from '../read-aloud/read-aloud'
@@ -24,19 +26,19 @@ export const translationLine = (t: Elements[keyof Elements], line: Line) => {
 }
 
 // 指示の行のすぐ下に、その外国語版（押せる語の並びがあればそれで）と、訳せたときは読み上げと話す練習。読み上げを押すとその下に発音記号。アドバイスは見出し「💡 ヒント」の下に「•」で、少し空けて並べ、単語の絵は 1 行空けて続ける
-export const withTranslation = (t: Elements[keyof Elements], isTerminal: boolean, id: string, row: RenderElement, line: Line, voice?: Voice, words?: RenderElement, cards: RenderElement[] = []) => {
+export const withTranslation = (t: Elements[keyof Elements], w: Wording, isTerminal: boolean, id: string, row: RenderElement, line: Line, voice?: Voice, words?: RenderElement, cards: RenderElement[] = []) => {
   const { Box, Markdown, Text } = t
   return (
     <Box flexDirection="column" marginBottom={cards.length > 0 || line.tips.length > 0 ? 1 : 0}>
       {row}
       <Box alignItems="flex-start" gap={1}>
         <Box flexShrink={1}>{words ?? restated(t, line.restated)}</Box>
-        {voice && speakerAndMicrophone(t, isTerminal, { speak: `${id}-speak`, practise: `${id}-practise` }, () => voice.sayWithSymbols(line.restated), () => voice.practise(line.restated))}
+        {voice && speakerAndMicrophone(t, w, isTerminal, { speak: `${id}-speak`, practise: `${id}-practise` }, () => voice.sayWithSymbols(line.restated), () => voice.practise(line.restated))}
       </Box>
-      {voice && symbolLine(t, voice.symbols(line.restated))}
+      {voice && symbolLine(t, w, voice.symbols(line.restated))}
       {line.tips.length > 0 && (
         <Box flexDirection="column" marginTop={1} gap={0.5}>
-          <Text dimColor bold>💡 ヒント</Text>
+          <Text dimColor bold>{`💡 ${w.tips}`}</Text>
           <Box flexDirection="column" gap={0.5}>
             {line.tips.map(tip => (
               <Box gap={1} alignItems="flex-start">

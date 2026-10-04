@@ -35,7 +35,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     if (prompt.startsWith('{"pressed"')) return gate.then(() => ({ value: card(JSON.parse(prompt).pressed) }))
     if (prompt.startsWith('[1] ') && !fail) return { value: { isAnswered: true, text: `FROM: Japanese\n${prompt.replace(/\] /g, '] EN ')}`, usage } }
     models.push(e.model)
-    if (fail === 'reject') throw new Error('model blocked')
+    if (fail === 'reject') return { deny: 'model blocked' }
     const value: ModelCompleteResult = fail === 'api-error'
       ? { isAnswered: false, reason: 'api-error', status: 500, error: 'server_error', usage }
       : { isAnswered: true, text: `EN: ${prompt}`, usage }
@@ -71,7 +71,7 @@ const row = (text: string, origin: PromptOrigin = composer) =>
 
 const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
 // 返事の訳のパネル
-const replyPane = { plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: REPLY_PANE, props: { ...pane, title: '訳' } } as const
+const replyPane = { plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: REPLY_PANE, props: { ...pane, title: '🌐' } } as const
 
 describe('register', () => {
   test('-p など描く面がないときは訳さない', async ($, on) => {
@@ -121,13 +121,14 @@ describe('register', () => {
     expect(await ui.findAll({ type: 'Text' })).toHaveLength(1)
   })
 
-  for (const fail of ['api-error', 'reject'] as const) {
+  // api-error は種類を添え、呼び出しが拒まれたらその message
+  for (const [fail, reason] of [['api-error', /^訳せませんでした：api-error（server_error）$/], ['reject', /^訳せませんでした：.*model blocked$/]] as const) {
     test(`訳に失敗（${fail}）したら理由を出し、送信は通る`, async ($, on) => {
       const { clock } = engine(on, fail)
       expect(await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })).toEqual({ text: 'ログ見て' })
       await clock.advance(0)
       const ui = await $.ui.mount({ ...row('ログ見て'), surface: 'terminal' })
-      expect(await ui.find({ type: 'Text', text: /^訳せませんでした：.+/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: reason })).toBeDefined()
     })
   }
 
@@ -167,6 +168,20 @@ describe('register', () => {
       await act()
       expect(pause()).toBe(now)
     }
+  })
+
+  test('母語・学ぶ言語は空（空白だけ）で確定しても変えない。声は空にできる', async ($, on) => {
+    const { store } = engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    for (const [key, text] of [['native', ''], ['target', '  '], ['voice', '']] as const) await ui.input({ key, text })
+    expect(store.get('settings')).toMatchObject({ native: 'Japanese', target: 'English', voice: '' })
+  })
+
+  test('基本のモデルは、送った後の訳をオフにしても選べる', async ($, on) => {
+    engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    await ui.press({ key: 'afterSend' })
+    expect(await ui.find({ type: 'Button', key: 'model-opus' })).toBeDefined()
   })
 
   test('オフにしたまとまりは見出しと切り替えだけになり、オンに戻すと下の設定がまた出る。mod ごとオフなら他のまとまりも出ない', async ($, on) => {
@@ -213,6 +228,15 @@ describe('register', () => {
     expect(models).toEqual(['opus'])
   })
 
+  test('UI の文言は母語の辞書で出し（「日本語（関西弁）」も日本語）、辞書のない母語なら英語。母語を変えるとすぐ切り替わる', async ($, on) => {
+    engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    for (const [native, label] of [['English', 'Turn off'], ['日本語（関西弁）', 'オフにする'], ['Español', 'Turn off']] as const) {
+      await ui.input({ key: 'native', text: native })
+      expect((await ui.find({ type: 'Button', key: 'enabled' }))?.props.label).toBe(label)
+    }
+  })
+
   test('設定の保存に失敗したら、選んだ値は示さず、理由を出す', async ($, on) => {
     engine(on, undefined, undefined, undefined, false)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
@@ -236,6 +260,13 @@ describe('register', () => {
     await clock.advance(0)
     expect(Object.values(store.get('words') as object)).toEqual([3])
     expect(await terminal.find({ type: 'Text', text: /自分で書いた外国語/ })).toBeUndefined()
+  })
+
+  test('コマンドは数えず、/tmp を見て のようにコマンドでない指示は数える', async ($, on) => {
+    const { clock, store } = engine(on)
+    for (const text of ['/clear', '/tmp を見て']) await $.prompt.submit({ text, wait: false, origin: composer })
+    await clock.advance(0)
+    expect(Object.values(store.get('words') as object)).toEqual([1])
   })
 
   test('保存してある翻訳モデルで訳す', async ($, on) => {
@@ -401,6 +432,23 @@ describe('register', () => {
     await side.press({ key: replyKey('原因はここ。\n\n直した', 'speak') })
     expect(spoken.slice(1)).toEqual(['Samantha: EN 原因はここ。 [[slnc 500]]', 'Samantha: EN 直した [[slnc 500]]'])
     expect(await side.find({ type: 'Text', text: 'EN EN 直した' })).toBeDefined()
+  })
+
+  test('読めなければ理由を知らせる。返事の段落がいくつ読めなくても、押すごとに 1 回', async ($, on) => {
+    engine(on)
+    on('ui.open', () => ({ value: { isPlaced: true } }))
+    on('audio.speak', () => ({ deny: 'voice not installed' }))
+    const toasts: string[] = []
+    on('ui.toast', (_$, e) => (toasts.push(e.text), { value: undefined }))
+    const text = '原因はここ。\n\n直した'
+    const reply = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'AssistantMessage', requestId: text, props: { text, isFirstOfReply: true } })
+    await reply.press({ key: replyKey(text, 'translate') })
+    const side = await $.ui.mount(replyPane)
+    for (const count of [1, 2]) {
+      await side.press({ key: replyKey(text, 'speak') })
+      expect(toasts).toHaveLength(count)
+    }
+    expect(toasts[0]).toMatch(/^読み上げできませんでした：.*voice not installed$/)
   })
 
   test('🎤 を押すと入力欄の上に練習が開き、声で入れた文をお手本と比べてコーチする。もう一度で入れ直し、押し直すと閉じる', async ($, on) => {

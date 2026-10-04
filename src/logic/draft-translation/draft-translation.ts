@@ -23,10 +23,10 @@ const request = (settings: Settings, draft: string, commands: readonly string[])
 
 // --- business rules
 // 帯を出すのは、mod と入力中の校正がオンで、校正が届いているとき
-const band = (settings: Settings, proofread: Proofread | null) => (settings.enabled && settings.live && proofread ? banded(proofread) : undefined)
+const band = (settings: Settings, proofread: Proofread | null) => (settings.enabled && settings.live && proofread ? banded(settings.native, proofread) : undefined)
 // 帯には "! " の行を除いて送信後の訳と同じ形で出し、言い直しが下書きと違えば置き換えも
-const banded = ({ text, version }: Proofread) => {
-  const line = oneTip(PromptTranslations.line(version, withoutMarks))
+const banded = (native: string, { text, version }: Proofread) => {
+  const line = oneTip(PromptTranslations.line(native, version, withoutMarks))
   return line && { line, replacement: differing(restatedOf(version), text) }
 }
 // 赤線（文字は変えない赤い下線）は一度に 1 つ。"! " の行の文字列が今の下書きに残っている所のうち、一番前。直せば次が出る

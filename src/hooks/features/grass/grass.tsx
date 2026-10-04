@@ -1,4 +1,4 @@
-import type { EngineInterface, On } from 'claude-code'
+import type { EngineInterface, MatchedHook } from 'claude-code'
 
 import { Grass } from '../../../logic/grass/grass'
 import { LingoSettings } from '../../../logic/lingo-settings/lingo-settings'
@@ -15,10 +15,8 @@ const count = async ($: EngineInterface, text: string) => {
   $.ui.invalidate('ui.render')
 }
 
-export const grass = (on: On) => {
-  // 数えるのは自分で打った指示の打った文だけ（送った後の訳と同じ）。送信は待たせない
-  on('prompt.submit', { origin: PromptTranslations.ownOrigins() }, ($, e, next) => {
-    $.clock.after(0, () => void count($, PromptTranslations.typed(e.text)))
-    return next(e)
-  })
+// 数えるのは自分で打った指示の打った文だけ（送った後の訳と同じ）。送信は待たせない
+export const counted: MatchedHook<'prompt.submit', { origin: ReturnType<typeof PromptTranslations.ownOrigins> }> = ($, e, next) => {
+  $.clock.after(0, () => void count($, PromptTranslations.typed(e.text)))
+  return next(e)
 }

@@ -17,8 +17,6 @@ export const en = {
   readAloud: 'Read aloud',
   model: 'Model',
   pause: 'Delay',
-  fast: 'Fast',
-  slow: 'Slow',
   seconds: 's',
   voice: 'Voice',
   voiceHint: 'A Mac voice name (System Settings › Accessibility › Read & Speak)',

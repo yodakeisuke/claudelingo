@@ -18,8 +18,6 @@ export const ja: Wording = {
   readAloud: '読み上げ',
   model: 'モデル',
   pause: '反応の速さ',
-  fast: '速い',
-  slow: '遅い',
   seconds: '秒',
   voice: '声',
   voiceHint: 'Mac の声の名前（システム設定 › アクセシビリティ › リーダーと読み上げ）',

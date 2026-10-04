@@ -49,7 +49,7 @@ export const en = {
   again: 'Again',
   toField: 'ctrl+x tab to the field, ',
   speakAndEnter: 'speak, then Enter',
-  voiceHelp: 'Say the sample with your own voice input (on a Mac, press fn twice), then Enter. Set its language to the one you practice. Nothing is sent to Claude',
+  voiceHelp: 'Say the sample with your own voice input (on a Mac, press fn twice), then Enter. Set its language to the one you practice. It stays out of the conversation',
   listening: 'Listening…',
   coachFailed: (error: string) => `Couldn't coach: ${error}`,
 }

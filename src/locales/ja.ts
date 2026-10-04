@@ -50,7 +50,7 @@ export const ja: Wording = {
   again: 'もう一度',
   toField: 'ctrl+x tab で欄へ移り、',
   speakAndEnter: '声で入れて Enter',
-  voiceHelp: '手元の音声入力（Mac 標準は fn 2回）でお手本を話して Enter。言語は練習する言語に。Claude には送られません',
+  voiceHelp: '手元の音声入力（Mac 標準は fn 2回）でお手本を話して Enter。言語は練習する言語に。会話には送られません',
   listening: '聞いています…',
   coachFailed: error => `コーチできませんでした：${error}`,
 }

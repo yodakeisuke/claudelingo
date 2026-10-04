@@ -3,4 +3,4 @@ src/.claude-plugin/types/
 
 # リリース用の素材と撮影指示（repo には入れない）
 gtm/media/
-gtm/codex-media-brief.md
+gtm/release-media-workplan.md

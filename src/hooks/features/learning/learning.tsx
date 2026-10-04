@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, On, Timer } from 'claude-code'
+import type { EngineInterface, Hook, MatchedHook, Timer } from 'claude-code'
 
 import type { Answer, Aspect, OpenCard, Practice } from '../../../engine-protocol'
 import { Answers } from '../../../logic/answer/answer'
@@ -267,97 +267,95 @@ const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0
   return draftBand(t, w, isTerminal, line, () => void hideDraftTranslation($), replacement ? () => void replace(replacement) : undefined, shown)
 }
 
-export const learning = (on: On) => {
-  on('prompt.submit', ($, e, next) => {
-    // 送信は待たせない。訳は自分の dispatch で走らせる
-    $.clock.after(0, () => void showTranslation($, e.origin.kind, PromptTranslations.typed(e.text)))
-    // 自分で送ったら下書きは空になる。通知などの送信では、打ちかけの帯を残す
-    if (PromptTranslations.isOwn(e.origin.kind)) $.clock.after(0, () => void hideDraftTranslation($))
-    return next(e)
-  })
+export const submitted: Hook<'prompt.submit'> = ($, e, next) => {
+  // 送信は待たせない。訳は自分の dispatch で走らせる
+  $.clock.after(0, () => void showTranslation($, e.origin.kind, PromptTranslations.typed(e.text)))
+  // 自分で送ったら下書きは空になる。通知などの送信では、打ちかけの帯を残す
+  if (PromptTranslations.isOwn(e.origin.kind)) $.clock.after(0, () => void hideDraftTranslation($))
+  return next(e)
+}
 
-  on('prompt.edit', async ($, e, next) => {
-    const box = await next(e)
-    if (box.text !== e.text) void translateAfterPause($, box.text)
-    // 校正で直した所が下書きに残っていれば、入力欄のその文字に赤い下線（文字は変えない）
-    return { ...box, decorations: [...(box.decorations ?? []), ...DraftTranslations.underlines(box.text, await read($, draft))] }
-  })
+export const edited: Hook<'prompt.edit'> = async ($, e, next) => {
+  const box = await next(e)
+  if (box.text !== e.text) void translateAfterPause($, box.text)
+  // 校正で直した所が下書きに残っていれば、入力欄のその文字に赤い下線（文字は変えない）
+  return { ...box, decorations: [...(box.decorations ?? []), ...DraftTranslations.underlines(box.text, await read($, draft))] }
+}
 
-  // 入力欄の上は、開いている話す練習と打ちかけの校正を上下に
-  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey) return next(e)
-    // 入力欄の上の帯は端末と Desktop にしかない
-    const t = $.ui.resolve(e) as Parameters<typeof practiceBand>[0]
-    const settings = await settingsOf($)
-    const band = await draftBandOf($, t, e.surface === 'terminal', settings)
-    const opened = await read($, practice)
-    if (!opened || !settings.enabled) return band ?? next(e)
-    // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
-    const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: (text: string) => $.ui.toast(text, { timeoutMs: 15000 }), close: () => void showPractice($, () => null) }
-    const { Box } = t
-    return <Box flexDirection="column" gap={1}>{practiceBand(t, LingoSettings.wording(settings.native), e.surface === 'terminal', opened, SpeakingPractice.shown(settings.native, opened.coach), hands, (await read($, speaking))[opened.sample] ?? 0)}{band}</Box>
-  })
+// 入力欄の上は、開いている話す練習と打ちかけの校正を上下に
+export const abovePrompt: MatchedHook<'ui.render', { component: 'AbovePrompt' }> = async ($, e, next) => {
+  if (e.props.hasSurvey) return next(e)
+  // 入力欄の上の帯は端末と Desktop にしかない
+  const t = $.ui.resolve(e) as Parameters<typeof practiceBand>[0]
+  const settings = await settingsOf($)
+  const band = await draftBandOf($, t, e.surface === 'terminal', settings)
+  const opened = await read($, practice)
+  if (!opened || !settings.enabled) return band ?? next(e)
+  // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
+  const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: (text: string) => $.ui.toast(text, { timeoutMs: 15000 }), close: () => void showPractice($, () => null) }
+  const { Box } = t
+  return <Box flexDirection="column" gap={1}>{practiceBand(t, LingoSettings.wording(settings.native), e.surface === 'terminal', opened, SpeakingPractice.shown(settings.native, opened.coach), hands, (await read($, speaking))[opened.sample] ?? 0)}{band}</Box>
+}
 
-  on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
-    const row = await next(e)
-    const key = PromptTranslations.key(e.props.text)
-    const all = await read($, translations)
-    // 文面が constructor などでも、引き継いだ値は拾わない
-    const version = Object.hasOwn(all, key) ? all[key] : undefined
-    // 訳のない行は、設定を読まずにそのまま（本体の描画を重くしない）
-    if (version === undefined) return row
-    const settings = await settingsOf($)
-    if (version === null) return pendingTranslation($.ui.resolve(e), LingoSettings.wording(settings.native), ElementKeys.of('line', e.requestId), row)
-    const line = PromptTranslations.line(settings.native, version)
-    if (!line) return row
-    const t = $.ui.resolve(e)
-    const w = LingoSettings.wording(settings.native)
-    const voice = await voiceOf($)
-    // 訳せていて mod がオンのときだけ押せる（オフなら訳の文だけ。押してもモデルを呼ばない）
-    const isPressable = settings.enabled && Result.given(version).either(() => true, () => false)
-    const isTerminal = e.surface === 'terminal'
-    const id = ElementKeys.of('line', e.requestId)
-    if (!isPressable || !settings.card) return withTranslation(t, w, isTerminal, id, row, line, isPressable ? voice : undefined)
-    // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る。絵はメッセージごと（同じ文の指示でも分ける）
-    const words = await wordsOf($, t, w, isTerminal, voice)
-    return withTranslation(t, w, isTerminal, id, row, line, voice, words.line(e.requestId, line.restated, WordLines.of(line.restated), `${id}-word`), words.cards(e.requestId, line.restated, `${id}-`))
-  })
+export const userMessage: MatchedHook<'ui.render', { component: 'UserMessage' }> = async ($, e, next) => {
+  const row = await next(e)
+  const key = PromptTranslations.key(e.props.text)
+  const all = await read($, translations)
+  // 文面が constructor などでも、引き継いだ値は拾わない
+  const version = Object.hasOwn(all, key) ? all[key] : undefined
+  // 訳のない行は、設定を読まずにそのまま（本体の描画を重くしない）
+  if (version === undefined) return row
+  const settings = await settingsOf($)
+  if (version === null) return pendingTranslation($.ui.resolve(e), LingoSettings.wording(settings.native), ElementKeys.of('line', e.requestId), row)
+  const line = PromptTranslations.line(settings.native, version)
+  if (!line) return row
+  const t = $.ui.resolve(e)
+  const w = LingoSettings.wording(settings.native)
+  const voice = await voiceOf($)
+  // 訳せていて mod がオンのときだけ押せる（オフなら訳の文だけ。押してもモデルを呼ばない）
+  const isPressable = settings.enabled && Result.given(version).either(() => true, () => false)
+  const isTerminal = e.surface === 'terminal'
+  const id = ElementKeys.of('line', e.requestId)
+  if (!isPressable || !settings.card) return withTranslation(t, w, isTerminal, id, row, line, isPressable ? voice : undefined)
+  // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る。絵はメッセージごと（同じ文の指示でも分ける）
+  const words = await wordsOf($, t, w, isTerminal, voice)
+  return withTranslation(t, w, isTerminal, id, row, line, voice, words.line(e.requestId, line.restated, WordLines.of(line.restated), `${id}-word`), words.cards(e.requestId, line.restated, `${id}-`))
+}
 
-  on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
-    const text = e.props.text
-    const settings = await settingsOf($)
-    if (!ReplyTranslations.request(settings, text)) return next(e)
-    // 端末の返事の頭の行は「● 」の 2 マス下げで描かれる。🌐 もそこにそろえる
-    const indent = e.surface === 'terminal' && e.props.isFirstOfReply ? 2 : 0
-    return replyBlock($.ui.resolve(e), LingoSettings.wording(settings.native), ElementKeys.of('reply', e.requestId), await next(e), indent, () => void openReply($, text))
-  })
+export const assistantMessage: MatchedHook<'ui.render', { component: 'AssistantMessage' }> = async ($, e, next) => {
+  const text = e.props.text
+  const settings = await settingsOf($)
+  if (!ReplyTranslations.request(settings, text)) return next(e)
+  // 端末の返事の頭の行は「● 」の 2 マス下げで描かれる。🌐 もそこにそろえる
+  const indent = e.surface === 'terminal' && e.props.isFirstOfReply ? 2 : 0
+  return replyBlock($.ui.resolve(e), LingoSettings.wording(settings.native), ElementKeys.of('reply', e.requestId), await next(e), indent, () => void openReply($, text))
+}
 
-  // パネルに出している返事の訳を段落ごとに描く。訳の語から絵を出すなら、訳の語を押すとその語の絵が出る（訳は行ごと）
-  // 読み上げは段落ごとに読み、その段落の訳の下に発音記号
-  on('ui.render', { component: 'Pane', requestId: REPLY_PANE }, async ($, e) => {
-    const t = $.ui.resolve(e)
-    const isTerminal = e.surface === 'terminal'
-    const { text, key: reply } = await read($, paneReply)
-    const id = ElementKeys.of('reply', text)
-    const head = ReplyTranslations.head(text)
-    const version = (await read($, replies))[reply]
-    const settings = await settingsOf($)
-    const w = LingoSettings.wording(settings.native)
-    // /clear で状態が空になっても、パネルは開いたまま残る
-    if (!text) return replyPane(t, w, id, head, [], w.replyHint)
-    if (!version) return replyPane(t, w, id, head, [], ticker(t, `${id}-translating`, 'wait', w.translating))
-    const voice = await voiceOf($)
-    const words = await wordsOf($, t, w, isTerminal, voice)
-    const said = await read($, sounds)
-    return Result.given(version).either(value => {
-      const { translated, spoken, withCards } = ReplyTranslations.shown(settings, text, value)
-      const translations = translated.map(({ restated, at }, n) => {
-        const symbol = symbolLine(t, w, `${id}-symbols-${at}`, Pronunciations.symbol(said, spoken, n))
-        const key = `${reply}#${at}`
-        const lines = WordLines.all(restated).map((line, j) => (withCards ? words.line(key, restated, line, `${id}-word-${at}-${j}`) : wordLine(t, isTerminal, line, new Map())))
-        return paragraphTranslation(t, symbol, lines, withCards ? words.cards(key, restated, `${id}-word-${at}-`) : [])
-      })
-      return replyPane(t, w, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined, voice.speaking(spoken.join('\n')))
-    }, error => replyPane(t, w, id, head, [], w.translateFailed(error)))
-  })
+// パネルに出している返事の訳を段落ごとに描く。訳の語から絵を出すなら、訳の語を押すとその語の絵が出る（訳は行ごと）
+// 読み上げは段落ごとに読み、その段落の訳の下に発音記号
+export const replyPaneDrawn: MatchedHook<'ui.render', { component: 'Pane'; requestId: typeof REPLY_PANE }> = async ($, e) => {
+  const t = $.ui.resolve(e)
+  const isTerminal = e.surface === 'terminal'
+  const { text, key: reply } = await read($, paneReply)
+  const id = ElementKeys.of('reply', text)
+  const head = ReplyTranslations.head(text)
+  const version = (await read($, replies))[reply]
+  const settings = await settingsOf($)
+  const w = LingoSettings.wording(settings.native)
+  // /clear で状態が空になっても、パネルは開いたまま残る
+  if (!text) return replyPane(t, w, id, head, [], w.replyHint)
+  if (!version) return replyPane(t, w, id, head, [], ticker(t, `${id}-translating`, 'wait', w.translating))
+  const voice = await voiceOf($)
+  const words = await wordsOf($, t, w, isTerminal, voice)
+  const said = await read($, sounds)
+  return Result.given(version).either(value => {
+    const { translated, spoken, withCards } = ReplyTranslations.shown(settings, text, value)
+    const translations = translated.map(({ restated, at }, n) => {
+      const symbol = symbolLine(t, w, `${id}-symbols-${at}`, Pronunciations.symbol(said, spoken, n))
+      const key = `${reply}#${at}`
+      const lines = WordLines.all(restated).map((line, j) => (withCards ? words.line(key, restated, line, `${id}-word-${at}-${j}`) : wordLine(t, isTerminal, line, new Map())))
+      return paragraphTranslation(t, symbol, lines, withCards ? words.cards(key, restated, `${id}-word-${at}-`) : [])
+    })
+    return replyPane(t, w, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined, voice.speaking(spoken.join('\n')))
+  }, error => replyPane(t, w, id, head, [], w.translateFailed(error)))
 }

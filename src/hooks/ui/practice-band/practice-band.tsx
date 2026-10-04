@@ -22,7 +22,7 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
         <Button key="practice-close" label="✕" plain dimColor role="dismiss" onPress={hands.close} />
       </Box>
       <Box gap={1}>
-        {head(w.practice)}
+        {head(w.attempt)}
         <Input key="practice" placeholder={`${isTerminal ? w.toField : ''}${w.speakAndEnter}`} value={practice.heard ?? ''} autoFocus onInput={hands.keep} onSubmit={hands.hear} />
         {/* 声は手元の音声入力で欄に入れる（mods にマイクはない）。その案内は ? のホバーと押下で出す */}
         {glyph(t, 'practice-help', '?', w.voiceHelp, () => hands.help(w.voiceHelp))}

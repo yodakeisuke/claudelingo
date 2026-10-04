@@ -75,9 +75,8 @@ const pressAspect = async ($: EngineInterface, row: string, restated: string, at
 }
 
 // 描くときに渡す単語の絵の手。row は絵を並べる鍵（指示か返事の段落）、restated は語がある訳の行、id と prefix はボタンの名前の頭
-const wordsOf = async ($: EngineInterface, t: Parameters<typeof wordCard>[0], isTerminal: boolean, voice: Voice) => {
+const wordsOf = async ($: EngineInterface, t: Parameters<typeof wordCard>[0], w: Parameters<typeof wordCard>[1], isTerminal: boolean, voice: Voice) => {
   const all = await read($, cards)
-  const w = LingoSettings.wording((await settingsOf($)).native)
   return {
     // 訳の 1 行を押せる語の並びで。押すとその語の絵が下に出る
     line: (row: string, restated: string, line: Parameters<typeof wordLine>[2], id: string) =>
@@ -214,7 +213,8 @@ const hideDraftTranslation = async ($: EngineInterface) => {
 // 打ちかけの校正の帯。校正がなければ undefined
 const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0], isTerminal: boolean) => {
   const shown = await read($, draft)
-  const band = DraftTranslations.band(await settingsOf($), shown)
+  const settings = await settingsOf($)
+  const band = DraftTranslations.band(settings, shown)
   if (!shown || !band) return undefined
   const { line, replacement } = band
   // 置き換えるのは、校正した打ちかけのままのときだけ（待ちの間に打たれていたら、古い言い直しになる）
@@ -223,7 +223,7 @@ const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0
     const { isFilled } = await $.prompt.fill({ text, mode: 'replace' })
     if (isFilled) void translateAfterPause($, text)
   }
-  return draftBand(t, isTerminal, line, () => void hideDraftTranslation($), replacement ? () => void replace(replacement) : undefined)
+  return draftBand(t, LingoSettings.wording(settings.native), isTerminal, line, () => void hideDraftTranslation($), replacement ? () => void replace(replacement) : undefined)
 }
 
 export const learning = (on: On) => {
@@ -275,7 +275,7 @@ export const learning = (on: On) => {
     const id = ElementKeys.of('line', e.requestId)
     if (!isPressable || !settings.card) return withTranslation(t, w, isTerminal, id, row, line, isPressable ? voice : undefined)
     // 単語の絵がオンなら、訳の行の語を押すとその語の絵が下に出る。絵はメッセージごと（同じ文の指示でも分ける）
-    const words = await wordsOf($, t, isTerminal, voice)
+    const words = await wordsOf($, t, w, isTerminal, voice)
     return withTranslation(t, w, isTerminal, id, row, line, voice, words.line(e.requestId, line.restated, WordLines.of(line.restated), `${id}-word`), words.cards(e.requestId, line.restated, `${id}-`))
   })
 
@@ -302,7 +302,7 @@ export const learning = (on: On) => {
     // /clear で状態が空になっても、パネルは開いたまま残る
     if (!text) return replyPane(t, w, id, head, [], w.replyHint)
     if (!version) return replyPane(t, w, id, head, [], w.translating)
-    const words = await wordsOf($, t, isTerminal, await voiceOf($))
+    const words = await wordsOf($, t, w, isTerminal, await voiceOf($))
     const said = await read($, sounds)
     return Result.given(version).either(value => {
       const { translated, spoken, withCards } = ReplyTranslations.shown(settings, text, value)

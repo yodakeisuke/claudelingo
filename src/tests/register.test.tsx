@@ -139,7 +139,7 @@ describe('register', () => {
     expect(asked).toHaveLength(0)
   })
 
-  test('/lingo で設定パネルが開き、押す・確定するとすぐ保存され、選んだ方が強調される', async ($, on) => {
+  test('/lingo で設定パネルが開き、押す・選ぶ・確定するとすぐ保存され、選んだモデルが欄に出る', async ($, on) => {
     const { store } = engine(on)
     const opened: string[] = []
     on('ui.open', (_$, e) => (opened.push(e.id), { value: { isPlaced: true } }))
@@ -149,9 +149,9 @@ describe('register', () => {
       const ui = await $.ui.mount({ plugin: 'claudelingo', surface, component: 'Pane', requestId: 'claudelingo', props: pane })
       await ui.input({ key: 'target', text: target })
       await ui.input({ key: 'level', text: `${target} 初級` })
-      await ui.press({ key: `model-${model}` })
+      await ui.select({ key: 'model', value: model })
       expect(store.get('settings')).toEqual({ enabled: true, native: 'Japanese', target, level: `${target} 初級`, model, afterSend: true, live: true, liveModel: 'haiku', livePause: '1.5', card: true, cardModel: 'opus', voice: 'Samantha' })
-      expect((await ui.find({ type: 'Button', key: `model-${model}` }))?.props.variant).toBe('primary')
+      expect((await ui.find({ type: 'Select', key: 'model' }))?.props.value).toBe(model)
       for (const enabled of [false, true]) {
         await ui.press({ key: 'enabled' })
         expect(store.get('settings')).toMatchObject({ enabled })
@@ -181,7 +181,7 @@ describe('register', () => {
     engine(on)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
     await ui.press({ key: 'afterSend' })
-    expect(await ui.find({ type: 'Button', key: 'model-opus' })).toBeDefined()
+    expect(await ui.find({ type: 'Select', key: 'model' })).toBeDefined()
   })
 
   test('オフにしたまとまりは見出しと切り替えだけになり、オンに戻すと下の設定がまた出る。mod ごとオフなら他のまとまりも出ない', async ($, on) => {
@@ -201,7 +201,7 @@ describe('register', () => {
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
     await clock.advance(0)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
-    await ui.press({ key: 'model-opus' })
+    await ui.select({ key: 'model', value: 'opus' })
     await ui.press({ key: 'enabled' })
     const message = await $.ui.mount({ ...row('ログ見て'), surface: 'desktop' })
     expect(await message.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
@@ -222,7 +222,7 @@ describe('register', () => {
   test('選んだモデルが、次の訳から使われる', async ($, on) => {
     const { clock, models } = engine(on)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
-    await ui.press({ key: 'model-opus' })
+    await ui.select({ key: 'model', value: 'opus' })
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
     await clock.advance(0)
     expect(models).toEqual(['opus'])
@@ -237,12 +237,12 @@ describe('register', () => {
     }
   })
 
-  test('設定の保存に失敗したら、選んだ値は示さず、理由を出す', async ($, on) => {
+  test('設定の保存に失敗したら、選んだ値は示さず（欄は元の値のまま）、理由を出す', async ($, on) => {
     engine(on, undefined, undefined, undefined, false)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
-    await ui.press({ key: 'model-opus' })
+    await ui.select({ key: 'model', value: 'opus' })
     expect(await ui.find({ type: 'Text', text: /保存できませんでした：.+/ })).toBeDefined()
-    expect((await ui.find({ type: 'Button', key: 'model-opus' }))?.props.variant).toBe('secondary')
+    expect((await ui.find({ type: 'Select', key: 'model' }))?.props.value).toBe('sonnet')
   })
 
   test('自分で送った指示の語数をその日の分に足し、設定パネルの下に草と合計を出す。mod がオフなら数えず、草も出さない', async ($, on) => {

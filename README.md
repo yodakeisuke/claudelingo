@@ -32,17 +32,12 @@ claudelingo は次の文面を、あなたの Claude Code と同じアカウン�
 
 ## インストール
 
-mods に対応した Claude Code（CLI か Desktop の Code タブ）で動きます。
+mods に対応した Claude Code（CLI か Desktop の Code タブ）で動きます。ターミナルで次の 2 行を実行し、Claude Code を起動し直します。
 
 ```bash
-git clone https://github.com/yodakeisuke/claudelingo.git
+claude plugin marketplace add yodakeisuke/claudelingo
+claude plugin install claudelingo@claudelingo
 ```
-
-```bash
-claude --plugin-dir ./claudelingo/src
-```
-
-Desktop では `~/.claude/settings.json` の `env` に `"CLAUDE_CODE_PLUGIN_DIRS": "<clone した場所の絶対パス>/claudelingo/src"` を足します。
 
 ## ライセンス
 

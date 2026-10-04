@@ -49,15 +49,16 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
       <Text>{w.seconds}</Text>{nudge(1, '+')}<Box flexShrink={0}><Text dimColor>{w.slow}</Text></Box>
     </Box>
   )
-  const text = (field: 'native' | 'target' | 'voice', placeholder?: string) => <Box width={28} minWidth={0} flexShrink={1} flexDirection="column"><Input key={field} value={settings[field]} placeholder={placeholder} onSubmit={v => save(field, v)} /></Box>
+  const text = (field: 'native' | 'target' | 'voice', placeholder?: string) => <Box width={28} minWidth={0} flexShrink={1} flexDirection="column"><Input key={field} value={settings[field]} placeholder={placeholder} onSubmit={v => save(field, LingoSettings.entered(field, v, settings[field]))} /></Box>
   // 欄は minWidth 0 で狭い面に合わせて縮む。レベルは自由記述なので残りの幅を使い、書く粒度（できること・苦手なこと）を例で見せる
   const level = <Box flexGrow={1} minWidth={0} flexDirection="column"><Input key="level" value={settings.level} placeholder={w.levelExample} onSubmit={v => save('level', v)} /></Box>
   return (
     <Box flexDirection="column" gap={room * 2} paddingX={room * 2} paddingY={room}>
       {group('claudelingo', 'enabled')}
       {settings.enabled && [
-        group(w.language, null, field(w.native, text('native')), field(w.target, text('target')), field(w.level, level)),
-        group(w.afterSend, 'afterSend', model('model')),
+        // 基本のモデルは送った後の訳のほか、返事の訳・発音記号・コーチ・例文などにも使うので、いつも見える所に
+        group(w.basics, null, field(w.native, text('native')), field(w.target, text('target')), field(w.level, level), model('model')),
+        group(w.afterSend, 'afterSend'),
         group(w.live, 'live', model('liveModel'), field(w.pause, pause)),
         group(w.card, 'card', model('cardModel')),
         group(w.readAloud, null, field(w.voice, text('voice', w.voiceHint))),

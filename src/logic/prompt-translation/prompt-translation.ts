@@ -8,6 +8,7 @@ import { TranslationRequest } from './translation-request'
 export const PromptTranslations = {
   request: (settings: Settings, sent: Sent, commands: readonly string[]) => request(settings, sent, commands),
   isOwn: (from: string) => isOwn(from),
+  isCommand: (text: string, commands: readonly string[]) => isCommand(text, commands),
   ownOrigins: () => ownOrigins(),
   isNeeded: (surfaces: readonly string[]) => isNeeded(surfaces),
   key: (text: string) => key(text),

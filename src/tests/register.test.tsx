@@ -228,10 +228,10 @@ describe('register', () => {
     expect(models).toEqual(['opus'])
   })
 
-  test('UI の文言は母語の辞書で出し、辞書のない母語なら英語。母語を変えるとすぐ切り替わる', async ($, on) => {
+  test('UI の文言は母語の辞書で出し（「日本語（関西弁）」も日本語）、辞書のない母語なら英語。母語を変えるとすぐ切り替わる', async ($, on) => {
     engine(on)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
-    for (const [native, label] of [['English', 'Turn off'], ['日本語', 'オフにする'], ['Español', 'Turn off']] as const) {
+    for (const [native, label] of [['English', 'Turn off'], ['日本語（関西弁）', 'オフにする'], ['Español', 'Turn off']] as const) {
       await ui.input({ key: 'native', text: native })
       expect((await ui.find({ type: 'Button', key: 'enabled' }))?.props.label).toBe(label)
     }

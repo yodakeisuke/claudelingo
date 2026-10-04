@@ -414,7 +414,7 @@ claude plugin install claudelingo@claudelingo</pre>
   <details>
     <summary>細かい決まり</summary>
     <div class="tw"><table><tbody>
-      <tr><th>帯が出るまで</th><td>打つ手が「反応の速さ」（初期 0.5 秒）止まったら頼む。また打つと、その依頼は取り消す</td></tr>
+      <tr><th>帯が出るまで</th><td>打つ手が「反応の速さ」（初期 1.5 秒）止まったら頼む。また打つと、その依頼は取り消す</td></tr>
       <tr><th>新しい帯が出るまで</th><td>前の帯が残る</td></tr>
       <tr><th>［置換］が効かない</th><td>帯の後に入力欄を変えたとき。新しい帯を待ってから押す</td></tr>
       <tr><th>コマンドを打っている間</th><td>校正しない（<code>/</code> の後がコマンド名の書き出しのとき）</td></tr>
@@ -634,10 +634,10 @@ claude plugin install claudelingo@claudelingo</pre>
       <div class="ln">  <span class="dim">モデル</span>      <span class="k">haiku</span> <span class="k on">sonnet</span> <span class="k">opus</span></div><div class="nt">訳などに使うモデル</div>
       <div class="ln"><b>送った後の訳</b>  <span class="ok">● オン</span>  <span class="k">オフにする</span></div><div class="nt">機能ごとのオン・オフ</div>
       <div class="ln"><b>入力中の校正</b>  <span class="ok">● オン</span>  <span class="k">オフにする</span></div><div class="nt"></div>
-      <div class="ln">  <span class="dim">モデル</span>      <span class="k">haiku</span> <span class="k on">sonnet</span> <span class="k">opus</span></div><div class="nt"></div>
-      <div class="ln">  <span class="dim">反応の速さ</span>  <span class="dim">速い</span> <span class="k">-</span> 0.5 秒 <span class="k">+</span> <span class="dim">遅い</span></div><div class="nt">何秒止まったら校正するか</div>
+      <div class="ln">  <span class="dim">モデル</span>      <span class="k on">haiku</span> <span class="k">sonnet</span> <span class="k">opus</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">反応の速さ</span>  <span class="dim">速い</span> <span class="k">-</span> 1.5 秒 <span class="k">+</span> <span class="dim">遅い</span></div><div class="nt">何秒止まったら校正するか</div>
       <div class="ln"><b>単語の絵</b>      <span class="ok">● オン</span>  <span class="k">オフにする</span></div><div class="nt"></div>
-      <div class="ln">  <span class="dim">モデル</span>      <span class="k">haiku</span> <span class="k on">sonnet</span> <span class="k">opus</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">モデル</span>      <span class="k">haiku</span> <span class="k">sonnet</span> <span class="k on">opus</span></div><div class="nt"></div>
       <div class="ln"><b>読み上げ</b></div><div class="nt"></div>
       <div class="ln">  <span class="dim">声</span>          Samantha</div><div class="nt">Mac の声の名前</div>
       <div class="gap full"></div>
@@ -717,16 +717,16 @@ claude plugin install claudelingo@claudelingo</pre>
     <thead><tr><th>モデル</th><th>向き</th></tr></thead>
     <tbody>
       <tr><th>haiku</th><td>速く、使用量が少ない。訳や図解の質は下がることがある</td></tr>
-      <tr><th>sonnet</th><td>初期値。速さと質の釣り合いがよい</td></tr>
+      <tr><th>sonnet</th><td>速さと質の釣り合いがよい</td></tr>
       <tr><th>opus</th><td>質が最も高い。遅く、使用量も多い</td></tr>
     </tbody>
   </table></div>
   <div class="tw"><table>
-    <thead><tr><th><code>/lingo</code> の設定</th><th>使うところ</th></tr></thead>
+    <thead><tr><th><code>/lingo</code> の設定</th><th>使うところ</th><th>初期</th></tr></thead>
     <tbody>
-      <tr><th>基本 › モデル</th><td>送った後の訳・返事の訳・発音記号・話す練習のコーチ・例文など</td></tr>
-      <tr><th>入力中の校正 › モデル</th><td>入力中の校正</td></tr>
-      <tr><th>単語の絵 › モデル</th><td>単語の絵</td></tr>
+      <tr><th>基本 › モデル</th><td>送った後の訳・返事の訳・発音記号・話す練習のコーチ・例文など</td><td>sonnet</td></tr>
+      <tr><th>入力中の校正 › モデル</th><td>入力中の校正</td><td>haiku</td></tr>
+      <tr><th>単語の絵 › モデル</th><td>単語の絵</td><td>opus</td></tr>
     </tbody>
   </table></div>
   <p>どれも、その系統の最新版を使います。</p>
@@ -989,7 +989,7 @@ claude plugin install claudelingo@claudelingo</pre>
   <details>
     <summary>Details</summary>
     <div class="tw"><table><tbody>
-      <tr><th>When the band appears</th><td>After you pause for the Delay (0.5 s by default). Typing again cancels that request</td></tr>
+      <tr><th>When the band appears</th><td>After you pause for the Delay (1.5 s by default). Typing again cancels that request</td></tr>
       <tr><th>Until a new band appears</th><td>The previous band stays</td></tr>
       <tr><th>Replace does nothing</th><td>You changed the input after the band appeared. Wait for a new band, then press it</td></tr>
       <tr><th>Typing a command</th><td>Not proofread (when what follows <code>/</code> starts a command name)</td></tr>
@@ -1209,10 +1209,10 @@ claude plugin install claudelingo@claudelingo</pre>
       <div class="ln">  <span class="dim">Model</span>         <span class="k">haiku</span> <span class="k on">sonnet</span> <span class="k">opus</span></div><div class="nt">Model for translations and more</div>
       <div class="ln"><b>After sending</b>   <span class="ok">● On</span>  <span class="k">Turn off</span></div><div class="nt">Per-feature switches</div>
       <div class="ln"><b>While typing</b>    <span class="ok">● On</span>  <span class="k">Turn off</span></div><div class="nt"></div>
-      <div class="ln">  <span class="dim">Model</span>         <span class="k">haiku</span> <span class="k on">sonnet</span> <span class="k">opus</span></div><div class="nt"></div>
-      <div class="ln">  <span class="dim">Delay</span>         <span class="dim">Fast</span> <span class="k">-</span> 0.5 s <span class="k">+</span> <span class="dim">Slow</span></div><div class="nt">How long a pause before proofreading</div>
+      <div class="ln">  <span class="dim">Model</span>         <span class="k on">haiku</span> <span class="k">sonnet</span> <span class="k">opus</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Delay</span>         <span class="dim">Fast</span> <span class="k">-</span> 1.5 s <span class="k">+</span> <span class="dim">Slow</span></div><div class="nt">How long a pause before proofreading</div>
       <div class="ln"><b>Word pictures</b>   <span class="ok">● On</span>  <span class="k">Turn off</span></div><div class="nt"></div>
-      <div class="ln">  <span class="dim">Model</span>         <span class="k">haiku</span> <span class="k on">sonnet</span> <span class="k">opus</span></div><div class="nt"></div>
+      <div class="ln">  <span class="dim">Model</span>         <span class="k">haiku</span> <span class="k">sonnet</span> <span class="k on">opus</span></div><div class="nt"></div>
       <div class="ln"><b>Read aloud</b></div><div class="nt"></div>
       <div class="ln">  <span class="dim">Voice</span>         Mónica</div><div class="nt">A Mac voice name</div>
       <div class="gap full"></div>
@@ -1292,16 +1292,16 @@ claude plugin install claudelingo@claudelingo</pre>
     <thead><tr><th>Model</th><th>Best for</th></tr></thead>
     <tbody>
       <tr><th>haiku</th><td>Fast and light on usage. Translations and pictures may be weaker</td></tr>
-      <tr><th>sonnet</th><td>The default. A good balance of speed and quality</td></tr>
+      <tr><th>sonnet</th><td>A good balance of speed and quality</td></tr>
       <tr><th>opus</th><td>The best quality. Slower and heavier on usage</td></tr>
     </tbody>
   </table></div>
   <div class="tw"><table>
-    <thead><tr><th>Setting in <code>/lingo</code></th><th>Used for</th></tr></thead>
+    <thead><tr><th>Setting in <code>/lingo</code></th><th>Used for</th><th>Default</th></tr></thead>
     <tbody>
-      <tr><th>General › Model</th><td>After sending, Reply translation, pronunciation, coaching for Practice speaking, Examples and the rest</td></tr>
-      <tr><th>While typing › Model</th><td>While typing</td></tr>
-      <tr><th>Word pictures › Model</th><td>Word pictures</td></tr>
+      <tr><th>General › Model</th><td>After sending, Reply translation, pronunciation, coaching for Practice speaking, Examples and the rest</td><td>sonnet</td></tr>
+      <tr><th>Live proofread › Model</th><td>While typing</td><td>haiku</td></tr>
+      <tr><th>Word pictures › Model</th><td>Word pictures</td><td>opus</td></tr>
     </tbody>
   </table></div>
   <p>Each one always uses the latest model of that family.</p>

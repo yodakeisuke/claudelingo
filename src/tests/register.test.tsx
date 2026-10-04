@@ -71,7 +71,7 @@ const row = (text: string, origin: PromptOrigin = composer) =>
 
 const pane = { title: 'claudelingo', isFocused: true, bodyColumns: 80, placement: 'inline', scroll: { offset: 0, bodyRows: 7 }, view: {} } as const
 // 返事の訳のパネル
-const replyPane = { plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: REPLY_PANE, props: { ...pane, title: '訳' } } as const
+const replyPane = { plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: REPLY_PANE, props: { ...pane, title: '🌐' } } as const
 
 describe('register', () => {
   test('-p など描く面がないときは訳さない', async ($, on) => {
@@ -211,6 +211,15 @@ describe('register', () => {
     await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
     await clock.advance(0)
     expect(models).toEqual(['opus'])
+  })
+
+  test('UI の文言は母語の辞書で出し、辞書のない母語なら英語。母語を変えるとすぐ切り替わる', async ($, on) => {
+    engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    for (const [native, label] of [['English', 'Turn off'], ['日本語', 'オフにする'], ['Español', 'Turn off']] as const) {
+      await ui.input({ key: 'native', text: native })
+      expect((await ui.find({ type: 'Button', key: 'enabled' }))?.props.label).toBe(label)
+    }
   })
 
   test('設定の保存に失敗したら、選んだ値は示さず、理由を出す', async ($, on) => {

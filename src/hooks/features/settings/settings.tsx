@@ -23,7 +23,7 @@ const changeSetting = async ($: EngineInterface, field: string, value: string | 
 
 export const settings = (on: On) => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'lingo', description: 'claudelingo の設定を開く', immediate: true })
+    await $.command.register({ name: 'lingo', description: LingoSettings.wording((await settingsOf($)).native).openSettings, immediate: true })
     return next(e)
   })
 
@@ -33,15 +33,17 @@ export const settings = (on: On) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: SETTINGS_PANE }, async ($, e) => {
+    const settings = await settingsOf($)
+    const w = LingoSettings.wording(settings.native)
     // スマホには入力欄がないので、開く場所を案内する
     if (e.surface === 'mobile') {
       const { Text } = $.ui.resolve(e)
-      return <Text dimColor>設定は Desktop か CLI で開いてください</Text>
+      return <Text dimColor>{w.openElsewhere}</Text>
     }
     const t = $.ui.resolve(e)
     const isTerminal = e.surface === 'terminal'
     // 設定の下に、書いた語の草
-    const grass = grassGraph(t, isTerminal, Grass.of(await $.store.get('words'), Grass.day(await $.clock.now())), e.props.bodyColumns)
-    return settingsPane(t, isTerminal, await settingsOf($), await read($, denied), (field, value) => void changeSetting($, field, value), grass)
+    const grass = grassGraph(t, w, isTerminal, Grass.of(await $.store.get('words'), Grass.day(await $.clock.now())), e.props.bodyColumns)
+    return settingsPane(t, w, isTerminal, settings, await read($, denied), (field, value) => void changeSetting($, field, value), grass)
   })
 }

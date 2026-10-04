@@ -56,8 +56,9 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
     <Box flexDirection="column" gap={room * 2} paddingX={room * 2} paddingY={room}>
       {group('claudelingo', 'enabled')}
       {settings.enabled && [
-        group(w.language, null, field(w.native, text('native')), field(w.target, text('target')), field(w.level, level)),
-        group(w.afterSend, 'afterSend', model('model')),
+        // 基本のモデルは送った後の訳のほか、返事の訳・発音記号・コーチ・例文などにも使うので、いつも見える所に
+        group(w.basics, null, field(w.native, text('native')), field(w.target, text('target')), field(w.level, level), model('model')),
+        group(w.afterSend, 'afterSend'),
         group(w.live, 'live', model('liveModel'), field(w.pause, pause)),
         group(w.card, 'card', model('cardModel')),
         group(w.readAloud, null, field(w.voice, text('voice', w.voiceHint))),

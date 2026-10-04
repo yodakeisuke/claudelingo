@@ -7,7 +7,7 @@ export const ja: Wording = {
   off: '○ オフ',
   turnOn: 'オンにする',
   turnOff: 'オフにする',
-  language: '言語',
+  basics: '基本',
   native: '母語',
   target: '学ぶ言語',
   level: '今のレベル',

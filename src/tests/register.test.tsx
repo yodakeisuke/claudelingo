@@ -180,6 +180,13 @@ describe('register', () => {
     expect(store.get('settings')).toMatchObject({ native: 'Japanese', target: 'English', voice: '' })
   })
 
+  test('基本のモデルは、送った後の訳をオフにしても選べる', async ($, on) => {
+    engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    await ui.press({ key: 'afterSend' })
+    expect(await ui.find({ type: 'Button', key: 'model-opus' })).toBeDefined()
+  })
+
   test('オフにしたまとまりは見出しと切り替えだけになり、オンに戻すと下の設定がまた出る。mod ごとオフなら他のまとまりも出ない', async ($, on) => {
     engine(on)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })

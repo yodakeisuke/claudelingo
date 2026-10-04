@@ -6,7 +6,7 @@ export const en = {
   off: '○ Off',
   turnOn: 'Turn on',
   turnOff: 'Turn off',
-  language: 'Language',
+  basics: 'General',
   native: 'Native',
   target: 'Learning',
   level: 'Level',

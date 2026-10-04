@@ -2,8 +2,8 @@ export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
 // モデルの答え（訳・絵・発音記号・コーチのどれも）：本文か、答えられなかった理由
 export type Answer = Result<string, string>
-// engine から届くモデルの返事。Answers.of で Answer にする
-export type Completion = { isAnswered: true; text: string } | { isAnswered: false; reason: string }
+// engine から届くモデルの返事。Answers.of で Answer にする。api-error には失敗の種類（rate_limit など）が付く
+export type Completion = { isAnswered: true; text: string } | { isAnswered: false; reason: string; error?: string }
 
 // 単語の絵：押した語のまとまり（句なら句）、その発音記号、絵が示すことの一文、動く SVG
 export type Card = { unit: string; pron: string; caption: string; svg: string }

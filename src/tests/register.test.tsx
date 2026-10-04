@@ -35,7 +35,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     if (prompt.startsWith('{"pressed"')) return gate.then(() => ({ value: card(JSON.parse(prompt).pressed) }))
     if (prompt.startsWith('[1] ') && !fail) return { value: { isAnswered: true, text: `FROM: Japanese\n${prompt.replace(/\] /g, '] EN ')}`, usage } }
     models.push(e.model)
-    if (fail === 'reject') throw new Error('model blocked')
+    if (fail === 'reject') return { deny: 'model blocked' }
     const value: ModelCompleteResult = fail === 'api-error'
       ? { isAnswered: false, reason: 'api-error', status: 500, error: 'server_error', usage }
       : { isAnswered: true, text: `EN: ${prompt}`, usage }
@@ -124,13 +124,14 @@ describe('register', () => {
     expect(await ui.findAll({ type: 'Text' })).toHaveLength(1)
   })
 
-  for (const fail of ['api-error', 'reject'] as const) {
+  // api-error は種類を添え、呼び出しが拒まれたらその message
+  for (const [fail, reason] of [['api-error', /^訳せませんでした：api-error（server_error）$/], ['reject', /^訳せませんでした：.*model blocked$/]] as const) {
     test(`訳に失敗（${fail}）したら理由を出し、送信は通る`, async ($, on) => {
       const { clock } = engine(on, fail)
       expect(await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })).toEqual({ text: 'ログ見て' })
       await clock.advance(0)
       const ui = await $.ui.mount({ ...row('ログ見て'), surface: 'terminal' })
-      expect(await ui.find({ type: 'Text', text: /^訳せませんでした：.+/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: reason })).toBeDefined()
     })
   }
 

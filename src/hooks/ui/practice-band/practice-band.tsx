@@ -5,14 +5,15 @@ import type { Wording } from '../../../locales/en'
 import { Restatements } from '../../../logic/restatement/restatement'
 import type { SpeakingPractice } from '../../../logic/speaking-practice/speaking-practice'
 import { glyph } from '../glyph/glyph'
+import { ticker } from '../ticker/ticker'
 
 type Coached = ReturnType<typeof SpeakingPractice.shown>
 // 帯の手：欄の文を残す、声で入れた文を聞かせる、お手本を読む、入れ直す、案内を出す、閉じる
 type Hands = { keep: (text: string) => void; hear: (heard: string) => void; say: () => void; again: () => void; help: (text: string) => void; close: () => void }
 
-// 入力欄の上に、話す練習。お手本（と発音記号）、声で入れる欄、コーチの返事。違う語は赤い下線。見出しは同じ幅で中身の頭を揃える
+// 入力欄の上に、話す練習。お手本（と発音記号）、声で入れる欄、コーチの返事（聞いている間は回る一言）。違う語は赤い下線。見出しは同じ幅で中身の頭を揃える。お手本を読んでいる間は横に音の棒
 // 端末の右端 4 マスは帯の折りたたみ印 [-] 避け（Desktop に印はない）。端末は帯が開いても打鍵が入力欄に残るので欄へ移る鍵を添え、行は詰める（Desktop は 1 行空ける）
-export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: Wording, isTerminal: boolean, practice: Practice, coached: Coached, hands: Hands) => {
+export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: Wording, isTerminal: boolean, practice: Practice, coached: Coached, hands: Hands, playing = 0) => {
   const { Box, Button, Input, Markdown, Text } = t
   const head = (text: string) => <Box width={8} flexShrink={0}><Text dimColor bold>{text}</Text></Box>
   return (
@@ -27,7 +28,7 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
         {/* 声は手元の音声入力で欄に入れる（mods にマイクはない）。その案内は ? のホバーと押下で出す */}
         {glyph(t, 'practice-help', '?', w.voiceHelp, () => hands.help(w.voiceHelp))}
       </Box>
-      {typeof coached === 'string' && <Text dimColor>{coached}</Text>}
+      {typeof coached === 'string' && (practice.coach === null ? ticker(t, 'practice-listening', 'wait', coached) : <Text dimColor>{coached}</Text>)}
       {typeof coached === 'object' && (
         <Box flexDirection="column">
           <Box gap={1}>
@@ -39,6 +40,7 @@ export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
       )}
       <Box gap={1}>
         <Button key="practice-speak" label={`🔊 ${w.sample}`} onPress={hands.say} />
+        {playing > 0 && ticker(t, 'practice-sound', 'sound', playing > 1 ? `×${playing}` : '')}
         <Button key="practice-again" label={w.again} onPress={hands.again} />
       </Box>
     </Box>

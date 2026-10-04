@@ -10,4 +10,13 @@ describe('open-cards', () => {
     const opened = [{ word: 'carry', card, aspects: { examples: { items: [{ text: 'Carry on.', notes: [] }] } } }]
     expect(OpenCards.written(opened, { word: 'carry', aspect: 'examples' })).toEqual(opened)
   })
+
+  test('届いた項目は 1 つ目から出し、1 つずつ足す。閉じた欄には足さない', () => {
+    const at = { word: 'carry', aspect: 'examples' } as const
+    const items = [{ text: 'Carry on.', notes: [] }, { text: 'Go on.', notes: [] }]
+    const written = OpenCards.written(OpenCards.aspectPressed([{ word: 'carry', card }], at), at, items)
+    expect(written[0]?.aspects?.examples?.shown).toBe(1)
+    expect(OpenCards.revealed(written, at)[0]?.aspects?.examples?.shown).toBe(2)
+    expect(OpenCards.revealed([{ word: 'carry', card }], at)[0]?.aspects?.examples).toBeUndefined()
+  })
 })

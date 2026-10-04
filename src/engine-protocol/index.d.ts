@@ -11,15 +11,15 @@ export type Card = { unit: string; pron: string; caption: string; svg: string }
 export type Aspect = 'examples' | 'similar' | 'origin'
 // 欄の 1 項目：本文と、その下に薄く添える行（訳と気持ち、使い分け、由来）
 export type Item = { text: string; notes: string[] }
-// 開いている欄（書いている間は items が無い）
-export type OpenAspect = { items?: Item[]; isFailed?: boolean }
-// 指示の下に開いている絵。押した順に、押した語ごと（描いている間は card が無い）。その下に開いている欄
-export type OpenCard = { word: string; card?: Card; isFailed?: boolean; isWide?: boolean; aspects?: Partial<Record<Aspect, OpenAspect>> }
+// 開いている欄（書いている間は items が無い）。shown は出し終えた項目の数（無ければ全部）
+export type OpenAspect = { items?: Item[]; isFailed?: boolean; shown?: number }
+// 指示の下に開いている絵。押した順に、押した語ごと（描いている間は card が無い）。その下に開いている欄。since は押した時刻（ms）
+export type OpenCard = { word: string; card?: Card; isFailed?: boolean; isWide?: boolean; since?: number; aspects?: Partial<Record<Aspect, OpenAspect>> }
 // 話す練習：お手本とその発音記号、欄に入れた文、そのコーチ（頼んでいる間は null）
 export type Practice = { sample: string; pron?: string; heard?: string; coach?: Answer | null }
 
 declare module 'claude-code' {
   interface PluginState {
-    claudelingo: { translations: Record<string, Answer>; denied: string; draft: { text: string; version: Answer } | null; cards: Record<string, OpenCard[]>; drawn: Record<string, Card>; replies: Record<string, Answer | null>; paneReply: { text: string; key: string }; sounds: Record<string, string[] | null>; practice: Practice | null }
+    claudelingo: { translations: Record<string, Answer | null>; denied: string; saved: string; draft: { text: string; version: Answer; isStale?: boolean; isAsking?: boolean } | null; cards: Record<string, OpenCard[]>; drawn: Record<string, Card>; replies: Record<string, Answer | null>; paneReply: { text: string; key: string }; sounds: Record<string, string[] | null>; speaking: Record<string, number>; practice: Practice | null }
   }
 }

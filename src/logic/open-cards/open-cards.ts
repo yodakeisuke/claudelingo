@@ -2,7 +2,7 @@ import type { Aspect, Card, Item, OpenAspect, OpenCard } from '../../engine-prot
 
 // --- public interface
 export const OpenCards = {
-  pressed: (list: readonly OpenCard[], word: string, saved?: Card) => pressed(list, word, saved),
+  pressed: (list: readonly OpenCard[], at: Pressed, saved?: Card) => pressed(list, at, saved),
   isDrawing: (list: readonly OpenCard[], word: string) => isDrawing(list, word),
   kept: (list: readonly OpenCard[], word: string, card?: Card) => kept(list, word, card),
   drawn: (list: readonly OpenCard[], word: string, card?: Card) => drawn(list, word, card),
@@ -10,16 +10,19 @@ export const OpenCards = {
   aspectPressed: (list: readonly OpenCard[], at: WordAspect) => aspectPressed(list, at),
   isWriting: (list: readonly OpenCard[], at: WordAspect) => isWriting(list, at),
   written: (list: readonly OpenCard[], at: WordAspect, items?: Item[]) => written(list, at, items),
+  revealed: (list: readonly OpenCard[], at: WordAspect) => revealed(list, at),
 }
 
 // --- I/O
 // どの語の、どの欄か
 type WordAspect = { word: string; aspect: Aspect }
+// 押した語と、押した時刻（ms）
+type Pressed = { word: string; since: number }
 
 // --- business rules
-// 押した語の絵が開いていれば閉じ、なければ下に並べる（その語で描いた絵があれば、それで）
-const pressed = (list: readonly OpenCard[], word: string, saved?: Card) =>
-  (list.some(s => isSame(s, word, saved)) ? list.filter(s => !isSame(s, word, saved)) : [...list, { word, card: saved }])
+// 押した語の絵が開いていれば閉じ、なければ押した時刻とともに下に並べる（その語で描いた絵があれば、それで）
+const pressed = (list: readonly OpenCard[], { word, since }: Pressed, saved?: Card) =>
+  (list.some(s => isSame(s, word, saved)) ? list.filter(s => !isSame(s, word, saved)) : [...list, { word, card: saved, since }])
 // 同じ絵とみなすのは、同じ語か、同じ句の絵
 const isSame = (s: OpenCard, word: string, saved?: Card) => s.word === word || (saved !== undefined && s.card?.unit === saved.unit)
 // 絵が無いまま開いた語は、描きに行く
@@ -40,8 +43,10 @@ const isWriting = (list: readonly OpenCard[], { word, aspect }: WordAspect) => {
   const opened = list.find(s => s.word === word)?.aspects?.[aspect]
   return opened !== undefined && !opened.items && !opened.isFailed
 }
-// 書けた欄は項目で、書けなければ失敗で埋める。もう項目が出ていればそのまま。書いている間に閉じられていたら、開き直さない
-const written = (list: readonly OpenCard[], at: WordAspect, items?: Item[]) => changeAspect(list, at, opened => opened && (opened.items ? opened : { items, isFailed: !items }))
+// 書けた欄は項目で、書けなければ失敗で埋める。項目は 1 つ目から出し始める。もう項目が出ていればそのまま。書いている間に閉じられていたら、開き直さない
+const written = (list: readonly OpenCard[], at: WordAspect, items?: Item[]) => changeAspect(list, at, opened => opened && (opened.items ? opened : { items, isFailed: !items, shown: 1 }))
+// 項目をもう 1 つ出す。閉じられていたらそのまま
+const revealed = (list: readonly OpenCard[], at: WordAspect) => changeAspect(list, at, opened => opened && { ...opened, shown: (opened.shown ?? 0) + 1 })
 // 押した語の欄だけを変える
 const changeAspect = (list: readonly OpenCard[], { word, aspect }: WordAspect, change: (opened?: OpenAspect) => OpenAspect | undefined) =>
   list.map(s => (s.word === word ? { ...s, aspects: { ...s.aspects, [aspect]: change(s.aspects?.[aspect]) } } : s))

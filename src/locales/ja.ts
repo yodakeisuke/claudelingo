@@ -26,6 +26,7 @@ export const ja: Wording = {
   grassAlt: '書いた外国語の草（1 日 1 マス、多く書いた日ほど濃い）',
   month: month => `${month}月`,
   replace: '置換',
+  replaceStale: '入力が変わったので置換しませんでした',
   translateAside: '訳を横に出す',
   replyHint: '返事の 🌐 を押すと、ここに訳が出ます',
   translating: '訳しています…',

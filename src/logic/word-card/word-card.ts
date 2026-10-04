@@ -10,7 +10,7 @@ export const WordCards = {
   of: (answer: Answer, pressed: Pressed) => of(answer, pressed),
   saved: (all: Drawn, pressed: Pressed) => saved(all, pressed),
   saving: (all: Drawn, card: Card, pressed: Pressed) => saving(all, card, pressed),
-  openedWords: (opened: readonly OpenCard[]) => openedWords(opened),
+  openedUnits: (opened: readonly OpenCard[]) => openedUnits(opened),
   picture: (svg: string, isWide?: boolean) => picture(svg, isWide),
   waiting: () => waiting(),
 }
@@ -41,8 +41,8 @@ const key = (word: string, restated: string) => `${word}|${Restatements.plain(re
 const saving = (all: Drawn, card: Card, { word, restated }: Pressed) => ({ ...all, ...Object.fromEntries([word, ...parts(card.unit)].map(w => [key(w, restated), card])) })
 // 描いた絵は、押した語と文から引く
 const saved = (all: Drawn, { word, restated }: Pressed) => all[key(word, restated)]
-// 絵が出ている語は、押した語と、その絵の句のどの語も
-const openedWords = (opened: readonly OpenCard[]) => new Set(opened.flatMap(s => [s.word, ...(s.card ? parts(s.card.unit) : [])]))
+// 絵が出ている語（押した語と、その絵の句のどの語も）→ その絵の句（描いている間は押した語）。同じ句の語と絵の見出しは一緒に光る
+const openedUnits = (opened: readonly OpenCard[]) => new Map(opened.flatMap(s => [s.word, ...(s.card ? parts(s.card.unit) : [])].map(w => [w, s.card?.unit ?? s.word])))
 // 絵を描ける面（端末のほか）が 1 つでもあれば、SVG も頼む
 const isPictured = (surfaces: readonly string[]) => surfaces.some(s => s !== 'terminal')
 // 返事から句・発音記号・一文・SVG を取り出す。句か一文が欠けるか、SVG が外を参照しうれば失敗（図形とアニメーション以外の要素（<img> などは SVG を抜けて HTML になる）、href、style 属性、文書の外への url()、image-set、それを隠す & と \。訳した文に混じった指示で、絵から外へ送らせない）
@@ -66,5 +66,5 @@ const picture = (svg: string, isWide?: boolean) => {
   const source = svg.replace(/<svg\b[^>]*>/, root => `${root.replace(/\s(?:width|height|preserveAspectRatio)="[^"]*"/g, '').slice(0, -1)} width="${width}" height="${height}" preserveAspectRatio="xMinYMid meet">`)
   return { source, width, height }
 }
-// 描いている間は、同じ大きさの無地の地で場所を取る（届いても、下のボタンと欄が動かない）
-const waiting = () => picture('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 288"><rect width="480" height="288" rx="14" fill="#151a2e"/></svg>')
+// 描いている間は、同じ大きさの地で場所を取る（届いても、下のボタンと欄が動かない）。地の真ん中で輪を描き続け、止まっていないと分かるように
+const waiting = () => picture('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 288"><rect width="480" height="288" rx="14" fill="#151a2e"/><circle cx="240" cy="144" r="28" fill="none" stroke="#7d84a3" stroke-width="3" stroke-dasharray="176"><animate attributeName="stroke-dashoffset" values="176;0" dur="2.4s" repeatCount="indefinite"/></circle></svg>')

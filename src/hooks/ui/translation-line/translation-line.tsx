@@ -5,21 +5,22 @@ import type { Wording } from '../../../locales/en'
 import { Restatements } from '../../../logic/restatement/restatement'
 import { speakerAndMicrophone, symbolLine } from '../read-aloud/read-aloud'
 import type { Voice } from '../read-aloud/read-aloud'
+import { ticker } from '../ticker/ticker'
 
 type Line = ReturnType<typeof Restatements.of>
 
-// 外国語版を薄く、直した所（** で囲んだ所）は薄くせず太字で。薄い Markdown は端末で太字が消えるので、分けて描く
-const restated = (t: Elements[keyof Elements], text: string) => {
+// 外国語版を薄く、直した所（** で囲んだ所）は薄くせず太字で（古い校正なら太字も薄く）。薄い Markdown は端末で太字が消えるので、分けて描く
+const restated = (t: Elements[keyof Elements], text: string, isStale = false) => {
   const { Text } = t
-  return <Text>{Restatements.parts(text).map((part, i) => (i % 2 ? <Text bold>{part}</Text> : <Text dimColor>{part}</Text>))}</Text>
+  return <Text>{Restatements.parts(text).map((part, i) => (i % 2 ? <Text bold dimColor={isStale}>{part}</Text> : <Text dimColor>{part}</Text>))}</Text>
 }
 
 // 外国語版と、アドバイスがあれば1点ずつ続けて
-export const translationLine = (t: Elements[keyof Elements], line: Line) => {
+export const translationLine = (t: Elements[keyof Elements], line: Line, isStale = false) => {
   const { Box, Markdown } = t
   return (
     <Box flexDirection="column">
-      {restated(t, line.restated)}
+      {restated(t, line.restated, isStale)}
       {line.tips.map(tip => <Markdown dimColor text={`💡 ${tip}`} />)}
     </Box>
   )
@@ -33,9 +34,9 @@ export const withTranslation = (t: Elements[keyof Elements], w: Wording, isTermi
       {row}
       <Box alignItems="flex-start" gap={1}>
         <Box flexShrink={1}>{words ?? restated(t, line.restated)}</Box>
-        {voice && speakerAndMicrophone(t, w, isTerminal, { speak: `${id}-speak`, practise: `${id}-practise` }, () => voice.sayWithSymbols(line.restated), () => voice.practise(line.restated))}
+        {voice && speakerAndMicrophone(t, w, isTerminal, { speak: `${id}-speak`, practise: `${id}-practise` }, () => voice.sayWithSymbols(line.restated), () => voice.practise(line.restated), voice.speaking(line.restated))}
       </Box>
-      {voice && symbolLine(t, w, voice.symbols(line.restated))}
+      {voice && symbolLine(t, w, `${id}-symbols`, voice.symbols(line.restated))}
       {line.tips.length > 0 && (
         <Box flexDirection="column" marginTop={1} gap={0.5}>
           <Text dimColor bold>{`💡 ${w.tips}`}</Text>
@@ -52,4 +53,10 @@ export const withTranslation = (t: Elements[keyof Elements], w: Wording, isTermi
       {cards}
     </Box>
   )
+}
+
+// 訳している間は、指示の行の下に回る印と「訳しています」
+export const pendingTranslation = (t: Elements[keyof Elements], w: Wording, id: string, row: RenderElement) => {
+  const { Box } = t
+  return <Box flexDirection="column">{row}{ticker(t, `${id}-translating`, 'wait', w.translating)}</Box>
 }

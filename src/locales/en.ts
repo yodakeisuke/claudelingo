@@ -25,6 +25,7 @@ export const en = {
   grassAlt: 'Foreign words you wrote, one square a day, darker on busier days',
   month: (month: number) => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1],
   replace: 'Replace',
+  replaceStale: 'Not replaced: the draft changed',
   translateAside: 'Translate on the side',
   replyHint: 'Press 🌐 under a reply to see its translation here',
   translating: 'Translating…',

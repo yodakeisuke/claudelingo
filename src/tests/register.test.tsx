@@ -11,7 +11,7 @@ const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, c
 // エンジン役：返事は "EN: <入力>"、行はそのまま。fail で失敗の仕方を変える
 const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[] = ['terminal'], saved?: object, isWritable = true) => {
   const clock = mock.clock(on)
-  // 絵の返事を待たせる関所。hold で閉じ、返る関数で開ける。テストごとに別
+  // 絵と訳の返事を待たせる関所。hold で閉じ、返る関数で開ける。テストごとに別
   let gate = Promise.resolve()
   const hold = () => {
     let release = () => {}
@@ -39,7 +39,7 @@ const engine = (on: On, fail?: 'api-error' | 'reject', surfaces: RenderSurface[]
     const value: ModelCompleteResult = fail === 'api-error'
       ? { isAnswered: false, reason: 'api-error', status: 500, error: 'server_error', usage }
       : { isAnswered: true, text: `EN: ${prompt}`, usage }
-    return { value }
+    return gate.then(() => ({ value }))
   })
   on('command.list', () => ({ value: [{ name: 'clear', description: '', source: 'builtin' }] }))
   on('prompt.submit', (_$, e) => ({ text: e.text }))
@@ -113,6 +113,26 @@ describe('register', () => {
     await $.prompt.submit({ text: 'done', wait: false, origin: { kind: 'task-notification' } })
     await clock.advance(0)
     expect(asked).toHaveLength(0)
+  })
+
+  test('訳が届くまで、指示の下で「訳しています」が回り、届くと訳に替わる（どの面でも）', async ($, on) => {
+    const { clock, hold } = engine(on, undefined, undefined, { card: false })
+    const release = hold()
+    await $.prompt.submit({ text: 'ログ見て', wait: false, origin: composer })
+    await clock.advance(0)
+    const key = lineKey('ログ見て', 'translating')
+    const uis = await Promise.all((['terminal', 'desktop'] as const).map(surface => $.ui.mount({ ...row('ログ見て'), surface })))
+    for (const ui of uis) {
+      expect(await ui.find({ type: 'Text', text: '⠋ 訳しています…', in: key })).toBeDefined()
+      await ui.advance(300)
+      expect(await ui.find({ type: 'Text', text: '⠸ 訳しています…', in: key })).toBeDefined()
+    }
+    release()
+    await clock.advance(0)
+    for (const ui of uis) {
+      expect(await ui.find({ type: 'Text', text: 'EN: ログ見て' })).toBeDefined()
+      expect(await ui.find({ type: 'Client' })).toBeUndefined()
+    }
   })
 
   test('訳ができるまでは何も足さない', async ($, on) => {
@@ -237,6 +257,15 @@ describe('register', () => {
     }
   })
 
+  test('保存できた設定の横に ✓ が 1.2 秒だけ出る', async ($, on) => {
+    const { clock } = engine(on)
+    const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
+    await ui.press({ key: 'live' })
+    expect(await ui.findAll({ type: 'Text', text: '✓' })).toHaveLength(1)
+    await clock.advance(1200)
+    expect(await ui.find({ type: 'Text', text: '✓' })).toBeUndefined()
+  })
+
   test('設定の保存に失敗したら、選んだ値は示さず（欄は元の値のまま）、理由を出す', async ($, on) => {
     engine(on, undefined, undefined, undefined, false)
     const ui = await $.ui.mount({ plugin: 'claudelingo', surface: 'desktop', component: 'Pane', requestId: 'claudelingo', props: pane })
@@ -341,6 +370,27 @@ describe('register', () => {
     expect(await ui.find({ type: 'Button', key: lineKey('fix the tests and carry on', 'word-0') })).toBeUndefined()
   })
 
+  test('絵を描いている間は、印が回って経過秒が進み、地の真ん中で輪を描く', async ($, on) => {
+    const { clock, hold } = engine(on)
+    await $.prompt.submit({ text: 'fix the tests and carry on', wait: false, origin: composer })
+    await clock.advance(0)
+    const ui = await $.ui.mount({ ...row('fix the tests and carry on'), surface: 'desktop' })
+    const release = hold()
+    await ui.press({ key: lineKey('fix the tests and carry on', 'word-5') })
+    const key = lineKey('fix the tests and carry on', 'drawing-carry')
+    await ui.advance(12000)
+    expect(await ui.find({ type: 'Text', text: /^. コアイメージを描画中… carry 12秒$/, in: key })).toBeDefined()
+    expect((await ui.find({ type: 'Svg' }))?.props.source).toContain('attributeName="stroke-dashoffset"')
+    // 描き直しで枠が作り直されても、秒は押してからの数で続く
+    await clock.advance(30000)
+    await ui.unmount()
+    const again = await $.ui.mount({ ...row('fix the tests and carry on'), surface: 'desktop' })
+    expect(await again.find({ type: 'Text', text: /^. コアイメージを描画中… carry 30秒$/, in: key })).toBeDefined()
+    release()
+    await clock.advance(0)
+    expect(await again.find({ type: 'Client', key })).toBeUndefined()
+  })
+
   test('絵を描いている間も例文を押せ、開いた欄は絵が届いても残り、押し直すと閉じる', async ($, on) => {
     const { clock, hold } = engine(on)
     const ui = await sent($, clock)
@@ -432,6 +482,23 @@ describe('register', () => {
     await side.press({ key: replyKey('原因はここ。\n\n直した', 'speak') })
     expect(spoken.slice(1)).toEqual(['Samantha: EN 原因はここ。 [[slnc 500]]', 'Samantha: EN 直した [[slnc 500]]'])
     expect(await side.find({ type: 'Text', text: 'EN EN 直した' })).toBeDefined()
+  })
+
+  test('読み上げている間は 🔊 の横で音の棒が動き、重ねて押した数も出る。読み終わると消える', async ($, on) => {
+    const { clock } = engine(on, undefined, undefined, { card: false })
+    const done: (() => void)[] = []
+    on('audio.speak', () => new Promise(resolve => done.push(() => resolve({ value: { via: 'system' } }))))
+    await $.prompt.submit({ text: 'fix **tests**', wait: false, origin: composer })
+    await clock.advance(0)
+    const ui = await $.ui.mount({ ...row('fix **tests**'), surface: 'terminal' })
+    const key = lineKey('fix **tests**', 'speak-sound')
+    await ui.press({ key: lineKey('fix **tests**', 'speak') })
+    expect(await ui.find({ type: 'Text', text: '▁▃▅', in: key })).toBeDefined()
+    await ui.press({ key: lineKey('fix **tests**', 'speak') })
+    expect(await ui.find({ type: 'Text', text: '▁▃▅ ×2', in: key })).toBeDefined()
+    done.forEach(finish => finish())
+    await clock.advance(0)
+    expect(await ui.find({ type: 'Client', key })).toBeUndefined()
   })
 
   test('読めなければ理由を知らせる。返事の段落がいくつ読めなくても、押すごとに 1 回', async ($, on) => {

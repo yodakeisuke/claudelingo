@@ -20,13 +20,14 @@ import { practiceBand } from '../../ui/practice-band/practice-band'
 import { symbolLine } from '../../ui/read-aloud/read-aloud'
 import type { Voice } from '../../ui/read-aloud/read-aloud'
 import { REPLY_PANE, paragraphTranslation, replyBlock, replyPane } from '../../ui/reply-translation/reply-translation'
-import { withTranslation } from '../../ui/translation-line/translation-line'
+import { ticker } from '../../ui/ticker/ticker'
+import { pendingTranslation, withTranslation } from '../../ui/translation-line/translation-line'
 import { wordCard, wordLine } from '../../ui/word-card/word-card'
 
 // 設定パネル（settings.tsx）が $.store に置いた設定。$ は import をまたいで渡せないので、ここでも読む
 const settingsOf = async ($: EngineInterface) => LingoSettings.of(await $.store.get('settings'))
 
-// 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く
+// 指示の鍵（PromptTranslations.key）→ その外国語版。送信のときに作り、行を描くときに引く。訳している間は null
 const translations = atom({ plugin: 'claudelingo', key: 'translations' } as const, {})
 // 指示のメッセージ（id）か返事の段落 → その下に開いている単語の絵
 const cards = atom({ plugin: 'claudelingo', key: 'cards' } as const, {})
@@ -37,9 +38,15 @@ const drawn = atom({ plugin: 'claudelingo', key: 'drawn' } as const, {})
 const showTranslation = async ($: EngineInterface, from: string, text: string) => {
   const request = PromptTranslations.request(await settingsOf($), { from, text }, (await $.command.list()).map(c => c.name))
   if (!request || !PromptTranslations.isNeeded(await $.session.surfaces())) return
+  // 訳している間の印は、まだ訳の無い指示だけ（同じ文を送り直したなら、前の訳を出したまま待つ）
+  await showTranslationOf($, text, all => (Object.hasOwn(all, PromptTranslations.key(text)) ? all[PromptTranslations.key(text)] : null))
   const translation = await Answers.of($.model.complete(request))
-  await update($, translations, all => ({ ...all, [PromptTranslations.key(text)]: translation }))
-  // 訳が届いたらすぐ描き直させる（状態の変化だけでは、面によっては次の描画まで行が出ない）
+  await showTranslationOf($, text, () => translation)
+}
+
+// 訳が届いたらすぐ描き直させる（状態の変化だけでは、面によっては次の描画まで行が出ない）
+const showTranslationOf = async ($: EngineInterface, text: string, change: (all: Record<string, Answer | null>) => Answer | null | undefined) => {
+  await update($, translations, all => ({ ...all, [PromptTranslations.key(text)]: change(all) ?? null }))
   $.ui.invalidate('ui.render')
 }
 
@@ -54,7 +61,8 @@ const showCards = async ($: EngineInterface, row: string, change: (list: OpenCar
 // 手順書「単語の絵を出す」：同じ絵が開いていれば閉じ、なければ下に並べる。描いた絵はセッションの間残し、二度目からはすぐ出す
 const pressWord = async ($: EngineInterface, row: string, word: string, restated: string) => {
   const saved = WordCards.saved(await read($, drawn), { word, restated })
-  await showCards($, row, list => OpenCards.pressed(list, word, saved))
+  const since = await $.clock.now()
+  await showCards($, row, list => OpenCards.pressed(list, { word, since }, saved))
   if (OpenCards.isDrawing(await rowOf($, row), word)) await drawCard($, row, word, restated)
 }
 
@@ -66,31 +74,36 @@ const drawCard = async ($: EngineInterface, row: string, word: string, restated:
   await showCards($, row, list => OpenCards.drawn(list, word, card))
 }
 
-// 手順書「語を深める」：開いている欄なら閉じ、なければ開いて書かせる。絵とは別に頼むので、描いている間も押せる
+// 手順書「語を深める」：開いている欄なら閉じ、なければ開いて書かせる。絵とは別に頼むので、描いている間も押せる。届いた項目は 0.1 秒ずつ順に出す
 const pressAspect = async ($: EngineInterface, row: string, restated: string, at: { word: string; aspect: Aspect }) => {
   await showCards($, row, list => OpenCards.aspectPressed(list, at))
   if (!OpenCards.isWriting(await rowOf($, row), at)) return
   const answer = await Answers.of($.model.complete(WordAspects.request(await settingsOf($), at.aspect, { word: at.word, restated })))
-  await showCards($, row, list => OpenCards.written(list, at, WordAspects.of(answer, at.aspect)))
+  const items = WordAspects.of(answer, at.aspect)
+  await showCards($, row, list => OpenCards.written(list, at, items))
+  items?.slice(1).forEach((_, n) => $.clock.after(100 * (n + 1), () => void showCards($, row, list => OpenCards.revealed(list, at))))
 }
 
 // 描くときに渡す単語の絵の手。row は絵を並べる鍵（指示か返事の段落）、restated は語がある訳の行、id と prefix はボタンの名前の頭
 const wordsOf = async ($: EngineInterface, t: Parameters<typeof wordCard>[0], w: Parameters<typeof wordCard>[1], isTerminal: boolean, voice: Voice) => {
   const all = await read($, cards)
+  const now = await $.clock.now()
   return {
     // 訳の 1 行を押せる語の並びで。押すとその語の絵が下に出る
     line: (row: string, restated: string, line: Parameters<typeof wordLine>[2], id: string) =>
-      wordLine(t, isTerminal, line, WordCards.openedWords(all[row] ?? []), word => void pressWord($, row, word, restated), id),
+      wordLine(t, isTerminal, line, WordCards.openedUnits(all[row] ?? []), word => void pressWord($, row, word, restated), id),
     // 開いている絵。拡大・縮小と欄はその絵だけ
     cards: (row: string, restated: string, prefix: string) =>
-      (all[row] ?? []).map(s => wordCard(t, w, isTerminal, s, isWide => void showCards($, row, list => OpenCards.resized(list, s.word, isWide)), aspect => void pressAspect($, row, restated, { word: s.word, aspect }), voice, prefix)),
+      (all[row] ?? []).map(s => wordCard(t, w, isTerminal, s, isWide => void showCards($, row, list => OpenCards.resized(list, s.word, isWide)), aspect => void pressAspect($, row, restated, { word: s.word, aspect }), voice, prefix, now)),
   }
 }
 
 // 読み上げた文の並び → 文ごとの発音記号（Pronunciations.saving の形）。書いている間は null
 const sounds = atom({ plugin: 'claudelingo', key: 'sounds' } as const, {})
+// 読み上げている文の並び（改行でつないだもの）→ 読み終わっていない数（重ねて押した分も数える）
+const speaking = atom({ plugin: 'claudelingo', key: 'speaking' } as const, {})
 
-// 手順書「読み上げる」：押したらすぐ設定の声で読ませる。段落は 1 つずつ渡せば順に読まれる。読み終わりは待たず、読めなければ理由を知らせる
+// 手順書「読み上げる」：押したらすぐ設定の声で読ませる。段落は 1 つずつ渡せば順に読まれる。読み終わるまで読んでいる数に入れ、読めなければ理由を知らせる
 const say = async ($: EngineInterface, lines: string[]) => {
   const { voice, native } = await settingsOf($)
   // 知らせるのは押すごとに 1 回（段落がいくつ読めなくても）
@@ -100,7 +113,14 @@ const say = async ($: EngineInterface, lines: string[]) => {
     isTold = true
   }
   // 声の欄が空なら渡さず、既定の声で読む。末尾の無音は、Bluetooth の遅れで語尾が切れるのを無音側で受けるため
-  Pronunciations.spoken(lines).forEach(line => void Result.given($.audio.speak(`${line} [[slnc 500]]`, { voice: voice.trim() || undefined })).then(said => said.either(() => undefined, tell)))
+  await showSpeaking($, lines, 1)
+  await Promise.all(Pronunciations.spoken(lines).map(line => Result.given($.audio.speak(`${line} [[slnc 500]]`, { voice: voice.trim() || undefined })).then(said => said.either(() => undefined, tell))))
+  await showSpeaking($, lines, -1)
+}
+
+const showSpeaking = async ($: EngineInterface, lines: string[], by: number) => {
+  await update($, speaking, all => ({ ...all, [lines.join('\n')]: (all[lines.join('\n')] ?? 0) + by }))
+  $.ui.invalidate('ui.render')
 }
 
 // 文は読ませながら、発音記号も頼む。書いた記号は残してすぐ出す
@@ -119,7 +139,8 @@ const showSymbols = async ($: EngineInterface, lines: string[], symbols?: string
 // 描くときに渡す読み上げの手
 const voiceOf = async ($: EngineInterface): Promise<Voice> => {
   const all = await read($, sounds)
-  return { say: text => void say($, [text]), sayWithSymbols: text => void sayWithSymbols($, [text]), symbols: text => Pronunciations.symbol(all, [text], 0), practise: (sample, pron) => void practise($, sample, pron) }
+  const playing = await read($, speaking)
+  return { say: text => void say($, [text]), sayWithSymbols: text => void sayWithSymbols($, [text]), symbols: text => Pronunciations.symbol(all, [text], 0), speaking: text => playing[text] ?? 0, practise: (sample, pron) => void practise($, sample, pron) }
 }
 
 // 返事の鍵（ReplyTranslations.key：言語の組み合わせと文面）→ その訳。訳している間は null
@@ -176,6 +197,7 @@ let stop = new AbortController()
 // 手順書「打ちかけを外国語で示す」：打つ手が止まったら 1 回だけ頼み、その間に打たれたら捨てる
 const showDraftTranslation = async ($: EngineInterface, text: string, signal: AbortSignal) => {
   const request = DraftTranslations.request(await settingsOf($), text, (await $.command.list()).map(c => c.name))
+  if (request) await markDraft($, signal, () => ({ isAsking: true }))
   const version = request && (await Answers.of($.model.complete(request, { signal })))
   const shown = version ? { text, version } : null
   if (signal.aborted) return
@@ -192,7 +214,16 @@ const underlineNow = async ($: EngineInterface, shown: { text: string; version: 
   if (box.text === shown.text && box.cursor === box.text.length && decorations.length > 0) await $.prompt.fill({ text: box.text, mode: 'replace', decorations })
 }
 
-const showDraft = async ($: EngineInterface, shown: { text: string; version: Answer } | null) => {
+// 出ている校正の印：下書きが校正した文と違えば古い（薄く）、次を頼んでいる間は頼んでいる（回る印）。印が変わるときだけ描き直す
+const markDraft = async ($: EngineInterface, signal: AbortSignal, marks: (shown: Proofread) => { isStale?: boolean; isAsking?: boolean }) => {
+  const shown = await read($, draft)
+  const marked = shown && { ...shown, ...marks(shown) }
+  if (marked && !signal.aborted && (!!marked.isStale !== !!shown.isStale || !!marked.isAsking !== !!shown.isAsking)) await showDraft($, marked)
+}
+
+type Proofread = { text: string; version: Answer; isStale?: boolean; isAsking?: boolean }
+
+const showDraft = async ($: EngineInterface, shown: Proofread | null) => {
   await update($, draft, () => shown)
   $.ui.invalidate('ui.render')
 }
@@ -206,6 +237,7 @@ const translateAfterPause = async ($: EngineInterface, text: string) => {
   cancelDraftTranslation()
   const own = new AbortController()
   stop = own
+  await markDraft($, own.signal, shown => ({ isStale: text.trim() !== shown.text.trim(), isAsking: false }))
   const { livePause } = await settingsOf($)
   if (!own.signal.aborted) pause = $.clock.after(Number(livePause) * 1000, () => void showDraftTranslation($, text, own.signal))
 }
@@ -222,13 +254,17 @@ const draftBandOf = async ($: EngineInterface, t: Parameters<typeof draftBand>[0
   const band = DraftTranslations.band(settings, shown)
   if (!shown || !band) return undefined
   const { line, replacement } = band
-  // 置き換えるのは、校正した打ちかけのままのときだけ（待ちの間に打たれていたら、古い言い直しになる）
+  // 置き換えるのは、校正した打ちかけのままのときだけ（待ちの間に打たれていたら、古い言い直しになる）。置き換えなかったら、そう知らせる
+  const w = LingoSettings.wording(settings.native)
   const replace = async (text: string) => {
-    if ((await $.prompt.read()).text.trim() !== shown.text.trim()) return
+    if ((await $.prompt.read()).text.trim() !== shown.text.trim()) return $.ui.toast(w.replaceStale)
     const { isFilled } = await $.prompt.fill({ text, mode: 'replace' })
-    if (isFilled) void translateAfterPause($, text)
+    // 置き換えた文が今の校正の文（帯は薄くせず、置換も引っ込む）。次の校正はまた手が止まってから
+    if (!isFilled) return
+    await showDraft($, { text, version: shown.version })
+    void translateAfterPause($, text)
   }
-  return draftBand(t, LingoSettings.wording(settings.native), isTerminal, line, () => void hideDraftTranslation($), replacement ? () => void replace(replacement) : undefined)
+  return draftBand(t, w, isTerminal, line, () => void hideDraftTranslation($), replacement ? () => void replace(replacement) : undefined, shown)
 }
 
 export const learning = (on: On) => {
@@ -259,7 +295,7 @@ export const learning = (on: On) => {
     // 欄の文は打つたびに残す（描き直しで消えないように）。描き直しはしない
     const hands = { keep: (text: string) => void update($, practice, now => SpeakingPractice.kept(now, text)), hear: (heard: string) => void hear($, heard), say: () => void say($, [opened.sample]), again: () => void showPractice($, SpeakingPractice.again), help: (text: string) => $.ui.toast(text, { timeoutMs: 15000 }), close: () => void showPractice($, () => null) }
     const { Box } = t
-    return <Box flexDirection="column" gap={1}>{practiceBand(t, LingoSettings.wording(settings.native), e.surface === 'terminal', opened, SpeakingPractice.shown(settings.native, opened.coach), hands)}{band}</Box>
+    return <Box flexDirection="column" gap={1}>{practiceBand(t, LingoSettings.wording(settings.native), e.surface === 'terminal', opened, SpeakingPractice.shown(settings.native, opened.coach), hands, (await read($, speaking))[opened.sample] ?? 0)}{band}</Box>
   })
 
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
@@ -269,8 +305,9 @@ export const learning = (on: On) => {
     // 文面が constructor などでも、引き継いだ値は拾わない
     const version = Object.hasOwn(all, key) ? all[key] : undefined
     // 訳のない行は、設定を読まずにそのまま（本体の描画を重くしない）
-    if (!version) return row
+    if (version === undefined) return row
     const settings = await settingsOf($)
+    if (version === null) return pendingTranslation($.ui.resolve(e), LingoSettings.wording(settings.native), ElementKeys.of('line', e.requestId), row)
     const line = PromptTranslations.line(settings.native, version)
     if (!line) return row
     const t = $.ui.resolve(e)
@@ -308,18 +345,19 @@ export const learning = (on: On) => {
     const w = LingoSettings.wording(settings.native)
     // /clear で状態が空になっても、パネルは開いたまま残る
     if (!text) return replyPane(t, w, id, head, [], w.replyHint)
-    if (!version) return replyPane(t, w, id, head, [], w.translating)
-    const words = await wordsOf($, t, w, isTerminal, await voiceOf($))
+    if (!version) return replyPane(t, w, id, head, [], ticker(t, `${id}-translating`, 'wait', w.translating))
+    const voice = await voiceOf($)
+    const words = await wordsOf($, t, w, isTerminal, voice)
     const said = await read($, sounds)
     return Result.given(version).either(value => {
       const { translated, spoken, withCards } = ReplyTranslations.shown(settings, text, value)
       const translations = translated.map(({ restated, at }, n) => {
-        const symbol = symbolLine(t, w, Pronunciations.symbol(said, spoken, n))
+        const symbol = symbolLine(t, w, `${id}-symbols-${at}`, Pronunciations.symbol(said, spoken, n))
         const key = `${reply}#${at}`
-        const lines = WordLines.all(restated).map((line, j) => (withCards ? words.line(key, restated, line, `${id}-word-${at}-${j}`) : wordLine(t, isTerminal, line, new Set())))
+        const lines = WordLines.all(restated).map((line, j) => (withCards ? words.line(key, restated, line, `${id}-word-${at}-${j}`) : wordLine(t, isTerminal, line, new Map())))
         return paragraphTranslation(t, symbol, lines, withCards ? words.cards(key, restated, `${id}-word-${at}-`) : [])
       })
-      return replyPane(t, w, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined)
+      return replyPane(t, w, id, head, translations, undefined, spoken.length > 0 ? () => void sayWithSymbols($, spoken) : undefined, voice.speaking(spoken.join('\n')))
     }, error => replyPane(t, w, id, head, [], w.translateFailed(error)))
   })
 }

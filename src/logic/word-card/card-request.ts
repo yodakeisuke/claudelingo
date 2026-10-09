@@ -15,7 +15,7 @@ type Pressed = { word: string; sentence: string }
 // 押した語と文を JSON で渡し、その語のまとまり（句なら句）を決めさせて、コアイメージを動く SVG で描かせる。形は UNIT / PRON / CAPTION / SVG の 4 つ（絵を出せないときは SVG を除く 3 つ）
 const of = (settings: Settings, { word, sentence }: Pressed, withPicture: boolean) => ({
   model: settings.cardModel,
-  effort: 'low' as const,
+  effort: 'medium' as const,
   maxTokens: 64000,
   system: system(settings, withPicture),
   prompt: JSON.stringify({ pressed: word, sentence }),

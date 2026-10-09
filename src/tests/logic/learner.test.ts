@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import { TranslationRequest } from '../../logic/prompt-translation/translation-request'
+import { WordCards } from '../../logic/word-card/word-card'
 
 const learner = { native: 'Japanese', target: 'English', level: '' }
 
@@ -13,6 +14,7 @@ describe('learner', () => {
     ] as const
     for (const [level, told] of rows) {
       expect(TranslationRequest.of({ ...learner, level, model: 'haiku' }, 'ログ見て').system.startsWith(told)).toBe(true)
+      expect(WordCards.request({ ...learner, level, cardModel: 'sonnet' }, { word: 'carry', restated: 'carry on' }, ['desktop']).system).not.toContain('The learner is')
     }
   })
 })

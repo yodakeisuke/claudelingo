@@ -6,7 +6,7 @@ import { WordCards } from '../../logic/word-card/word-card'
 const learner = { native: 'Japanese', target: 'English', level: '' }
 
 describe('learner', () => {
-  test('どの頼み事も学ぶ人を伝え、レベルは書いてあるときだけ自己申告として添える', () => {
+  test('頼み事は学ぶ人を伝え（単語の絵は illustrate-nuance の文面のままにするので伝えない）、レベルは書いてあるときだけ自己申告として添える', () => {
     // [レベル, 伝える文]
     const rows = [
       ['', 'The learner is a Japanese speaker learning English.\n\n'],
@@ -14,7 +14,7 @@ describe('learner', () => {
     ] as const
     for (const [level, told] of rows) {
       expect(TranslationRequest.of({ ...learner, level, model: 'haiku' }, 'ログ見て').system.startsWith(told)).toBe(true)
-      expect(WordCards.request({ ...learner, level, cardModel: 'sonnet' }, { word: 'carry', restated: 'carry on' }, ['desktop']).system.startsWith(told)).toBe(true)
+      expect(WordCards.request({ ...learner, level, cardModel: 'sonnet' }, { word: 'carry', restated: 'carry on' }, ['desktop']).system).not.toContain('The learner is')
     }
   })
 })

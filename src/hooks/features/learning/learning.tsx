@@ -301,7 +301,7 @@ export const userMessage: MatchedHook<'ui.render', { component: 'UserMessage' }>
   const row = await next(e)
   const key = PromptTranslations.key(e.props.text)
   const all = await read($, translations)
-  // 文面が constructor などでも、引き継いだ値は拾わない
+  // 文面がオブジェクトの組み込みの名前と同じでも、引き継いだ値は拾わない
   const version = Object.hasOwn(all, key) ? all[key] : undefined
   // 訳のない行は、設定を読まずにそのまま（本体の描画を重くしない）
   if (version === undefined) return row

@@ -36,4 +36,12 @@ claudelingo sends text only to Claude, through your own Claude Code account, and
 
 On disk it keeps only your settings and daily word counts for the writing graph. Translations and pictures last for the session and never enter your conversation with Claude. To use less, turn features off or pick haiku in `/lingo`.
 
+## What the mod hooks
+
+| Hook | What it does |
+|---|---|
+| `command.run` | Only for `/lingo`: opens the settings pane. Other commands pass through untouched. |
+| `prompt.submit` | Reads the prompt you send to translate it and count its words for the graph. The prompt is sent as is, without waiting. |
+| `prompt.edit` | Reads your draft to proofread it after a pause, and underlines the corrected spots. Your text is not changed. |
+
 [Full guide](https://github.com/yodakeisuke/claudelingo#readme) · MIT License

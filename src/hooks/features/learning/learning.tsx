@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Hook, MatchedHook, Timer } from 'claude-code'
 
-import type { Answer, Aspect, OpenCard, Practice } from '../../../engine-protocol'
+import type { Answer, Aspect, OpenCard, Practice } from '../../../types'
 import { Answers } from '../../../logic/answer/answer'
 import { DraftTranslations } from '../../../logic/draft-translation/draft-translation'
 import { ElementKeys } from '../../../logic/element-key/element-key'
@@ -301,7 +301,7 @@ export const userMessage: MatchedHook<'ui.render', { component: 'UserMessage' }>
   const row = await next(e)
   const key = PromptTranslations.key(e.props.text)
   const all = await read($, translations)
-  // 文面が constructor などでも、引き継いだ値は拾わない
+  // 文面がオブジェクトの組み込みの名前と同じでも、引き継いだ値は拾わない
   const version = Object.hasOwn(all, key) ? all[key] : undefined
   // 訳のない行は、設定を読まずにそのまま（本体の描画を重くしない）
   if (version === undefined) return row

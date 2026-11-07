@@ -1,4 +1,4 @@
-import type { Answer } from '../../engine-protocol'
+import type { Answer } from '../../types'
 import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { ReplyRequest } from './reply-request'

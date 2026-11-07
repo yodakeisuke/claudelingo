@@ -26,7 +26,7 @@ export const settingsPane = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: 
     const on = key === null || settings[key]
     return (
       <Box flexDirection="column" gap={room}>
-        <Box alignItems="center" gap={1}><Box width={14} flexShrink={0}><Text bold dimColor={!on}>{title}</Text></Box>{key && onOff(key)}</Box>
+        <Box alignItems="center" gap={1}><Box width={14} flexShrink={0}><Text weight="semibold" dimColor={!on}>{title}</Text></Box>{key && onOff(key)}</Box>
         {on && fields}
       </Box>
     )

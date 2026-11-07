@@ -14,7 +14,7 @@ const saved = atom({ plugin: 'claudelingo', key: 'saved' } as const, '')
 // 保存した回数。✓ を消すのは最後の保存から 1.2 秒後（続けて押しても早く消えない）
 let saves = 0
 
-// 設定は mod 自身の保存領域（$.store）に置く。engine の設定行（userConfig）は Desktop のセッションには無く、$.config.set で書けない
+// 設定は mod 自身の保存領域（$.store）に置く。engine の設定行（userConfig）は Desktop のセッションには無く、mod から書けない
 const settingsOf = async ($: EngineInterface) => LingoSettings.of(await $.store.get('settings'))
 
 // 手順書「言語設定を変える」：保存して、失敗の理由（成功なら空）を残す。保存できたら、その設定を 1.2 秒だけ残す。パネルはそれを読んで描き直る

@@ -1,4 +1,4 @@
-import type { Answer, Practice } from '../../engine-protocol'
+import type { Answer, Practice } from '../../types'
 import { LingoSettings } from '../lingo-settings/lingo-settings'
 import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'

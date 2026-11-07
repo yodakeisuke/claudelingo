@@ -12,7 +12,7 @@ type Line = ReturnType<typeof Restatements.of>
 // 外国語版を薄く、直した所（** で囲んだ所）は薄くせず太字で（古い校正なら太字も薄く）。薄い Markdown は端末で太字が消えるので、分けて描く
 const restated = (t: Elements[keyof Elements], text: string, isStale = false) => {
   const { Text } = t
-  return <Text>{Restatements.parts(text).map((part, i) => (i % 2 ? <Text bold dimColor={isStale}>{part}</Text> : <Text dimColor>{part}</Text>))}</Text>
+  return <Text>{Restatements.parts(text).map((part, i) => (i % 2 ? <Text weight="semibold" dimColor={isStale}>{part}</Text> : <Text dimColor>{part}</Text>))}</Text>
 }
 
 // 外国語版と、アドバイスがあれば1点ずつ続けて
@@ -39,7 +39,7 @@ export const withTranslation = (t: Elements[keyof Elements], w: Wording, isTermi
       {voice && symbolLine(t, w, isTerminal, `${id}-symbols`, voice.symbols(line.restated))}
       {line.tips.length > 0 && (
         <Box flexDirection="column" marginTop={1} gap={0.5}>
-          <Text dimColor bold>{`💡 ${w.tips}`}</Text>
+          <Text dimColor weight="semibold">{`💡 ${w.tips}`}</Text>
           <Box flexDirection="column" gap={0.5}>
             {line.tips.map(tip => (
               <Box gap={1} alignItems="flex-start">

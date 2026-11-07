@@ -1,4 +1,4 @@
-import type { Aspect, Card, Item, OpenAspect, OpenCard } from '../../engine-protocol'
+import type { Aspect, Card, Item, OpenAspect, OpenCard } from '../../types'
 
 // --- public interface
 export const OpenCards = {

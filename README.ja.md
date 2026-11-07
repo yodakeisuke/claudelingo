@@ -19,7 +19,7 @@ Claude Code にいつも通り指示を送るだけで、その指示の外国�
 
 ### 必要なもの
 
-- Claude Code v2.1.287 以降（確かめ方：`claude --version`）
+- Claude Code v2.1.299 以降（確かめ方：`claude --version`）
 - ターミナルの `claude`、または Desktop アプリの Code タブ
 - 読み上げを使うなら Mac
 
@@ -500,7 +500,7 @@ claudelingo     ● オン  [オフにする]            ← 全体のオン・�
 <details>
 <summary>/lingo が無い</summary>
 
-1. `claude --version` が 2.1.287 以上か確かめる。
+1. `claude --version` が 2.1.299 以上か確かめる。
 2. 導入の後、Claude Code を起動し直したか確かめる。
 3. `/plugin` を開き、mod active の行に claudelingo があるか確かめる。
 

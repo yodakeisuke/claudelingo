@@ -1,4 +1,4 @@
-import type { Result as Data } from '../../engine-protocol'
+import type { Result as Data } from '../../types'
 
 // --- public interface
 export const Result = {

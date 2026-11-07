@@ -19,7 +19,7 @@ Keep using Claude Code as usual, and the version of each prompt in the language 
 
 ### What you need
 
-- Claude Code v2.1.287 or later (check with `claude --version`)
+- Claude Code v2.1.299 or later (check with `claude --version`)
 - `claude` in a terminal, or the Code tab of the Desktop app
 - A Mac, if you want read-aloud
 
@@ -500,7 +500,7 @@ Each one always uses the latest model of that family.
 <details>
 <summary>There's no /lingo</summary>
 
-1. Check that `claude --version` is 2.1.287 or later.
+1. Check that `claude --version` is 2.1.299 or later.
 2. Check that you restarted Claude Code after installing.
 3. Open `/plugin` and check that claudelingo is on its "mod active" line.
 

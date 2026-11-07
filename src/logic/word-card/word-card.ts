@@ -1,4 +1,4 @@
-import type { Answer, Card, OpenCard } from '../../engine-protocol'
+import type { Answer, Card, OpenCard } from '../../types'
 import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { CardRequest } from './card-request'
@@ -36,11 +36,11 @@ const bare = (word: string) => word.toLowerCase().replaceAll('’', "'").replace
 // 句の語（carry on なら carry と on）
 const parts = (unit: string) => unit.split(/\s+/).map(bare).filter(Boolean)
 // 同じ文の同じ語なら、同じ絵
-const key = (word: string, restated: string) => `${word}|${Restatements.plain(restated)}`
+const slot = (word: string, restated: string) => `${word}|${Restatements.plain(restated)}`
 // 描いた絵は、押した語と句のどの語からも引けるように残す（carry の後の on はすぐ出る）
-const saving = (all: Drawn, card: Card, { word, restated }: Pressed) => ({ ...all, ...Object.fromEntries([word, ...parts(card.unit)].map(w => [key(w, restated), card])) })
+const saving = (all: Drawn, card: Card, { word, restated }: Pressed) => ({ ...all, ...Object.fromEntries([word, ...parts(card.unit)].map(w => [slot(w, restated), card])) })
 // 描いた絵は、押した語と文から引く
-const saved = (all: Drawn, { word, restated }: Pressed) => all[key(word, restated)]
+const saved = (all: Drawn, { word, restated }: Pressed) => all[slot(word, restated)]
 // 絵が出ている語（押した語と、その絵の句のどの語も）→ その絵の句（描いている間は押した語）。同じ句の語と絵の見出しは一緒に光る
 const openedUnits = (opened: readonly OpenCard[]) => new Map(opened.flatMap(s => [s.word, ...(s.card ? parts(s.card.unit) : [])].map(w => [w, s.card?.unit ?? s.word])))
 // 絵を描ける面（端末のほか）が 1 つでもあれば、SVG も頼む

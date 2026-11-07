@@ -1,6 +1,6 @@
 import type { Elements } from 'claude-code'
 
-import type { Practice } from '../../../engine-protocol'
+import type { Practice } from '../../../types'
 import type { Wording } from '../../../locales/en'
 import { Restatements } from '../../../logic/restatement/restatement'
 import type { SpeakingPractice } from '../../../logic/speaking-practice/speaking-practice'
@@ -15,7 +15,7 @@ type Hands = { keep: (text: string) => void; hear: (heard: string) => void; say:
 // 端末の右端 4 マスは帯の折りたたみ印 [-] 避け（Desktop に印はない）。端末は帯が開いても打鍵が入力欄に残るので欄へ移る鍵を添え、行は詰める（Desktop は 1 行空ける）
 export const practiceBand = (t: Elements[Exclude<keyof Elements, 'mobile'>], w: Wording, isTerminal: boolean, practice: Practice, coached: Coached, hands: Hands, playing = 0) => {
   const { Box, Button, Input, Markdown, Text } = t
-  const head = (text: string) => <Box width={8} flexShrink={0}><Text dimColor bold>{text}</Text></Box>
+  const head = (text: string) => <Box width={8} flexShrink={0}><Text dimColor weight="semibold">{text}</Text></Box>
   return (
     <Box flexDirection="column" gap={isTerminal ? 0 : 1} paddingRight={isTerminal ? 4 : 0}>
       <Box justifyContent="space-between">

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import type { Answer } from '../../engine-protocol'
+import type { Answer } from '../../types'
 import { DraftTranslations } from '../../logic/draft-translation/draft-translation'
 
 const on = { enabled: true, live: true, native: 'Japanese', target: 'English', level: '', liveModel: 'haiku' }

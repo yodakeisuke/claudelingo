@@ -1,4 +1,4 @@
-import type { Answer, Card, OpenCard } from '../../engine-protocol'
+import type { Answer, Card, OpenCard } from '../../types'
 import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { CardRequest } from './card-request'

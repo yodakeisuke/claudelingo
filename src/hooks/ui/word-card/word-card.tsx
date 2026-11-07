@@ -1,6 +1,6 @@
 import type { Elements, RenderElement } from 'claude-code'
 
-import type { Aspect, OpenAspect, OpenCard } from '../../../engine-protocol'
+import type { Aspect, OpenAspect, OpenCard } from '../../../types'
 import type { Wording } from '../../../locales/en'
 import { WordAspects } from '../../../logic/word-aspect/word-aspect'
 import { WordCards } from '../../../logic/word-card/word-card'
@@ -23,7 +23,7 @@ export const wordLine = (t: Elements[keyof Elements], isTerminal: boolean, { ind
 // 押せないなら 1 つの文として印の横で折り返す（空白の無い日本語の行も印の横に収まる）。印は頭の行に（Desktop は既定で縦の中央にそろえる）
 const wrapped = (t: Elements[keyof Elements], isTerminal: boolean, words: Line['words'], opened: Map<string, string>, press: ((word: string) => void) | undefined, id: string, lead?: RenderElement) => {
   const { Box, Button, Text } = t
-  if (!press) return <Box alignItems="flex-start">{lead}<Text>{words.map((w, i) => <Text bold={w.isFixed}>{i ? ' ' : ''}{w.label}</Text>)}</Text></Box>
+  if (!press) return <Box alignItems="flex-start">{lead}<Text>{words.map((w, i) => <Text weight={w.isFixed ? 'semibold' : 'regular'}>{i ? ' ' : ''}{w.label}</Text>)}</Text></Box>
   return (
     <Box flexWrap="wrap">
       {lead}
@@ -49,12 +49,12 @@ export const wordCard = (t: Elements[keyof Elements], w: Wording, isTerminal: bo
   const voiceButtons = !shown.isFailed && speakerAndMicrophone(t, w, isTerminal, { speak: `${prefix}speak-${word}`, practise: `${prefix}practise-${word}` }, () => voice.say(unit), () => voice.practise(unit, card?.pron), voice.speaking(unit))
   const head = !card ? <Box gap={2} alignItems="center">{status}{voiceButtons}</Box> : Svg ? (
     <Box gap={2} alignItems="center">
-      <Text bold hover={lit(card.unit)}>{card.unit}</Text>
+      <Text weight="semibold" hover={lit(card.unit)}>{card.unit}</Text>
       <Text dimColor>{card.pron}</Text>
       {voiceButtons}
       <Button key={`${prefix}resize-${word}`} label={shown.isWide ? w.shrink : w.enlarge} dimColor onPress={() => resize(!shown.isWide)} />
     </Box>
-  ) : <Box><Text bold hover={lit(card.unit)}>{card.unit}  </Text><Text dimColor>{card.pron}  {card.caption} </Text>{voiceButtons}</Box>
+  ) : <Box><Text weight="semibold" hover={lit(card.unit)}>{card.unit}  </Text><Text dimColor>{card.pron}  {card.caption} </Text>{voiceButtons}</Box>
   const picture = Svg && (card ? (
     <Box flexWrap="wrap" alignItems="flex-end" gap={2}>
       <Svg {...WordCards.picture(card.svg, shown.isWide)} alt={card.caption} isInteractive />
@@ -79,7 +79,7 @@ const aspect = (t: Elements[keyof Elements], w: Wording, isTerminal: boolean, la
   const { Box, Text } = t
   return (
     <Box flexDirection="column" gap={0.5}>
-      <Text dimColor bold>{label}</Text>
+      <Text dimColor weight="semibold">{label}</Text>
       <Box flexDirection="column">
         {opened.items?.slice(0, opened.shown).map((item, i) => (
           <Box flexDirection="column">

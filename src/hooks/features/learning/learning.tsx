@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Hook, MatchedHook, Timer } from 'claude-code'
 
-import type { Answer, Aspect, OpenCard, Practice } from '../../../engine-protocol'
+import type { Answer, Aspect, OpenCard, Practice } from '../../../types'
 import { Answers } from '../../../logic/answer/answer'
 import { DraftTranslations } from '../../../logic/draft-translation/draft-translation'
 import { ElementKeys } from '../../../logic/element-key/element-key'

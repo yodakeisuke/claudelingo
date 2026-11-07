@@ -21,7 +21,7 @@ Restart Claude Code, then send `/lingo` to set your native and learning language
 
 ## Requirements
 
-- Claude Code v2.1.287 or later, in the terminal or the Desktop app's Code tab
+- Claude Code v2.1.299 or later, in the terminal or the Desktop app's Code tab
 - A Mac for read-aloud
 
 ## Privacy and usage

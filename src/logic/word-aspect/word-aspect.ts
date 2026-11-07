@@ -1,4 +1,4 @@
-import type { Answer, Aspect, Item } from '../../engine-protocol'
+import type { Answer, Aspect, Item } from '../../types'
 import { Restatements } from '../restatement/restatement'
 import { Result } from '../result/result'
 import { AspectRequest } from './aspect-request'

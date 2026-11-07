@@ -5,6 +5,5 @@
   "author": {
     "name": "Keisuke Yoda"
   },
-  "license": "MIT",
-  "types": "./engine-protocol/index.d.ts"
+  "license": "MIT"
 }

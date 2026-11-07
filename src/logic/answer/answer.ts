@@ -1,4 +1,4 @@
-import type { Answer, Completion } from '../../engine-protocol'
+import type { Answer, Completion } from '../../types'
 import { Result } from '../result/result'
 
 // --- public interface

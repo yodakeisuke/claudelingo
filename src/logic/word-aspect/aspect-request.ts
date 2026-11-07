@@ -1,4 +1,4 @@
-import type { Aspect } from '../../engine-protocol'
+import type { Aspect } from '../../types'
 import { Learner } from '../learner/learner'
 import { CardRequest } from '../word-card/card-request'
 
